@@ -279,6 +279,15 @@ if (BUILD_SHARED_LIBS)
 set (SNDFILE_SHARED_TARGET sndfile)
 
 if (WIN32)
+
+add_executable (create_symbols_file src/create_symbols_file.c)
+
+add_custom_command (
+	OUTPUT ${CMAKE_SOURCE_DIR}/src/${PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.def
+	COMMENT "Generating ${PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.def file..."
+	COMMAND create_symbols_file win32 ${PROJECT_VERSION_MAJOR} > ${PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.def
+	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src)
+
 list (APPEND libsndfile_SOURCES src/${PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.def)
 endif (WIN32)
 
