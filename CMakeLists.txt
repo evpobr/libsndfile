@@ -300,7 +300,7 @@ add_custom_command (
 	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src)
 
 list (APPEND libsndfile_SOURCES src/Symbols.gnu-binutils)
-	
+
 endif (UNIX AND NOT APPLE)
 
 add_library(${SNDFILE_SHARED_TARGET} SHARED ${libsndfile_SOURCES})
@@ -329,6 +329,11 @@ if (WIN32)
 	set_target_properties(${SNDFILE_SHARED_TARGET} PROPERTIES PREFIX "lib")
 	set_target_properties(${SNDFILE_SHARED_TARGET} PROPERTIES OUTPUT_NAME "sndfile-${PROJECT_VERSION_MAJOR}")
 endif (WIN32)
+
+if (UNIX AND NOT APPLE)
+	set_target_properties (${SNDFILE_SHARED_TARGET} PROPERTIES LINK_FLAGS -Wl,--version-script=${CMAKE_SOURCE_DIR}/src/Symbols.gnu-binutils)
+endif ()
+
 target_include_directories (${SNDFILE_SHARED_TARGET} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 endif (BUILD_SHARED_LIBS)
