@@ -278,9 +278,9 @@ if (BUILD_SHARED_LIBS)
 
 set (SNDFILE_SHARED_TARGET sndfile)
 
-if (WIN32)
-
 add_executable (create_symbols_file src/create_symbols_file.c)
+
+if (WIN32)
 
 add_custom_command (
 	OUTPUT ${CMAKE_SOURCE_DIR}/src/${PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.def
@@ -290,6 +290,18 @@ add_custom_command (
 
 list (APPEND libsndfile_SOURCES src/${PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.def)
 endif (WIN32)
+
+if (UNIX AND NOT APPLE)
+
+add_custom_command (
+	OUTPUT ${CMAKE_SOURCE_DIR}/src/Symbols.gnu-binutils
+	COMMENT "Generating Symbols.gnu-binutils..."
+	COMMAND create_symbols_file linux ${PROJECT_VERSION_MAJOR} > Symbols.gnu-binutils
+	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src)
+
+list (APPEND libsndfile_SOURCES src/Symbols.gnu-binutils)
+	
+endif (UNIX AND NOT APPLE)
 
 add_library(${SNDFILE_SHARED_TARGET} SHARED ${libsndfile_SOURCES})
 if (LIBM_REQUIRED)
