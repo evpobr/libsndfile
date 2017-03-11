@@ -303,6 +303,18 @@ list (APPEND libsndfile_SOURCES src/Symbols.gnu-binutils)
 
 endif (UNIX AND NOT APPLE)
 
+if (APPLE)
+
+add_custom_command (
+	OUTPUT ${CMAKE_SOURCE_DIR}/src/Symbols.darwin
+	COMMENT "Generating Symbols.darwin..."
+	COMMAND create_symbols_file darwin ${PROJECT_VERSION_MAJOR} > Symbols.darwin
+	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src)
+
+list (APPEND libsndfile_SOURCES src/Symbols.darwin)
+
+endif (APPLE)
+
 add_library(${SNDFILE_SHARED_TARGET} SHARED ${libsndfile_SOURCES})
 if (LIBM_REQUIRED)
 target_link_libraries (${SNDFILE_SHARED_TARGET} PRIVATE ${M_LIBRARY})
@@ -333,6 +345,10 @@ endif (WIN32)
 if (UNIX AND NOT APPLE)
 	set_target_properties (${SNDFILE_SHARED_TARGET} PROPERTIES LINK_FLAGS -Wl,--version-script=${CMAKE_SOURCE_DIR}/src/Symbols.gnu-binutils)
 endif ()
+
+if (APPLE)
+	set_target_properties (${SNDFILE_SHARED_TARGET} PROPERTIES LINK_FLAGS "-Wl,-exported_symbols_list -Wl,${CMAKE_SOURCE_DIR}/src/Symbols.darwin)")
+endif (APPLE)
 
 target_include_directories (${SNDFILE_SHARED_TARGET} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
