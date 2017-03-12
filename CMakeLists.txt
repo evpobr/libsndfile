@@ -239,8 +239,6 @@ set (libalac_SOURCES
 	src/ALAC/alac_encoder.c)
 source_group ("ALAC" FILES ${libalac_SOURCES})
 
-# TODO: Private symbols (Win32 implemented)
-
 # Headers to be installed on target machine
 set (libsndfile_PUBLIC_HEADERS ${include_HEADERS} ${nodist_include_HEADERS})
 set (libsndfile_SOURCES ${COMMON} ${FILESPECIFIC} ${noinst_HEADERS} ${libgsm_SOURCES} ${libg72x_SOURCES} ${libalac_SOURCES} ${libsndfile_PUBLIC_HEADERS})
@@ -278,43 +276,6 @@ if (BUILD_SHARED_LIBS)
 
 set (SNDFILE_SHARED_TARGET sndfile)
 
-add_executable (create_symbols_file src/create_symbols_file.c)
-
-if (WIN32)
-
-add_custom_command (
-	OUTPUT ${CMAKE_SOURCE_DIR}/src/${PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.def
-	COMMENT "Generating ${PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.def file..."
-	COMMAND create_symbols_file win32 ${PROJECT_VERSION_MAJOR} > ${PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.def
-	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src)
-
-list (APPEND libsndfile_SOURCES src/${PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.def)
-endif (WIN32)
-
-if (UNIX AND NOT APPLE)
-
-add_custom_command (
-	OUTPUT ${CMAKE_SOURCE_DIR}/src/Symbols.gnu-binutils
-	COMMENT "Generating Symbols.gnu-binutils..."
-	COMMAND create_symbols_file linux ${PROJECT_VERSION_MAJOR} > Symbols.gnu-binutils
-	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src)
-
-list (APPEND libsndfile_SOURCES src/Symbols.gnu-binutils)
-
-endif (UNIX AND NOT APPLE)
-
-if (APPLE)
-
-add_custom_command (
-	OUTPUT ${CMAKE_SOURCE_DIR}/src/Symbols.darwin
-	COMMENT "Generating Symbols.darwin..."
-	COMMAND create_symbols_file darwin ${PROJECT_VERSION_MAJOR} > Symbols.darwin
-	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src)
-
-list (APPEND libsndfile_SOURCES src/Symbols.darwin)
-
-endif (APPLE)
-
 add_library(${SNDFILE_SHARED_TARGET} SHARED ${libsndfile_SOURCES})
 if (LIBM_REQUIRED)
 target_link_libraries (${SNDFILE_SHARED_TARGET} PRIVATE ${M_LIBRARY})
@@ -336,19 +297,18 @@ set_target_properties (${SNDFILE_SHARED_TARGET}
 			PROPERTIES
 			SOVERSION ${PROJECT_VERSION_MAJOR}
 			VERSION ${PROJECT_VERSION}
-			PUBLIC_HEADER "${libsndfile_PUBLIC_HEADERS}")
+			PUBLIC_HEADER "${libsndfile_PUBLIC_HEADERS}"
+			C_VISIBILITY_PRESET hidden
+			CMAKE_VISIBILITY_INLINES_HIDDEN 1)
+
+target_compile_definitions (${SNDFILE_SHARED_TARGET}
+	PRIVATE SNDFILE_EXPORTS
+	INTERFACE SNDFILE_IMPORTS)
+
 if (WIN32)
 	set_target_properties(${SNDFILE_SHARED_TARGET} PROPERTIES PREFIX "lib")
 	set_target_properties(${SNDFILE_SHARED_TARGET} PROPERTIES OUTPUT_NAME "sndfile-${PROJECT_VERSION_MAJOR}")
 endif (WIN32)
-
-if (UNIX AND NOT APPLE)
-	set_target_properties (${SNDFILE_SHARED_TARGET} PROPERTIES LINK_FLAGS -Wl,--version-script=${CMAKE_SOURCE_DIR}/src/Symbols.gnu-binutils)
-endif ()
-
-if (APPLE)
-	set_target_properties (${SNDFILE_SHARED_TARGET} PROPERTIES LINK_FLAGS "-Wl,-exported_symbols_list -Wl,${CMAKE_SOURCE_DIR}/src/Symbols.darwin)")
-endif (APPLE)
 
 target_include_directories (${SNDFILE_SHARED_TARGET} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
