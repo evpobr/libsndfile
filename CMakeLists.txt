@@ -468,6 +468,7 @@ set (html_DATA
 	doc/index.html
 	doc/libsndfile.jpg
 	doc/libsndfile.css
+	doc/print.css
 	doc/api.html
 	doc/command.html
 	doc/bugs.html
@@ -478,7 +479,6 @@ set (html_DATA
 	doc/lists.html
 	doc/embedded_files.html
 	doc/octave.html
-	doc/dither.html
 	doc/tutorial.html)
 install (FILES ${html_DATA} DESTINATION ${CMAKE_INSTALL_DOCDIR}/${PROJECT_NAME})
 
@@ -498,7 +498,7 @@ add_custom_command (
 add_custom_command (
 	OUTPUT ${CMAKE_SOURCE_DIR}/tests/floating_point_test.c
 	COMMAND ${AUTOGEN_EXECUTABLE} --writable floating_point_test.def
-	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests)	
+	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests)
 
 add_custom_command (
 	OUTPUT ${CMAKE_SOURCE_DIR}/tests/floating_point_test.c
