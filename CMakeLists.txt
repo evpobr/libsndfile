@@ -465,24 +465,21 @@ set (HTML_BGCOLOUR "black")
 set (HTML_FGCOLOUR "white")
 configure_file (${CMAKE_CURRENT_SOURCE_DIR}/doc/libsndfile.css.in ${CMAKE_CURRENT_SOURCE_DIR}/doc/libsndfile.css)
 set (html_DATA
-	doc/api.html
-	doc/bugs.html
-	doc/command.html
-	doc/development.html
-	doc/donate.html
-	doc/embedded_files.html
-	doc/FAQ.html
-	doc/index.html
-	doc/libsndfile.css
-	doc/libsndfile.jpg
-	doc/linux_games_programming.txt
-	doc/lists.html
-	doc/new_file_type.HOWTO
-	doc/octave.html
-	doc/print.css
-	doc/sndfile_info.html
-	doc/tutorial.html
-	doc/win32.html)
+	index.html 
+	libsndfile.jpg 
+	libsndfile.css
+	print.css
+	api.html
+	command.html
+	bugs.html
+	sndfile_info.html
+	new_file_type.HOWTO
+	win32.html
+	FAQ.html
+	lists.html
+	embedded_files.html
+	octave.html
+	tutorial.html)
 install (FILES ${html_DATA} DESTINATION ${CMAKE_INSTALL_DOCDIR}/${PROJECT_NAME})
 
 install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/sndfile.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
