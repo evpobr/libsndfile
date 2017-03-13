@@ -276,6 +276,20 @@ if (BUILD_SHARED_LIBS)
 
 set (SNDFILE_SHARED_TARGET sndfile)
 
+if (WIN32)
+
+add_executable (create_symbols_file src/create_symbols_file.c)
+
+add_custom_command (
+	OUTPUT ${CMAKE_SOURCE_DIR}/src/${PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.def
+	COMMENT "Generating ${PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.def file..."
+	COMMAND create_symbols_file win32 ${PROJECT_VERSION_MAJOR} > ${PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.def
+	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src)
+
+list (APPEND libsndfile_SOURCES src/${PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.def)
+
+endif (WIN32)
+
 add_library(${SNDFILE_SHARED_TARGET} SHARED ${libsndfile_SOURCES})
 if (LIBM_REQUIRED)
 target_link_libraries (${SNDFILE_SHARED_TARGET} PRIVATE ${M_LIBRARY})
@@ -293,6 +307,9 @@ if (NOT DISABLE_EXTERNAL_LIBS)
 		${SPEEX_INCLUDE_DIRS})
 	endif ()
 endif ()
+
+if (NOT WIN32)
+
 set_target_properties (${SNDFILE_SHARED_TARGET}
 			PROPERTIES
 			SOVERSION ${PROJECT_VERSION_MAJOR}
@@ -302,13 +319,14 @@ set_target_properties (${SNDFILE_SHARED_TARGET}
 			CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 
 target_compile_definitions (${SNDFILE_SHARED_TARGET}
-	PRIVATE SNDFILE_EXPORTS
-	INTERFACE SNDFILE_IMPORTS)
+	PRIVATE SNDFILE_EXPORTS)
 
-if (WIN32)
-	set_target_properties(${SNDFILE_SHARED_TARGET} PROPERTIES PREFIX "lib")
-	set_target_properties(${SNDFILE_SHARED_TARGET} PROPERTIES OUTPUT_NAME "sndfile-${PROJECT_VERSION_MAJOR}")
-endif (WIN32)
+else (WIN32)
+
+set_target_properties(${SNDFILE_SHARED_TARGET} PROPERTIES PREFIX "lib")
+set_target_properties(${SNDFILE_SHARED_TARGET} PROPERTIES OUTPUT_NAME "sndfile-${PROJECT_VERSION_MAJOR}")
+
+endif (NOT WIN32)
 
 target_include_directories (${SNDFILE_SHARED_TARGET} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
