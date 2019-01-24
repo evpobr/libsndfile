@@ -317,52 +317,25 @@ if (BUILD_SHARED_LIBS)
 		VERSION ${PROJECT_VERSION}
 		)
 
-	# Symbol files generation
+	# Symbol files
 
 	if (WIN32)
-		set (SYMBOL_FILENAME "sndfile.def")
-		set (SYMBOL_OS "win32")
+		target_sources (sndfile	PRIVATE src/sndfile.def)
 	elseif ((CMAKE_SYSTEM_NAME MATCHES "Darwin") OR (CMAKE_SYSTEM_NAME MATCHES "Rhapsody"))
-		set (SYMBOL_FILENAME "Symbols.darwin")
-		set (SYMBOL_OS "darwin")
+		set_property (TARGET sndfile APPEND_STRING PROPERTY
+			LINK_FLAGS " -Wl,-exported_symbols_list -Wl,${CMAKE_CURRENT_SOURCE_DIR}/src/Symbols.darwin"
+		)
 	elseif (CMAKE_SYSTEM_NAME MATCHES "OS2")
 		set (SYMBOL_FILENAME "Symbols.os2")
-		set (SYMBOL_OS "os2")
+		set_property (TARGET sndfile APPEND_STRING PROPERTY
+			LINK_FLAGS " -Wl,-export-symbols ${CMAKE_CURRENT_SOURCE_DIR}/src/Symbols.os2"
+		)
 	elseif (UNIX)
 		set (SYMBOL_FILENAME "Symbols.gnu-binutils")
-		set (SYMBOL_OS "linux")
+		set_property (TARGET sndfile APPEND_STRING PROPERTY
+			LINK_FLAGS " -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/src/Symbols.gnu-binutils"
+		)
 	endif ()
-
-	if (DEFINED SYMBOL_OS)
-		add_custom_command (
-			OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/src/${SYMBOL_FILENAME}
-			COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/src/create_symbols_file.py ${SYMBOL_OS} ${PROJECT_VERSION_MAJOR} > ${CMAKE_CURRENT_BINARY_DIR}/src/${SYMBOL_FILENAME}
-			COMMENT "Generating ${SYMBOL_FILENAME}..."
-			)
-
-		add_custom_target (GENFILES DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/src/${SYMBOL_FILENAME})
-		if (SYMBOL_OS MATCHES "win32")
-			target_sources (sndfile
-				PRIVATE
-					${CMAKE_CURRENT_BINARY_DIR}/src/${SYMBOL_FILENAME}
-				)
-		elseif (SYMBOL_OS MATCHES "darwin")
-			add_dependencies (sndfile GENFILES)
-			set_property (TARGET sndfile APPEND_STRING PROPERTY
-				LINK_FLAGS " -Wl,-exported_symbols_list -Wl,${CMAKE_CURRENT_BINARY_DIR}/src/${SYMBOL_FILENAME}"
-				)
-		elseif (SYMBOL_OS MATCHES "os")
-			add_dependencies (sndfile GENFILES)
-			set_property (TARGET sndfile APPEND_STRING PROPERTY
-				LINK_FLAGS " -Wl,-export-symbols ${CMAKE_CURRENT_BINARY_DIR}/src/${SYMBOL_FILENAME}"
-				)
-		elseif (UNIX)
-			add_dependencies (sndfile GENFILES)
-			set_property (TARGET sndfile APPEND_STRING PROPERTY
-				LINK_FLAGS " -Wl,--version-script,${CMAKE_CURRENT_BINARY_DIR}/src/${SYMBOL_FILENAME}"
-				)
-		endif()
-	endif()
 
 endif ()
 
