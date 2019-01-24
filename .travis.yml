@@ -41,11 +41,3 @@ install:
 
 script:
   - mkdir cmake-build && (cd cmake-build && cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall -Wextra" && make VERBOSE=1 && ctest -V)
-  - pwd
-  - ./autogen.sh
-  - |
-    if [[ "${CC}" == "clang" ]]; then
-      ./configure --enable-werror && make clean all check && make distcheck
-    else
-      Scripts/asan-configure.sh --enable-werror && make clean all check && make distcheck
-    fi
