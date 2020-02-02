@@ -1111,4 +1111,10 @@ arith_shift_right (int32_t x, int shift)
 	return ~ ((~x) >> shift) ;
 } /* arith_shift_right */
 
+#ifdef ENABLE_RUST
+#define RUST_EXTERN extern
+#else
+#define RUST_EXTERN
+#endif
+
 #endif /* SNDFILE_COMMON_H */

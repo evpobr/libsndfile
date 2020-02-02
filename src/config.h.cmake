@@ -309,3 +309,5 @@
 
 /* Define as `__inline' or '__inline__' if that's what the C compiler calls it, or to nothing if it is not supported. */
 @INLINE_CODE@
+
+#cmakedefine ENABLE_RUST
