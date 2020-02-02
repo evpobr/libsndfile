@@ -41,6 +41,12 @@
 #error "This code is not designed to be compiled with a C++ compiler."
 #endif
 
+#ifdef ENABLE_RUST
+#define RUST_EXTERN extern
+#else
+#define RUST_EXTERN
+#endif
+
 #ifdef INT64_C
 #	define	SF_PLATFORM_S64(x)		INT64_C (x)
 #elif (SIZEOF_LONG == 8)
@@ -764,7 +770,7 @@ enum
 } ;
 
 /* Allocate and initialize the SF_PRIVATE struct. */
-SF_PRIVATE * psf_allocate (void) ;
+RUST_EXTERN SF_PRIVATE * psf_allocate (void) ;
 
 int subformat_to_bytewidth (int format) ;
 int s_bitwidth_to_subformat (int bits) ;
@@ -1110,11 +1116,5 @@ arith_shift_right (int32_t x, int shift)
 		return x >> shift ;
 	return ~ ((~x) >> shift) ;
 } /* arith_shift_right */
-
-#ifdef ENABLE_RUST
-#define RUST_EXTERN extern
-#else
-#define RUST_EXTERN
-#endif
 
 #endif /* SNDFILE_COMMON_H */

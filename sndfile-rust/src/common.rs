@@ -4,7 +4,7 @@ use std::fmt;
 use std::mem;
 use std::ptr;
 
-use libc::{c_char, c_int, c_uint, c_float, c_uchar};
+use libc::{c_char, c_int, c_uint, c_float, c_uchar, calloc, size_t, free};
 
 pub const SF_BUFFER_LEN: usize = 8192;
 pub const SF_FILENAME_LEN: usize = 1024;
@@ -842,3 +842,21 @@ pub const SFE_OPUS_BAD_SAMPLERATE: c_int = 176;
 pub const SFE_MAX_ERROR: c_int = 177; /* This must be last in list. */
 
 const INITIAL_HEADER_SIZE: sf_count_t = 256;
+
+#[no_mangle]
+pub unsafe extern "C" fn psf_allocate() -> *mut SF_PRIVATE {
+    let mut psf: *mut SF_PRIVATE = calloc(1, mem::size_of::<SF_PRIVATE>()) as *mut SF_PRIVATE;
+
+    if psf.is_null() {
+        return ptr::null_mut();
+    }
+
+    (*psf).header.ptr = calloc(1, INITIAL_HEADER_SIZE as size_t) as *mut u8;
+    if (*psf).header.ptr.is_null() {
+        free(psf as *mut c_void);
+        return ptr::null_mut();
+    };
+    (*psf).header.len = INITIAL_HEADER_SIZE;
+
+    psf
+}

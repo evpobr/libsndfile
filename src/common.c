@@ -37,6 +37,8 @@
 
 #define	INITIAL_HEADER_SIZE	256
 
+#ifndef ENABLE_RUST
+
 /* Allocate and initialize the SF_PRIVATE struct. */
 SF_PRIVATE *
 psf_allocate (void)
@@ -53,6 +55,8 @@ psf_allocate (void)
 
 	return psf ;
 } /* psf_allocate */
+
+#endif
 
 static int
 psf_bump_header_allocation (SF_PRIVATE * psf, sf_count_t needed)
