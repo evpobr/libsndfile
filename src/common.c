@@ -472,10 +472,19 @@ psf_asciiheader_printf (SF_PRIVATE *psf, const char *format, ...)
 ** seg. fault when asked to write an int or short to a non-int/short aligned address.
 */
 
+#ifdef ENABLE_RUST
+
+RUST_EXTERN void
+header_put_byte (SF_PRIVATE *psf, char x) ;
+
+#else
+
 static inline void
 header_put_byte (SF_PRIVATE *psf, char x)
 {	psf->header.ptr [psf->header.indx++] = x ;
 } /* header_put_byte */
+
+#endif
 
 #if (CPU_IS_BIG_ENDIAN == 1)
 static inline void

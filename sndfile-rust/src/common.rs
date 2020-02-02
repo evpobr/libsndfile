@@ -5,6 +5,7 @@ use std::ffi::CString;
 use std::fmt;
 use std::mem;
 use std::ptr;
+use std::slice;
 
 use libc::{c_char, c_float, c_int, c_uchar, c_uint, calloc, free, memset, realloc, size_t};
 
@@ -924,6 +925,17 @@ pub unsafe extern "C" fn log_putchar(psf: *mut SF_PRIVATE, ch: c_char) {
         psf.parselog.indx += 1;
         psf.parselog.buf[psf.parselog.indx as usize] = 0;
     };
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn header_put_byte(psf: *mut SF_PRIVATE, x: c_char) {
+    assert!(!psf.is_null());
+    let psf = &mut *psf;
+
+    assert!(!psf.header.ptr.is_null());
+    let header_ptr = slice::from_raw_parts_mut(psf.header.ptr, psf.header.len as usize);
+    header_ptr[psf.header.indx as usize] = x as u8;
+    psf.header.indx += 1;
 }
 
 extern "C" {
