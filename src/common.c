@@ -1665,6 +1665,8 @@ psf_f2s_clip_array (const float *src, short *dest, int count, int normalize)
 	return ;
 } /* psf_f2s_clip_array */
 
+#ifndef ENABLE_RUST
+
 void
 psf_d2s_array (const double *src, short *dest, int count, int normalize)
 {	double 			normfact ;
@@ -1675,6 +1677,8 @@ psf_d2s_array (const double *src, short *dest, int count, int normalize)
 
 	return ;
 } /* psf_f2s_array */
+
+#endif
 
 void
 psf_d2s_clip_array (const double *src, short *dest, int count, int normalize)

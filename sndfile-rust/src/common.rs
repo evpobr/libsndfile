@@ -7,7 +7,9 @@ use std::mem;
 use std::ptr;
 use std::slice;
 
-use libc::{c_char, c_float, c_int, c_uchar, c_uint, calloc, free, memset, realloc, size_t};
+use libc::{
+    c_char, c_double, c_float, c_int, c_uchar, c_uint, calloc, free, memset, realloc, size_t,
+};
 
 pub const SF_BUFFER_LEN: usize = 8192;
 pub const SF_FILENAME_LEN: usize = 1024;
@@ -936,6 +938,31 @@ pub unsafe extern "C" fn header_put_byte(psf: *mut SF_PRIVATE, x: c_char) {
     let header_ptr = slice::from_raw_parts_mut(psf.header.ptr, psf.header.len as usize);
     header_ptr[psf.header.indx as usize] = x as u8;
     psf.header.indx += 1;
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn psf_d2s_array(
+    src: *const c_double,
+    dest: *mut c_short,
+    count: c_int,
+    normalize: c_int,
+) {
+    assert!(!src.is_null());
+    assert!(!dest.is_null());
+    assert!(count >= 0);
+
+    let count = count as usize;
+    let src = slice::from_raw_parts(src, count);
+    let dest = slice::from_raw_parts_mut(dest, count);
+
+    let normfact = if normalize != 0 {
+        1.0 * 0x7FFF as c_double
+    } else {
+        1.0
+    };
+    for (d, s) in dest.iter_mut().zip(src) {
+        *d = (*s * normfact).round() as i16;
+    }
 }
 
 extern "C" {
