@@ -914,6 +914,18 @@ pub unsafe extern "C" fn psf_bump_header_allocation(
     0
 }
 
+#[no_mangle]
+pub unsafe extern "C" fn log_putchar(psf: *mut SF_PRIVATE, ch: c_char) {
+    assert!(!psf.is_null());
+    let psf = &mut *psf;
+
+    if psf.parselog.indx < SF_PARSELOG_LEN as c_int - 1 {
+        psf.parselog.buf[psf.parselog.indx as usize] = ch;
+        psf.parselog.indx += 1;
+        psf.parselog.buf[psf.parselog.indx as usize] = 0;
+    };
+}
+
 extern "C" {
     pub fn psf_log_printf(psf: *mut SF_PRIVATE, format: *const c_char, ...);
 }

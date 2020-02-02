@@ -104,6 +104,13 @@ psf_bump_header_allocation (SF_PRIVATE * psf, sf_count_t needed)
 ** parselog array.
 */
 
+#ifdef ENABLE_RUST
+
+RUST_EXTERN void
+log_putchar (SF_PRIVATE *psf, char ch);
+
+#else
+
 static inline void
 log_putchar (SF_PRIVATE *psf, char ch)
 {	if (psf->parselog.indx < SIGNED_SIZEOF (psf->parselog.buf) - 1)
@@ -112,6 +119,8 @@ log_putchar (SF_PRIVATE *psf, char ch)
 		} ;
 	return ;
 } /* log_putchar */
+
+#endif
 
 void
 psf_log_printf (SF_PRIVATE *psf, const char *format, ...)
