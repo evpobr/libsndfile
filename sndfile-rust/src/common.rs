@@ -4,7 +4,7 @@ use std::fmt;
 use std::mem;
 use std::ptr;
 
-use libc::{c_char, c_int, c_uint, c_float, c_uchar, calloc, size_t, free};
+use libc::{c_char, c_float, c_int, c_uchar, c_uint, calloc, free, size_t};
 
 pub const SF_BUFFER_LEN: usize = 8192;
 pub const SF_FILENAME_LEN: usize = 1024;
@@ -15,7 +15,9 @@ pub const SF_PARSELOG_LEN: usize = 2048;
 pub const PSF_SEEK_ERROR: sf_count_t = -1;
 
 macro_rules! BITWIDTH2BYTES {
-    ($x:expr) => { ($x + 7) / 8 }
+    ($x:expr) => {
+        ($x + 7) / 8
+    };
 }
 
 pub const SF_MAX_CHANNELS: sf_count_t = 1024;
@@ -23,17 +25,17 @@ pub const SF_MAX_CHANNELS: sf_count_t = 1024;
 macro_rules! SF_CONTAINER {
     ($x:expr) => {
         $x & SF_FORMAT.SF_FORMAT_TYPEMASK
-    }
+    };
 }
 macro_rules! SF_CODEC {
     ($x:expr) => {
         $x & SF_FORMAT.SF_FORMAT_SUBMASK
-    }
+    };
 }
 macro_rules! SF_ENDIAN {
     ($x:expr) => {
         $x & SF_FORMAT.SF_FORMAT_ENDMASK
-    }
+    };
 }
 
 #[repr(C)]
@@ -41,7 +43,6 @@ pub enum SF_PEAK_LOCATION {
     SF_PEAK_START = 42,
     SF_PEAK_END = 43,
 }
-
 
 pub type sfwchar_t = u16;
 
