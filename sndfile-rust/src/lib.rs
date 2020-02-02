@@ -1,6 +1,10 @@
 #![allow(non_camel_case_types, unused_macros, non_snake_case, dead_code)]
 
+use std::ptr;
+
 use libc::{c_void, c_char, c_short, c_int, c_uint, c_double};
+
+mod common;
 
 /// Microsoft WAV format (little endian default).
 pub const SF_FORMAT_WAV: c_int = 0x010000;
@@ -393,6 +397,16 @@ pub struct SF_DITHER_INFO {
     pub name: *mut c_char,
 }
 
+impl Default for SF_DITHER_INFO {
+    fn default() -> Self {
+        SF_DITHER_INFO {
+            r#type: 0,
+            level: 0.0,
+            name: ptr::null_mut(),
+        }
+    }
+}
+
 /// Struct used to retrieve information about a file embedded within a larger file.
 /// See SFC_GET_EMBED_FILE_INFO.
 #[repr(C)]
@@ -561,6 +575,7 @@ pub type sf_vio_write = unsafe extern "C" fn(
 pub type sf_vio_tell = unsafe extern "C" fn(user_data: *mut c_void) -> sf_count_t;
 
 #[repr(C)]
+#[derive(Default)]
 pub struct SF_VIRTUAL_IO {
     pub get_filelen: Option<sf_vio_get_filelen>,
     pub seek: Option<sf_vio_seek>,
