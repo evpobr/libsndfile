@@ -142,3 +142,5 @@ CMakeSettings.json
 
 /.vscode/
 /.vs/
+
+/target
