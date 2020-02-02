@@ -58,6 +58,13 @@ psf_allocate (void)
 
 #endif
 
+#ifdef ENABLE_RUST
+
+RUST_EXTERN int
+psf_bump_header_allocation (SF_PRIVATE * psf, sf_count_t needed) ;
+
+#else
+
 static int
 psf_bump_header_allocation (SF_PRIVATE * psf, sf_count_t needed)
 {
@@ -85,6 +92,8 @@ psf_bump_header_allocation (SF_PRIVATE * psf, sf_count_t needed)
 	psf->header.len = newlen ;
 	return 0 ;
 } /* psf_bump_header_allocation */
+
+#endif
 
 /*-----------------------------------------------------------------------------------------------
 ** psf_log_printf allows libsndfile internal functions to print to an internal parselog which

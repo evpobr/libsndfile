@@ -1,10 +1,12 @@
 use crate::*;
 
+use std::cmp;
+use std::ffi::CString;
 use std::fmt;
 use std::mem;
 use std::ptr;
 
-use libc::{c_char, c_float, c_int, c_uchar, c_uint, calloc, free, size_t};
+use libc::{c_char, c_float, c_int, c_uchar, c_uint, calloc, free, memset, realloc, size_t};
 
 pub const SF_BUFFER_LEN: usize = 8192;
 pub const SF_FILENAME_LEN: usize = 1024;
@@ -17,6 +19,12 @@ pub const PSF_SEEK_ERROR: sf_count_t = -1;
 macro_rules! BITWIDTH2BYTES {
     ($x:expr) => {
         ($x + 7) / 8
+    };
+}
+
+macro_rules! SF_MAX {
+    ($x:expr, $y:expr) => {
+        cmp::max($x, $y)
     };
 }
 
@@ -860,4 +868,52 @@ pub unsafe extern "C" fn psf_allocate() -> *mut SF_PRIVATE {
     (*psf).header.len = INITIAL_HEADER_SIZE;
 
     psf
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn psf_bump_header_allocation(
+    psf: *mut SF_PRIVATE,
+    needed: sf_count_t,
+) -> c_int {
+    assert!(!psf.is_null());
+    let psf = &mut *psf;
+
+    let smallest = INITIAL_HEADER_SIZE;
+    let newlen = if needed > psf.header.len {
+        2 * SF_MAX!(needed, smallest)
+    } else {
+        2 * psf.header.len
+    };
+
+    if newlen > 100 * 1024 {
+        let msg = CString::new("Request for header allocation of %D denied.\n").unwrap();
+        psf_log_printf(psf, msg.as_ptr(), newlen);
+        return 1;
+    };
+
+    let ptr = realloc(psf.header.ptr as *mut c_void, newlen as size_t);
+    if ptr.is_null() {
+        let msg = CString::new("realloc (%p, %D) failed\n").unwrap();
+        psf_log_printf(psf, msg.as_ptr(), psf.header.ptr, newlen);
+        psf.error = SFE_MALLOC_FAILED;
+        return 1;
+    };
+
+    // Always zero-out new header memory to avoid un-initializer memory accesses.
+    if newlen > psf.header.len {
+        memset(
+            ptr.offset(psf.header.len as isize),
+            0,
+            (newlen - psf.header.len) as size_t,
+        );
+    }
+
+    psf.header.ptr = ptr as *mut u8;
+    psf.header.len = newlen;
+
+    0
+}
+
+extern "C" {
+    pub fn psf_log_printf(psf: *mut SF_PRIVATE, format: *const c_char, ...);
 }

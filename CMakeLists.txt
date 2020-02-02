@@ -323,6 +323,11 @@ target_link_libraries (sndfile
 		$<$<BOOL:${ENABLE_RUST}>:sndfile-rust>
 >>>>>>> 38fbc512... Initial Rust support
 	)
+if (ENABLE_RUST AND (NOT BUILD_SHARED_LIBS))
+	if (WIN32)
+		target_link_libraries (sndfile PRIVATE ws2_32 userenv)
+	endif ()
+endif ()
 set_target_properties (sndfile PROPERTIES
 	PUBLIC_HEADER "${sndfile_HDRS}"
 	)
