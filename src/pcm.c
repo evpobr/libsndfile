@@ -283,6 +283,7 @@ pcm_init (SF_PRIVATE *psf)
 
 RUST_EXTERN void sc2s_array	(signed char *src, int count, short *dest) ;
 RUST_EXTERN void uc2s_array	(unsigned char *src, int count, short *dest) ;
+RUST_EXTERN void let2s_array (tribyte *src, int count, short *dest) ;
 
 #else
 
@@ -300,8 +301,6 @@ uc2s_array	(unsigned char *src, int count, short *dest)
 		} ;
 } /* uc2s_array */
 
-#endif
-
 static inline void
 let2s_array (tribyte *src, int count, short *dest)
 {	unsigned char	*ucptr ;
@@ -312,6 +311,8 @@ let2s_array (tribyte *src, int count, short *dest)
 		dest [count] = LET2H_16_PTR (ucptr) ;
 		} ;
 } /* let2s_array */
+
+#endif
 
 static inline void
 bet2s_array (tribyte *src, int count, short *dest)
