@@ -51,3 +51,20 @@ unsafe extern "C" fn let2s_array(src: *const tribyte, count: c_int, dest: *mut c
         *d = u16::from_le_bytes(s_bytes) as c_short;
     }
 }
+
+#[no_mangle]
+unsafe extern "C" fn bet2s_array(src: *const tribyte, count: c_int, dest: *mut c_short) {
+    assert!(!src.is_null());
+    assert!(!dest.is_null());
+    assert!(count >= 0);
+
+    let count = count as usize;
+    let src = slice::from_raw_parts(src, count * 3);
+    let dest = slice::from_raw_parts_mut(dest, count);
+
+    for (d, s) in dest.iter_mut().zip(src.chunks_exact(3)) {
+        let mut s_bytes = [0u8; 2];
+        s_bytes.clone_from_slice(&s[0..=1]);
+        *d = u16::from_be_bytes(s_bytes) as c_short;
+    }
+}
