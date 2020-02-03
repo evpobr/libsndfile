@@ -282,6 +282,7 @@ pcm_init (SF_PRIVATE *psf)
 #ifdef ENABLE_RUST
 
 RUST_EXTERN void sc2s_array	(signed char *src, int count, short *dest) ;
+RUST_EXTERN void uc2s_array	(unsigned char *src, int count, short *dest) ;
 
 #else
 
@@ -292,14 +293,14 @@ sc2s_array	(signed char *src, int count, short *dest)
 		} ;
 } /* sc2s_array */
 
-#endif
-
 static inline void
 uc2s_array	(unsigned char *src, int count, short *dest)
 {	while (--count >= 0)
 	{	dest [count] = (((uint32_t) src [count]) - 0x80) << 8 ;
 		} ;
 } /* uc2s_array */
+
+#endif
 
 static inline void
 let2s_array (tribyte *src, int count, short *dest)
