@@ -31,14 +31,12 @@
 void
 test_binheader_writef (void)
 {	char buffer [18] ;
-	SF_PRIVATE	sf_private, *psf ;
+	SF_PRIVATE	*psf ;
 	int			k, errors = 0 ;
 
 	print_test_name ("Testing binheader_writef") ;
 
-	memset (&sf_private, 0, sizeof (sf_private)) ;
-
-	psf = &sf_private ;
+	psf = psf_allocate () ;
 	for (k = 0 ; errors == 0 && k < 10 ; k++)
 	{	psf_strlcpy (buffer, sizeof (buffer), "abcdefghijklmnop") ;
 		buffer [k] = 0 ;
@@ -49,7 +47,7 @@ test_binheader_writef (void)
 			errors = 1 ;
 		} ;
 
-	free (psf->header.ptr) ;
+	sf_close ((SNDFILE *) psf) ;
 
 	if (errors)
 	{	puts ("\nExiting due to errors.\n") ;

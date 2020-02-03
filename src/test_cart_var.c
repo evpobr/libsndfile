@@ -59,12 +59,11 @@ fill_tag_text (SF_CART_INFO_512 * ci)
 
 void
 test_cart_var (void)
-{	SF_PRIVATE	sf_private, *psf ;
+{	SF_PRIVATE	*psf ;
 	SF_CART_TIMER timer ;
 	int k ;
 
-	psf = &sf_private ;
-	memset (psf, 0, sizeof (sf_private)) ;
+	psf = psf_allocate () ;
 
 	print_test_name ("Testing cart_var_set ") ;
 
@@ -84,8 +83,7 @@ test_cart_var (void)
 		cart_var_set (psf, (SF_CART_INFO*) &ci, sizeof (ci)) ;
 		} ;
 
-	if (psf->cart_16k != NULL)
-		free (psf->cart_16k) ;
+	sf_close ((SNDFILE *) psf) ;
 
 	puts ("ok") ;
 } /* test_cart_var */

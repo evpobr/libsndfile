@@ -59,11 +59,10 @@ fill_coding_history (SF_BROADCAST_INFO_512 * bi)
 
 static void
 test_broadcast_var_set (void)
-{	SF_PRIVATE	sf_private, *psf ;
+{	SF_PRIVATE	*psf ;
 	int k ;
 
-	psf = &sf_private ;
-	memset (psf, 0, sizeof (sf_private)) ;
+	psf = psf_allocate () ;
 
 	print_test_name ("Testing broadcast_var_set ") ;
 
@@ -80,19 +79,17 @@ test_broadcast_var_set (void)
 		broadcast_var_set (psf, (SF_BROADCAST_INFO*) &bi, sizeof (bi)) ;
 		} ;
 
-	if (psf->broadcast_16k != NULL)
-		free (psf->broadcast_16k) ;
+	sf_close ((SNDFILE *) psf) ;
 
 	puts ("ok") ;
 } /* test_broadcast_var_set */
 
 static void
 test_broadcast_var_zero (void)
-{	SF_PRIVATE	sf_private, *psf ;
+{	SF_PRIVATE	*psf ;
 	SF_BROADCAST_INFO_VAR (0) bi ;
 
-	psf = &sf_private ;
-	memset (psf, 0, sizeof (sf_private)) ;
+	psf = psf_allocate () ;
 	psf->file.mode = SFM_RDWR ;
 
 	print_test_name ("Testing broadcast_var_zero ") ;
@@ -103,11 +100,11 @@ test_broadcast_var_zero (void)
 
 	if (psf->broadcast_16k->coding_history_size != 0)
 	{	printf ("\n\nLine %d: coding_history_size %d should be zero.\n\n", __LINE__, psf->broadcast_16k->coding_history_size) ;
+		sf_close ((SNDFILE *) psf) ;
 		exit (1) ;
 		} ;
 
-	if (psf->broadcast_16k != NULL)
-		free (psf->broadcast_16k) ;
+	sf_close ((SNDFILE *) psf) ;
 
 	puts ("ok") ;
 } /* test_broadcast_var_zero */

@@ -42,7 +42,7 @@
 static void
 conversion_test (char endian)
 {
-	SF_PRIVATE	sf_private, *psf ;
+	SF_PRIVATE	*psf ;
 	const char * filename = "conversion.bin" ;
 	int64_t i64 = SF_PLATFORM_S64 (0x0123456789abcdef), t64 = 0 ;
 	char format_str [16] ;
@@ -58,35 +58,34 @@ conversion_test (char endian)
 	snprintf (test_name, sizeof (test_name), "Testing %s conversions", endian == 'e' ? "little endian" : "big endian") ;
 	print_test_name (test_name) ;
 
-	psf = &sf_private ;
-	memset (psf, 0, sizeof (sf_private)) ;
+	psf = psf_allocate () ;
 
 	psf->file.mode = SFM_WRITE ;
 	snprintf (psf->file.path.c, sizeof (psf->file.path.c), "%s", filename) ;
 
 	if (psf_fopen (psf) != 0)
 	{	printf ("\n\nError : failed to open file '%s' for write.\n\n", filename) ;
+		sf_close ((SNDFILE *) psf) ;
 		exit (1) ;
 		} ;
 
 	psf_binheader_writef (psf, format_str, i8, i16, i24, i32, i64) ;
 	psf_fwrite (psf->header.ptr, 1, psf->header.indx, psf) ;
-	free (psf->header.ptr) ;
-	psf_fclose (psf) ;
+	sf_close ((SNDFILE *) psf) ;
 
-	memset (psf, 0, sizeof (sf_private)) ;
+	psf = psf_allocate () ;
 
 	psf->file.mode = SFM_READ ;
 	snprintf (psf->file.path.c, sizeof (psf->file.path.c), "%s", filename) ;
 
 	if (psf_fopen (psf) != 0)
 	{	printf ("\n\nError : failed to open file '%s' for read.\n\n", filename) ;
+		sf_close ((SNDFILE *) psf) ;
 		exit (1) ;
 		} ;
 
 	bytes = psf_binheader_readf (psf, format_str, &t8, &t16, &t24, &t32, &t64) ;
-	free (psf->header.ptr) ;
-	psf_fclose (psf) ;
+	sf_close ((SNDFILE *) psf) ;
 
 	if (bytes != 18)
 	{	printf ("\n\nLine %d : read %d bytes.\n\n", __LINE__, bytes) ;

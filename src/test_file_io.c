@@ -58,17 +58,17 @@ static void test_tell_or_die	(SF_PRIVATE *psf, sf_count_t expected_position, int
 
 static void
 file_open_test (const char *filename)
-{	SF_PRIVATE sf_data, *psf ;
+{	SF_PRIVATE *psf ;
 	int		error ;
 
 	print_test_name ("Testing file open") ;
 
-	memset (&sf_data, 0, sizeof (sf_data)) ;
-	psf = &sf_data ;
+	psf = psf_allocate () ;
 
 	/* Ensure that the file doesn't already exist. */
 	if (unlink (filename) != 0 && errno != ENOENT)
 	{	printf ("\n\nLine %d: unlink failed (%d) : %s\n\n", __LINE__, errno, strerror (errno)) ;
+		sf_close ((SNDFILE *) psf) ;
 		exit (1) ;
 		} ;
 
@@ -79,6 +79,7 @@ file_open_test (const char *filename)
 	error = psf_fopen (psf) ;
 	if (error == 0)
 	{	printf ("\n\nLine %d: psf_fopen() should have failed.\n\n", __LINE__) ;
+		sf_close ((SNDFILE *) psf) ;
 		exit (1) ;
 		} ;
 
@@ -106,6 +107,7 @@ file_open_test (const char *filename)
 	test_close_or_die (psf, __LINE__) ;
 
 	unlink (psf->file.path.c) ;
+	sf_close ((SNDFILE *) psf) ;
 	puts ("ok") ;
 } /* file_open_test */
 
@@ -114,7 +116,7 @@ file_read_write_test (const char *filename)
 {	static int data_out	[512] ;
 	static int data_in	[512] ;
 
-	SF_PRIVATE sf_data, *psf ;
+	SF_PRIVATE *psf ;
 	sf_count_t retval ;
 
 	/*
@@ -124,8 +126,7 @@ file_read_write_test (const char *filename)
 
 	print_test_name ("Testing file write") ;
 
-	memset (&sf_data, 0, sizeof (sf_data)) ;
-	psf = &sf_data ;
+	psf = psf_allocate () ;
 	snprintf (psf->file.path.c, sizeof (psf->file.path.c), "%s", filename) ;
 
 	/* Test file open in write mode. */
@@ -139,6 +140,7 @@ file_read_write_test (const char *filename)
 	{	printf ("\n\nLine %d: file length after write is not correct (%" PRId64 " should be %zd).\n\n", __LINE__, retval, sizeof (data_out)) ;
 		if (retval == 0)
 			printf ("An fsync() may be necessary before fstat() in psf_get_filelen().\n\n") ;
+		sf_close ((SNDFILE *) psf) ;
 		exit (1) ;
 		} ;
 
@@ -147,6 +149,7 @@ file_read_write_test (const char *filename)
 
 	if ((retval = psf_get_filelen (psf)) != 2 * sizeof (data_out))
 	{	printf ("\n\nLine %d: file length after write is not correct. (%" PRId64 " should be %zd)\n\n", __LINE__, retval, 2 * sizeof (data_out)) ;
+		sf_close ((SNDFILE *) psf) ;
 		exit (1) ;
 		} ;
 
@@ -267,7 +270,7 @@ file_read_write_test (const char *filename)
 
 static void
 file_truncate_test (const char *filename)
-{	SF_PRIVATE sf_data, *psf ;
+{	SF_PRIVATE *psf ;
 	unsigned char buffer [256] ;
 	int k ;
 
@@ -278,10 +281,9 @@ file_truncate_test (const char *filename)
 
 	print_test_name ("Testing file truncate") ;
 
-	memset (&sf_data, 0, sizeof (sf_data)) ;
 	memset (buffer, 0xEE, sizeof (buffer)) ;
 
-	psf = &sf_data ;
+	psf = psf_allocate () ;
 	snprintf (psf->file.path.c, sizeof (psf->file.path.c), "%s", filename) ;
 
 	/*
@@ -324,20 +326,21 @@ file_truncate_test (const char *filename)
 	test_seek_or_die (psf, 0, SEEK_END, SIGNED_SIZEOF (buffer) / 4, __LINE__) ;
 	test_close_or_die (psf, __LINE__) ;
 
+	sf_close ((SNDFILE *) psf) ;
+
 	puts ("ok") ;
 } /* file_truncate_test */
 
 static void
 file_seek_with_offset_test (const char *filename)
-{	SF_PRIVATE sf_data, *psf ;
+{	SF_PRIVATE *psf ;
 	sf_count_t real_end ;
 	const size_t fileoffset = 64 ;
 
 	print_test_name ("Testing seek with offset") ;
 
 	/* Open the file created by the previous test for reading. */
-	memset (&sf_data, 0, sizeof (sf_data)) ;
-	psf = &sf_data ;
+	psf = psf_allocate () ;
 	psf->file.mode = SFM_READ ;
 	snprintf (psf->file.path.c, sizeof (psf->file.path.c), "%s", filename) ;
 	test_open_or_die (psf, __LINE__) ;
@@ -375,6 +378,7 @@ test_open_or_die (SF_PRIVATE *psf, int linenum)
 	error = psf_fopen (psf) ;
 	if (error)
 	{	printf ("\n\nLine %d: psf_fopen() failed : %s\n\n", linenum, strerror (errno)) ;
+		sf_close ((SNDFILE *) psf) ;
 		exit (1) ;
 		} ;
 
@@ -386,6 +390,7 @@ test_close_or_die (SF_PRIVATE *psf, int linenum)
 	psf_fclose (psf) ;
 	if (psf_file_valid (psf))
 	{	printf ("\n\nLine %d: psf->file.filedes should not be valid.\n\n", linenum) ;
+		sf_close ((SNDFILE *) psf) ;
 		exit (1) ;
 		} ;
 
@@ -398,11 +403,13 @@ test_write_or_die (SF_PRIVATE *psf, void *data, sf_count_t bytes, sf_count_t ite
 	retval = psf_fwrite (data, bytes, items, psf) ;
 	if (retval != items)
 	{	printf ("\n\nLine %d: psf_write() returned %" PRId64 " (should be %" PRId64 ")\n\n", linenum, retval, items) ;
+		sf_close ((SNDFILE *) psf) ;
 		exit (1) ;
 		} ;
 
 	if ((retval = psf_ftell (psf)) != new_position)
 	{	printf ("\n\nLine %d: file length after write is not correct. (%" PRId64 " should be %" PRId64 ")\n\n", linenum, retval, new_position) ;
+		sf_close ((SNDFILE *) psf) ;
 		exit (1) ;
 		} ;
 
@@ -416,11 +423,13 @@ test_read_or_die (SF_PRIVATE *psf, void *data, sf_count_t bytes, sf_count_t item
 	retval = psf_fread (data, bytes, items, psf) ;
 	if (retval != items)
 	{	printf ("\n\nLine %d: psf_write() returned %" PRId64 " (should be %" PRId64 ")\n\n", linenum, retval, items) ;
+		sf_close ((SNDFILE *) psf) ;
 		exit (1) ;
 		} ;
 
 	if ((retval = psf_ftell (psf)) != new_position)
 	{	printf ("\n\nLine %d: file length after write is not correct. (%" PRId64 " should be %" PRId64 ")\n\n", linenum, retval, new_position) ;
+		sf_close ((SNDFILE *) psf) ;
 		exit (1) ;
 		} ;
 
@@ -436,6 +445,7 @@ test_seek_or_die (SF_PRIVATE *psf, sf_count_t offset, int whence, sf_count_t new
 	if (retval != new_position)
 	{	printf ("\n\nLine %d: psf_fseek() failed. New position is %" PRId64 " (should be %" PRId64 ").\n\n",
 			linenum, retval, new_position) ;
+		sf_close ((SNDFILE *) psf) ;
 		exit (1) ;
 		} ;
 
@@ -451,6 +461,7 @@ test_tell_or_die	(SF_PRIVATE *psf, sf_count_t expected_position, int linenum)
 	if (retval != expected_position)
 	{	printf ("\n\nLine %d: psf_ftell() failed. Position reported as %" PRId64 " (should be %" PRId64 ").\n\n",
 			linenum, retval, expected_position) ;
+		sf_close ((SNDFILE *) psf) ;
 		exit (1) ;
 		} ;
 }

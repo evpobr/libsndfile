@@ -81,14 +81,13 @@ compare_strings_or_die (int linenum, const char *fmt, const char* s1, const char
 void
 test_log_printf (void)
 {	static char buffer [2048] ;
-	SF_PRIVATE	sf_private, *psf ;
+	SF_PRIVATE	*psf ;
 	int			k, errors = 0 ;
 	int			int_values [] = { 0, 1, 12, 123, 1234, 123456, -1, -12, -123, -1234, -123456 } ;
 
 	print_test_name ("Testing psf_log_printf") ;
 
-	psf = &sf_private ;
-	memset (psf, 0, sizeof (sf_private)) ;
+	psf = psf_allocate () ;
 
 	CMP_0_ARGS (__LINE__, errors, " ->%%<- ") ;
 
@@ -115,8 +114,11 @@ test_log_printf (void)
 
 	if (errors)
 	{	puts ("\nExiting due to errors.\n") ;
+		sf_close ((SNDFILE *) psf) ;
 		exit (1) ;
 		} ;
+	
+	sf_close ((SNDFILE *) psf) ;
 
 	puts ("ok") ;
 } /* test_log_printf */

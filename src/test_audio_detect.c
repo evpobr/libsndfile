@@ -79,28 +79,30 @@ static unsigned char int24_32_le_stereo [] =
 void
 test_audio_detect (void)
 {
-	SF_PRIVATE psf ;
+	SF_PRIVATE *psf ;
 	AUDIO_DETECT ad ;
 	int errors = 0 ;
 
 	print_test_name ("Testing audio detect") ;
 
-	memset (&psf, 0, sizeof (psf)) ;
+	psf = psf_allocate () ;
 
 	ad.endianness = SF_ENDIAN_LITTLE ;
 	ad.channels = 1 ;
-	if (audio_detect (&psf, &ad, float_le_mono, sizeof (float_le_mono)) != SF_FORMAT_FLOAT)
+	if (audio_detect (psf, &ad, float_le_mono, sizeof (float_le_mono)) != SF_FORMAT_FLOAT)
 	{	puts ("    float_le_mono") ;
 		errors ++ ;
 		} ;
 
 	ad.endianness = SF_ENDIAN_LITTLE ;
 	ad.channels = 2 ;
-	if (audio_detect (&psf, &ad, int24_32_le_stereo, sizeof (int24_32_le_stereo)) != SF_FORMAT_PCM_32)
+	if (audio_detect (psf, &ad, int24_32_le_stereo, sizeof (int24_32_le_stereo)) != SF_FORMAT_PCM_32)
 	{	if (errors == 0) puts ("\nFailed tests :\n") ;
 		puts ("    int24_32_le_stereo") ;
 		errors ++ ;
 		} ;
+
+	sf_close ((SNDFILE *) psf) ;
 
 	if (errors != 0)
 	{	printf ("\n    Errors : %d\n\n", errors) ;
