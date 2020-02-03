@@ -1,15 +1,14 @@
 #![allow(non_camel_case_types, unused_macros, non_snake_case, dead_code)]
 
 use std::ptr;
-use std::slice;
 
-use libc::{c_char, c_double, c_int, c_short, c_uint, c_void, free};
+use libc::{c_char, c_double, c_int, c_short, c_uint, c_void};
 
 mod common;
 mod pcm;
 mod strings;
 
-use crate::common::{psf_close_rsrc, psf_fclose, SF_PRIVATE};
+use crate::common::SF_PRIVATE;
 
 /// Microsoft WAV format (little endian default).
 pub const SF_FORMAT_WAV: c_int = 0x010000;
@@ -604,54 +603,6 @@ pub struct SF_CHUNK_INFO {
 #[no_mangle]
 unsafe extern "C" fn psf_close(psf: *mut SF_PRIVATE) -> c_int {
     assert!(!psf.is_null());
-    let psf = &mut *psf;
-
-    match psf.codec_close {
-        Some(codec_close) => {
-            codec_close(psf);
-        }
-        _ => {}
-    };
-    /* To prevent it being called in psf->container_close(). */
-    psf.codec_close = None;
-
-    match psf.container_close {
-        Some(container_close) => {
-            container_close(psf);
-        }
-        _ => {}
-    };
-
-    let error = psf_fclose(psf);
-    psf_close_rsrc(psf);
-
-    /* For an ISO C compliant implementation it is ok to free a NULL pointer. */
-    free(psf.header.ptr as *mut c_void);
-    free(psf.container_data as *mut c_void);
-    free(psf.codec_data as *mut c_void);
-    free(psf.interleave as *mut c_void);
-    free(psf.dither as *mut c_void);
-    free(psf.peak_info as *mut c_void);
-    free(psf.broadcast_16k as *mut c_void);
-    free(psf.loop_info as *mut c_void);
-    free(psf.instrument as *mut c_void);
-    free(psf.cues as *mut c_void);
-    free(psf.channel_map as *mut c_void);
-    free(psf.format_desc as *mut c_void);
-    free(psf.strings.storage as *mut c_void);
-
-    if !psf.wchunks.chunks.is_null() {
-        let wchunks = slice::from_raw_parts_mut(psf.wchunks.chunks, psf.wchunks.used as usize);
-        for wchunk in wchunks.iter() {
-            free(wchunk.data as *mut c_void);
-        }
-    }
-    free(psf.rchunks.chunks as *mut c_void);
-    free(psf.wchunks.chunks as *mut c_void);
-    free(psf.iterator as *mut c_void);
-    free(psf.cart_16k as *mut c_void);
-
-    free(psf as *mut SF_PRIVATE as *mut c_void);
-
-    return error;
+    Box::from_raw(psf);
+    return 0;
 }

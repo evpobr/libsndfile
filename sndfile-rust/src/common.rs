@@ -603,7 +603,6 @@ impl Drop for SF_PRIVATE {
             free(self.wchunks.chunks as *mut c_void);
             free(self.iterator as *mut c_void);
             free(self.cart_16k as *mut c_void);
-            free(self as *mut SF_PRIVATE as *mut c_void);
         };
     }
 }
@@ -906,20 +905,12 @@ const INITIAL_HEADER_SIZE: sf_count_t = 256;
 
 #[no_mangle]
 pub unsafe extern "C" fn psf_allocate() -> *mut SF_PRIVATE {
-    let mut psf: *mut SF_PRIVATE = calloc(1, mem::size_of::<SF_PRIVATE>()) as *mut SF_PRIVATE;
+    let mut psf = Box::new(SF_PRIVATE::default());
 
-    if psf.is_null() {
-        return ptr::null_mut();
-    }
+    psf.header.ptr = calloc(1, INITIAL_HEADER_SIZE as size_t) as *mut u8;
+    psf.header.len = INITIAL_HEADER_SIZE;
 
-    (*psf).header.ptr = calloc(1, INITIAL_HEADER_SIZE as size_t) as *mut u8;
-    if (*psf).header.ptr.is_null() {
-        free(psf as *mut c_void);
-        return ptr::null_mut();
-    };
-    (*psf).header.len = INITIAL_HEADER_SIZE;
-
-    psf
+    Box::into_raw(psf)
 }
 
 #[no_mangle]
