@@ -559,6 +559,55 @@ pub struct sf_private_tag {
     >,
 }
 
+impl Drop for SF_PRIVATE {
+    fn drop(&mut self) {
+        unsafe {
+            match self.codec_close {
+                Some(codec_close) => {
+                    codec_close(self);
+                }
+                _ => {}
+            };
+            /* To prevent it being called in self->container_close(). */
+            self.codec_close = None;
+            match self.container_close {
+                Some(container_close) => {
+                    container_close(self);
+                }
+                _ => {}
+            };
+            psf_fclose(self);
+            psf_close_rsrc(self);
+            /* For an ISO C compliant implementation it is ok to free a NULL pointer. */
+            free(self.header.ptr as *mut c_void);
+            free(self.container_data as *mut c_void);
+            free(self.codec_data as *mut c_void);
+            free(self.interleave as *mut c_void);
+            free(self.dither as *mut c_void);
+            free(self.peak_info as *mut c_void);
+            free(self.broadcast_16k as *mut c_void);
+            free(self.loop_info as *mut c_void);
+            free(self.instrument as *mut c_void);
+            free(self.cues as *mut c_void);
+            free(self.channel_map as *mut c_void);
+            free(self.format_desc as *mut c_void);
+            free(self.strings.storage as *mut c_void);
+            if !self.wchunks.chunks.is_null() {
+                let wchunks =
+                    slice::from_raw_parts_mut(self.wchunks.chunks, self.wchunks.used as usize);
+                for wchunk in wchunks.iter() {
+                    free(wchunk.data as *mut c_void);
+                }
+            }
+            free(self.rchunks.chunks as *mut c_void);
+            free(self.wchunks.chunks as *mut c_void);
+            free(self.iterator as *mut c_void);
+            free(self.cart_16k as *mut c_void);
+            free(self as *mut SF_PRIVATE as *mut c_void);
+        };
+    }
+}
+
 impl Default for SF_PRIVATE {
     fn default() -> Self {
         SF_PRIVATE {
