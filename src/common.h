@@ -839,7 +839,11 @@ int		psf_get_max_all_channels	(SF_PRIVATE *psf, double *peaks) ;
 
 /* Functions in strings.c. */
 
+#ifdef ENABLE_RUST
+RUST_EXTERN const char* psf_get_string (SF_PRIVATE *psf, int str_type) ;
+#else
 const char* psf_get_string (SF_PRIVATE *psf, int str_type) ;
+#endif
 int psf_set_string (SF_PRIVATE *psf, int str_type, const char *str) ;
 int psf_store_string (SF_PRIVATE *psf, int str_type, const char *str) ;
 #ifdef ENABLE_RUST
