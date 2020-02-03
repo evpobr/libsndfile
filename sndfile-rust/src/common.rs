@@ -967,4 +967,6 @@ pub unsafe extern "C" fn psf_d2s_array(
 
 extern "C" {
     pub fn psf_log_printf(psf: *mut SF_PRIVATE, format: *const c_char, ...);
+    pub fn psf_fclose(psf: *mut SF_PRIVATE) -> c_int;
+    pub fn psf_close_rsrc(psf: *mut SF_PRIVATE) -> c_int;
 }

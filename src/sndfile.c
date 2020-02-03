@@ -286,7 +286,11 @@ static int	validate_sfinfo (SF_INFO *sfinfo) ;
 static int	validate_psf (SF_PRIVATE *psf) ;
 static void	save_header_info (SF_PRIVATE *psf) ;
 static int	copy_filename (SF_PRIVATE *psf, const char *path) ;
+#ifdef ENABLE_RUST
+RUST_EXTERN int	psf_close (SF_PRIVATE *psf) ;
+#else
 static int	psf_close (SF_PRIVATE *psf) ;
+#endif
 
 static int	try_resource_fork (SF_PRIVATE * psf) ;
 
@@ -2860,6 +2864,8 @@ copy_filename (SF_PRIVATE *psf, const char *path)
 /*==============================================================================
 */
 
+#ifndef ENABLE_RUST
+
 static int
 psf_close (SF_PRIVATE *psf)
 {	uint32_t k ;
@@ -2904,6 +2910,8 @@ psf_close (SF_PRIVATE *psf)
 
 	return error ;
 } /* psf_close */
+
+#endif
 
 SNDFILE *
 psf_open_file (SF_PRIVATE *psf, SF_INFO *sfinfo)
