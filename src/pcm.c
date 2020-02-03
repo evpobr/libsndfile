@@ -279,12 +279,20 @@ pcm_init (SF_PRIVATE *psf)
 /*==============================================================================
 */
 
+#ifdef ENABLE_RUST
+
+RUST_EXTERN void sc2s_array	(signed char *src, int count, short *dest) ;
+
+#else
+
 static inline void
 sc2s_array	(signed char *src, int count, short *dest)
 {	while (--count >= 0)
 	{	dest [count] = ((uint16_t) src [count]) << 8 ;
 		} ;
 } /* sc2s_array */
+
+#endif
 
 static inline void
 uc2s_array	(unsigned char *src, int count, short *dest)

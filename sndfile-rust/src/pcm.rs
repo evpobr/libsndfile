@@ -1,0 +1,18 @@
+use std::slice;
+
+use libc::{c_int, c_schar, c_short};
+
+#[no_mangle]
+unsafe extern "C" fn sc2s_array(src: *const c_schar, count: c_int, dest: *mut c_short) {
+    assert!(!src.is_null());
+    assert!(!dest.is_null());
+    assert!(count >= 0);
+
+    let count = count as usize;
+    let src = slice::from_raw_parts(src, count);
+    let dest = slice::from_raw_parts_mut(dest, count);
+
+    for (d, s) in dest.iter_mut().zip(src) {
+        *d = ((*s as u16) << 8) as c_short;
+    }
+}
