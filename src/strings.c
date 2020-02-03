@@ -175,6 +175,8 @@ psf_get_string (SF_PRIVATE *psf, int str_type)
 	return NULL ;
 } /* psf_get_string */
 
+#ifndef ENABLE_RUST
+
 int
 psf_location_string_count (const SF_PRIVATE * psf, int location)
 {	int k, count = 0 ;
@@ -185,3 +187,5 @@ psf_location_string_count (const SF_PRIVATE * psf, int location)
 
 	return count ;
 } /* psf_location_string_count */
+
+#endif

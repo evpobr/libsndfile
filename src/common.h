@@ -842,7 +842,11 @@ int		psf_get_max_all_channels	(SF_PRIVATE *psf, double *peaks) ;
 const char* psf_get_string (SF_PRIVATE *psf, int str_type) ;
 int psf_set_string (SF_PRIVATE *psf, int str_type, const char *str) ;
 int psf_store_string (SF_PRIVATE *psf, int str_type, const char *str) ;
+#ifdef ENABLE_RUST
+RUST_EXTERN int psf_location_string_count (const SF_PRIVATE * psf, int location) ;
+#else
 int psf_location_string_count (const SF_PRIVATE * psf, int location) ;
+#endif
 
 /* Default seek function. Use for PCM and float encoded data. */
 sf_count_t	psf_default_seek (SF_PRIVATE *psf, int mode, sf_count_t samples_from_start) ;

@@ -6,6 +6,7 @@ use libc::{c_void, c_char, c_short, c_int, c_uint, c_double};
 
 mod common;
 mod pcm;
+mod strings;
 
 /// Microsoft WAV format (little endian default).
 pub const SF_FORMAT_WAV: c_int = 0x010000;
