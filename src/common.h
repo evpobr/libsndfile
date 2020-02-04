@@ -769,14 +769,17 @@ enum
 	SFE_MAX_ERROR			/* This must be last in list. */
 } ;
 
+
+#ifdef ENABLE_RUST
 /* Allocate and initialize the SF_PRIVATE struct. */
 RUST_EXTERN SF_PRIVATE * psf_allocate (void) ;
 
-#ifdef ENABLE_RUST
 RUST_EXTERN int subformat_to_bytewidth (int format) ;
 RUST_EXTERN int s_bitwidth_to_subformat (int bits) ;
 RUST_EXTERN int u_bitwidth_to_subformat (int bits) ;
 #else
+SF_PRIVATE * psf_allocate (void) ;
+
 int subformat_to_bytewidth (int format) ;
 int s_bitwidth_to_subformat (int bits) ;
 int u_bitwidth_to_subformat (int bits) ;
