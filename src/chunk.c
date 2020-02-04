@@ -151,6 +151,8 @@ psf_store_read_chunk_u32 (READ_CHUNKS * pchk, uint32_t marker, sf_count_t offset
 	return psf_store_read_chunk (pchk, &rchunk) ;
 } /* psf_store_read_chunk_u32 */
 
+#ifndef ENABLE_RUST
+
 int
 psf_find_read_chunk_str (const READ_CHUNKS * pchk, const char * marker_str)
 {	uint64_t hash ;
@@ -170,6 +172,8 @@ psf_find_read_chunk_str (const READ_CHUNKS * pchk, const char * marker_str)
 
 	return -1 ;
 } /* psf_find_read_chunk_str */
+
+#endif
 
 int
 psf_find_read_chunk_m32 (const READ_CHUNKS * pchk, uint32_t marker)

@@ -5,6 +5,7 @@ use std::ptr;
 use libc::{c_char, c_double, c_int, c_short, c_uint, c_void};
 
 mod common;
+mod chunk;
 mod pcm;
 mod strings;
 
