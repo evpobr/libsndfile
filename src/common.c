@@ -1402,8 +1402,6 @@ subformat_to_bytewidth (int format)
 	return 0 ;
 } /* subformat_to_bytewidth */
 
-#endif
-
 int
 s_bitwidth_to_subformat (int bits)
 {	static int array [] =
@@ -1415,6 +1413,8 @@ s_bitwidth_to_subformat (int bits)
 
 	return array [((bits + 7) / 8) - 1] ;
 } /* bitwidth_to_subformat */
+
+#endif
 
 int
 u_bitwidth_to_subformat (int bits)
