@@ -772,7 +772,11 @@ enum
 /* Allocate and initialize the SF_PRIVATE struct. */
 RUST_EXTERN SF_PRIVATE * psf_allocate (void) ;
 
+#ifdef ENABLE_RUST
+RUST_EXTERN int subformat_to_bytewidth (int format) ;
+#else
 int subformat_to_bytewidth (int format) ;
+#endif
 int s_bitwidth_to_subformat (int bits) ;
 int u_bitwidth_to_subformat (int bits) ;
 

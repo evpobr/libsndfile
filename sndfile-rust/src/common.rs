@@ -1005,6 +1005,18 @@ pub unsafe extern "C" fn psf_d2s_array(
     }
 }
 
+#[no_mangle]
+extern "C" fn subformat_to_bytewidth(format: c_int) -> c_int {
+    match format {
+        SF_FORMAT_PCM_U8 | SF_FORMAT_PCM_S8 => 1,
+        SF_FORMAT_PCM_16 => 2,
+        SF_FORMAT_PCM_24 => 3,
+        SF_FORMAT_PCM_32 | SF_FORMAT_FLOAT => 4,
+        SF_FORMAT_DOUBLE => 8,
+        _ => 0,
+    }
+}
+
 extern "C" {
     pub fn psf_log_printf(psf: *mut SF_PRIVATE, format: *const c_char, ...);
     pub fn psf_fclose(psf: *mut SF_PRIVATE) -> c_int;

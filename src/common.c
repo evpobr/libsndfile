@@ -1379,6 +1379,8 @@ psf_get_date_str (char *str, int maxlen)
 	return ;
 } /* psf_get_date_str */
 
+#ifndef ENABLE_RUST
+
 int
 subformat_to_bytewidth (int format)
 {
@@ -1399,6 +1401,8 @@ subformat_to_bytewidth (int format)
 
 	return 0 ;
 } /* subformat_to_bytewidth */
+
+#endif
 
 int
 s_bitwidth_to_subformat (int bits)
