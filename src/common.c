@@ -1414,8 +1414,6 @@ s_bitwidth_to_subformat (int bits)
 	return array [((bits + 7) / 8) - 1] ;
 } /* bitwidth_to_subformat */
 
-#endif
-
 int
 u_bitwidth_to_subformat (int bits)
 {	static int array [] =
@@ -1427,6 +1425,8 @@ u_bitwidth_to_subformat (int bits)
 
 	return array [((bits + 7) / 8) - 1] ;
 } /* bitwidth_to_subformat */
+
+#endif
 
 /*
 **	psf_rand_int32 : Not crypto quality, but more than adequate for things

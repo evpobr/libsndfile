@@ -775,11 +775,12 @@ RUST_EXTERN SF_PRIVATE * psf_allocate (void) ;
 #ifdef ENABLE_RUST
 RUST_EXTERN int subformat_to_bytewidth (int format) ;
 RUST_EXTERN int s_bitwidth_to_subformat (int bits) ;
+RUST_EXTERN int u_bitwidth_to_subformat (int bits) ;
 #else
 int subformat_to_bytewidth (int format) ;
 int s_bitwidth_to_subformat (int bits) ;
-#endif
 int u_bitwidth_to_subformat (int bits) ;
+#endif
 
 /*  Functions for reading and writing floats and doubles on processors
 **	with non-IEEE floats/doubles.

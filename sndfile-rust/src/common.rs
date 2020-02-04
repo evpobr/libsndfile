@@ -1033,6 +1033,22 @@ extern "C" fn s_bitwidth_to_subformat(bits: c_int) -> c_int {
     return array[(((bits + 7) / 8) - 1) as usize];
 }
 
+#[no_mangle]
+extern "C" fn u_bitwidth_to_subformat(bits: c_int) -> c_int {
+    let array: [c_int; 4] = [
+        SF_FORMAT_PCM_U8,
+        SF_FORMAT_PCM_16,
+        SF_FORMAT_PCM_24,
+        SF_FORMAT_PCM_32,
+    ];
+
+    if bits < 8 || bits > 32 {
+        return 0;
+    }
+
+    return array[(((bits + 7) / 8) - 1) as usize];
+}
+
 extern "C" {
     pub fn psf_log_printf(psf: *mut SF_PRIVATE, format: *const c_char, ...);
     pub fn psf_fclose(psf: *mut SF_PRIVATE) -> c_int;
