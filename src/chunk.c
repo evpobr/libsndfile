@@ -37,6 +37,8 @@ hash_of_str (const char * str)
 	return marker ;
 } /* hash_of_str */
 
+#ifndef ENABLE_RUST
+
 SF_CHUNK_ITERATOR *
 psf_get_chunk_iterator (SF_PRIVATE * psf, const char * marker_str)
 {	const READ_CHUNKS * pchk = &psf->rchunks ;
@@ -83,6 +85,8 @@ psf_get_chunk_iterator (SF_PRIVATE * psf, const char * marker_str)
 
 	return psf->iterator ;
 } /* psf_get_chunk_iterator */
+
+#endif
 
 SF_CHUNK_ITERATOR *
 psf_next_chunk_iterator (const READ_CHUNKS * pchk , SF_CHUNK_ITERATOR * iterator)

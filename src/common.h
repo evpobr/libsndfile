@@ -975,7 +975,7 @@ int		interleave_init (SF_PRIVATE *psf) ;
 ** Chunk logging functions.
 */
 
-SF_CHUNK_ITERATOR * psf_get_chunk_iterator (SF_PRIVATE * psf, const char * marker_str) ;
+RUST_EXTERN SF_CHUNK_ITERATOR * psf_get_chunk_iterator (SF_PRIVATE * psf, const char * marker_str) ;
 SF_CHUNK_ITERATOR * psf_next_chunk_iterator (const READ_CHUNKS * pchk , SF_CHUNK_ITERATOR *iterator) ;
 int		psf_store_read_chunk_u32 (READ_CHUNKS * pchk, uint32_t marker, sf_count_t offset, uint32_t len) ;
 int		psf_store_read_chunk_str (READ_CHUNKS * pchk, const char * marker, sf_count_t offset, uint32_t len) ;
