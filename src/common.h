@@ -1097,7 +1097,7 @@ int sf_dither_double	(const SF_DITHER_INFO *dither, const double *in, double *ou
 ** Data conversion functions.
 */
 
-void psf_f2s_array (const float *src, short *dest, int count, int normalize) ;
+RUST_EXTERN void psf_f2s_array (const float *src, short *dest, int count, int normalize) ;
 void psf_f2s_clip_array (const float *src, short *dest, int count, int normalize) ;
 
 RUST_EXTERN void psf_d2s_array (const double *src, short *dest, int count, int normalize) ;

@@ -981,6 +981,36 @@ pub unsafe extern "C" fn header_put_byte(psf: *mut SF_PRIVATE, x: c_char) {
 }
 
 #[no_mangle]
+unsafe extern "C" fn psf_f2s_array(
+    src: *const c_float,
+    dest: *mut c_short,
+    count: c_int,
+    normalize: c_int,
+) {
+    assert!(!src.is_null());
+    assert!(!dest.is_null());
+    assert!(count >= 0);
+
+    let count = count as usize;
+    let src = slice::from_raw_parts(src, count);
+    let dest = slice::from_raw_parts_mut(dest, count);
+    let normalize = if normalize == 0 { false } else { true };
+
+    let normfact = if normalize {
+        1.0 * (0x7FFF as c_float)
+    } else {
+        1.0
+    };
+
+    dest.iter_mut()
+        .zip(src.iter().map(|s| (*s * normfact).round() as c_short))
+        .take(count)
+        .for_each(|(d, s)| {
+            *d = s;
+        });
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn psf_d2s_array(
     src: *const c_double,
     dest: *mut c_short,

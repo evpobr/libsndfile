@@ -1635,6 +1635,8 @@ str_of_endianness (int end)
 /*==============================================================================
 */
 
+#ifndef ENABLE_RUST
+
 void
 psf_f2s_array (const float *src, short *dest, int count, int normalize)
 {	float 			normfact ;
@@ -1645,6 +1647,8 @@ psf_f2s_array (const float *src, short *dest, int count, int normalize)
 
 	return ;
 } /* psf_f2s_array */
+
+#endif
 
 void
 psf_f2s_clip_array (const float *src, short *dest, int count, int normalize)
