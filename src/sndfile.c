@@ -2911,6 +2911,11 @@ psf_close (SF_PRIVATE *psf)
 	return error ;
 } /* psf_close */
 
+#else
+
+RUST_EXTERN int
+psf_close (SF_PRIVATE *psf) ;
+
 #endif
 
 SNDFILE *
