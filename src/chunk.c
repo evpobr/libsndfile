@@ -110,6 +110,13 @@ psf_next_chunk_iterator (const READ_CHUNKS * pchk , SF_CHUNK_ITERATOR * iterator
 	return NULL ;
 } /* psf_next_chunk_iterator */
 
+#ifdef ENABLE_RUST
+
+RUST_EXTERN int
+psf_store_read_chunk (READ_CHUNKS * pchk, const READ_CHUNK * rchunk) ;
+
+#else
+
 static int
 psf_store_read_chunk (READ_CHUNKS * pchk, const READ_CHUNK * rchunk)
 {	if (pchk->count == 0)
@@ -137,6 +144,8 @@ psf_store_read_chunk (READ_CHUNKS * pchk, const READ_CHUNK * rchunk)
 
 	return SFE_NO_ERROR ;
 } /* psf_store_read_chunk */
+
+#endif
 
 int
 psf_store_read_chunk_u32 (READ_CHUNKS * pchk, uint32_t marker, sf_count_t offset, uint32_t len)

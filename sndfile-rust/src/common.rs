@@ -89,6 +89,7 @@ pub struct STR_DATA {
 }
 
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub struct READ_CHUNK {
     pub hash: u64,
     pub id: [c_char; 64],

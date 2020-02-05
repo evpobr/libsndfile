@@ -141,3 +141,44 @@ unsafe extern "C" fn psf_find_read_chunk_iterator(
         -1
     }
 }
+
+#[no_mangle]
+unsafe extern "C" fn psf_store_read_chunk(
+    pchk: *mut READ_CHUNKS,
+    rchunk: *const READ_CHUNK,
+) -> c_int {
+    assert_ne!(pchk.is_null(), true);
+    assert_ne!(rchunk.is_null(), true);
+
+    let pchk = &mut *pchk;
+    let rchunk = &*rchunk;
+
+    if pchk.count == 0 {
+        pchk.used = 0;
+        pchk.count = 20;
+        pchk.chunks =
+            calloc(pchk.count as size_t, mem::size_of::<READ_CHUNK>() as size_t) as *mut READ_CHUNK;
+    } else if pchk.used > pchk.count {
+        return SFE_INTERNAL;
+    } else if pchk.used == pchk.count {
+        let old_ptr = pchk.chunks;
+        let new_count = (3 * (pchk.count + 1) / 2) as u32;
+
+        pchk.chunks = realloc(
+            old_ptr as *mut c_void,
+            (new_count as size_t) * mem::size_of::<READ_CHUNK>() as size_t,
+        ) as *mut READ_CHUNK;
+        if pchk.chunks.is_null() {
+            pchk.chunks = old_ptr;
+            return SFE_MALLOC_FAILED;
+        };
+        pchk.count = new_count;
+    };
+
+    let x = pchk.chunks.offset(pchk.used as isize);
+    x.write(*rchunk);
+
+    pchk.used += 1;
+
+    return SFE_NO_ERROR;
+}
