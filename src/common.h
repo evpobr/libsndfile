@@ -982,7 +982,7 @@ int		psf_store_read_chunk_str (READ_CHUNKS * pchk, const char * marker, sf_count
 int		psf_save_write_chunk (WRITE_CHUNKS * pchk, const SF_CHUNK_INFO * chunk_info) ;
 RUST_EXTERN int		psf_find_read_chunk_str (const READ_CHUNKS * pchk, const char * marker) ;
 RUST_EXTERN int		psf_find_read_chunk_m32 (const READ_CHUNKS * pchk, uint32_t marker) ;
-int		psf_find_read_chunk_iterator (const READ_CHUNKS * pchk, const SF_CHUNK_ITERATOR * marker) ;
+RUST_EXTERN int		psf_find_read_chunk_iterator (const READ_CHUNKS * pchk, const SF_CHUNK_ITERATOR * marker) ;
 
 int		psf_find_write_chunk (WRITE_CHUNKS * pchk, const char * marker) ;
 

@@ -124,3 +124,20 @@ unsafe extern "C" fn psf_find_read_chunk_m32(pchk: *const READ_CHUNKS, marker: u
         .position(|chunk| chunk.mark32 == marker)
         .map_or_else(|| -1, |k| k as c_int)
 }
+
+#[no_mangle]
+unsafe extern "C" fn psf_find_read_chunk_iterator(
+    pchk: *const READ_CHUNKS,
+    marker: *const SF_CHUNK_ITERATOR,
+) -> c_int {
+    assert_ne!(pchk.is_null(), true);
+    assert_ne!(marker.is_null(), true);
+
+    let pchk = &*pchk;
+    let marker = &*marker;
+    if marker.current < pchk.used {
+        marker.current as c_int
+    } else {
+        -1
+    }
+}
