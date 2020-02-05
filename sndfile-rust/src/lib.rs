@@ -8,6 +8,8 @@ mod common;
 mod chunk;
 mod pcm;
 mod strings;
+mod float32;
+mod sfendian;
 
 use crate::common::SF_PRIVATE;
 

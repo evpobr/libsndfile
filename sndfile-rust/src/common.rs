@@ -1012,7 +1012,12 @@ unsafe extern "C" fn psf_f2s_array(
 }
 
 #[no_mangle]
-unsafe extern "C" fn psf_f2s_clip_array (src: *const c_float, dest: *mut c_short, count: c_int, normalize: c_int) {
+unsafe extern "C" fn psf_f2s_clip_array(
+    src: *const c_float,
+    dest: *mut c_short,
+    count: c_int,
+    normalize: c_int,
+) {
     assert!(!src.is_null());
     assert!(!dest.is_null());
     assert!(count >= 0);
@@ -1022,15 +1027,19 @@ unsafe extern "C" fn psf_f2s_clip_array (src: *const c_float, dest: *mut c_short
     let dest = slice::from_raw_parts_mut(dest, count);
     let normalize = if normalize == 0 { false } else { true };
 
-	let normfact = if normalize { 1.0 * (32768 as c_float) } else { 1.0 };
+    let normfact = if normalize {
+        1.0 * (32768 as c_float)
+    } else {
+        1.0
+    };
 
     dest.iter_mut().zip(src).take(count).for_each(|(d, s)| {
-        let scaled_value = *s * normfact ;
-		if !cfg!(cpu_clips_positive) && scaled_value >= (1.0 * 32767 as c_float) {
+        let scaled_value = *s * normfact;
+        if !cfg!(cpu_clips_positive) && scaled_value >= (1.0 * 32767 as c_float) {
             *d = 32767;
-		} else if cfg!(cpu_clips_negative) && scaled_value <= (-8.0 * 4096 as c_float) {
-            *d = -32768 ;
-		} else {
+        } else if cfg!(cpu_clips_negative) && scaled_value <= (-8.0 * 4096 as c_float) {
+            *d = -32768;
+        } else {
             *d = scaled_value.round() as c_short;
         }
     });
@@ -1107,6 +1116,12 @@ extern "C" fn u_bitwidth_to_subformat(bits: c_int) -> c_int {
 
 extern "C" {
     pub fn psf_log_printf(psf: *mut SF_PRIVATE, format: *const c_char, ...);
+    pub fn psf_fread(
+        ptr: *mut c_void,
+        bytes: sf_count_t,
+        items: sf_count_t,
+        psf: *mut SF_PRIVATE,
+    ) -> sf_count_t;
     pub fn psf_fclose(psf: *mut SF_PRIVATE) -> c_int;
     pub fn psf_close_rsrc(psf: *mut SF_PRIVATE) -> c_int;
 }
