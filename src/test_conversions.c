@@ -25,6 +25,7 @@
 #include <errno.h>
 #include <inttypes.h>
 
+#include "sndfile.h"
 #include "common.h"
 #include "test_main.h"
 

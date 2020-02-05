@@ -85,7 +85,7 @@ src_test_main_SOURCES = src/test_main.c src/test_main.h src/test_conversions.c s
 	src/test_audio_detect.c src/test_log_printf.c src/test_file_io.c src/test_ima_oki_adpcm.c \
 	src/test_strncpy_crlf.c src/test_broadcast_var.c src/test_cart_var.c \
 	src/test_binheader_writef.c src/test_nms_adpcm.c
-src_test_main_LDADD = src/libcommon.la
+src_test_main_LDADD = src/libsndfile.la
 
 ##############
 # src/GSM610 #
