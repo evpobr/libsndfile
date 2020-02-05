@@ -84,6 +84,36 @@ unsafe extern "C" fn psf_get_chunk_iterator(
 }
 
 #[no_mangle]
+unsafe extern "C" fn psf_store_read_chunk_u32(
+    pchk: *mut READ_CHUNKS,
+    marker: u32,
+    offset: sf_count_t,
+    len: u32,
+) -> c_int {
+    assert_ne!(pchk.is_null(), true);
+
+    let pchk = &mut *pchk;
+
+    let id_vec: Vec<c_char> = marker
+        .to_ne_bytes()
+        .iter()
+        .map(|ch| *ch as c_char)
+        .collect();
+    let mut id: [c_char; 64] = [0; 64];
+    id[0..4].clone_from_slice(&id_vec[0..4]);
+    let rchunk = READ_CHUNK {
+        hash: marker as u64,
+        mark32: marker,
+        offset: offset,
+        len: len,
+        id_size: 4,
+        id: id,
+    };
+
+    psf_store_read_chunk(pchk, &rchunk)
+}
+
+#[no_mangle]
 unsafe extern "C" fn psf_find_read_chunk_str(
     pchk: *const READ_CHUNKS,
     marker_str: *const c_char,
