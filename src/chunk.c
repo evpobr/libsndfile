@@ -177,8 +177,6 @@ psf_find_read_chunk_str (const READ_CHUNKS * pchk, const char * marker_str)
 	return -1 ;
 } /* psf_find_read_chunk_str */
 
-#endif
-
 int
 psf_find_read_chunk_m32 (const READ_CHUNKS * pchk, uint32_t marker)
 {	uint32_t k ;
@@ -189,6 +187,9 @@ psf_find_read_chunk_m32 (const READ_CHUNKS * pchk, uint32_t marker)
 
 	return -1 ;
 } /* psf_find_read_chunk_m32 */
+
+#endif
+
 int
 psf_find_read_chunk_iterator (const READ_CHUNKS * pchk, const SF_CHUNK_ITERATOR * marker)
 {	if (marker->current < pchk->used)

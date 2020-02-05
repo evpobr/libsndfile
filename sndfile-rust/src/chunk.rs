@@ -109,3 +109,18 @@ unsafe extern "C" fn psf_find_read_chunk_str(
         .position(|chunk| chunk.hash == hash as u64)
         .map_or_else(|| -1, |k| k as c_int)
 }
+
+#[no_mangle]
+unsafe extern "C" fn psf_find_read_chunk_m32(pchk: *const READ_CHUNKS, marker: u32) -> c_int {
+    assert_ne!(pchk.is_null(), true);
+
+    let pchk = &*pchk;
+    if pchk.chunks.is_null() || pchk.used == 0 {
+        return -1;
+    };
+    let chunks = slice::from_raw_parts(pchk.chunks, pchk.used as usize);
+    chunks
+        .iter()
+        .position(|chunk| chunk.mark32 == marker)
+        .map_or_else(|| -1, |k| k as c_int)
+}
