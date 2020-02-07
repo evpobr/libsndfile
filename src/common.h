@@ -473,7 +473,7 @@ typedef struct sf_private_tag
 	SF_CART_INFO_16K *cart_16k ;
 
 	/* Channel map data (if present) : an array of ints. */
-	int				*channel_map ;
+	int				*_channel_map ;
 
 	sf_count_t		filelength ;	/* Overall length of (embedded) file. */
 	sf_count_t		fileoffset ;	/* Offset in number of bytes from beginning of file. */
@@ -552,6 +552,7 @@ typedef struct sf_private_tag
 	SF_CHUNK_ITERATOR *	(*next_chunk_iterator)	(struct sf_private_tag*, SF_CHUNK_ITERATOR * iterator) ;
 	int					(*get_chunk_size)	(struct sf_private_tag*, const SF_CHUNK_ITERATOR * iterator, SF_CHUNK_INFO * chunk_info) ;
 	int					(*get_chunk_data)	(struct sf_private_tag*, const SF_CHUNK_ITERATOR * iterator, SF_CHUNK_INFO * chunk_info) ;
+	void *				rs ;
 } SF_PRIVATE ;
 
 
@@ -1133,5 +1134,11 @@ arith_shift_right (int32_t x, int shift)
 		return x >> shift ;
 	return ~ ((~x) >> shift) ;
 } /* arith_shift_right */
+
+extern const int *psf_channel_map_allocate (SF_PRIVATE *psf, size_t count) ;
+extern const int *psf_get_channel_map (const SF_PRIVATE *psf) ;
+extern void *psf_channel_map_set_item (SF_PRIVATE *psf, size_t index, int item) ;
+extern void psf_channel_map_add_item (SF_PRIVATE *psf, int item) ;
+extern void psf_set_channel_map (SF_PRIVATE *psf, const int *channel_map, size_t size) ;
 
 #endif /* SNDFILE_COMMON_H */

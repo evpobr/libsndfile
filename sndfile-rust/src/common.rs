@@ -396,7 +396,7 @@ pub struct sf_private_tag {
     pub cart_16k: *mut SF_CART_INFO_16K,
 
     /* Channel map data (if present) : an array of ints. */
-    pub channel_map: *mut c_int,
+    pub _channel_map: *mut c_int,
 
     pub filelength: sf_count_t, /* Overall length of (embedded) file. */
     pub fileoffset: sf_count_t, /* Offset in number of bytes from beginning of file. */
@@ -558,6 +558,8 @@ pub struct sf_private_tag {
             chunk_info: *mut SF_CHUNK_INFO,
         ) -> c_int,
     >,
+
+    pub rs: *mut c_void,
 }
 
 impl Drop for SF_PRIVATE {
@@ -590,7 +592,7 @@ impl Drop for SF_PRIVATE {
             free(self.loop_info as *mut c_void);
             free(self.instrument as *mut c_void);
             free(self.cues as *mut c_void);
-            free(self.channel_map as *mut c_void);
+            free(self._channel_map as *mut c_void);
             free(self.format_desc as *mut c_void);
             free(self.strings.storage as *mut c_void);
             if !self.wchunks.chunks.is_null() {
@@ -604,8 +606,14 @@ impl Drop for SF_PRIVATE {
             free(self.wchunks.chunks as *mut c_void);
             free(self.iterator as *mut c_void);
             free(self.cart_16k as *mut c_void);
+            Box::from_raw(self.rs as *mut RustPrivate);
         };
     }
+}
+
+#[derive(Default)]
+pub struct RustPrivate {
+    pub channel_map: Vec<i32>,
 }
 
 impl Default for SF_PRIVATE {
@@ -638,7 +646,7 @@ impl Default for SF_PRIVATE {
             instrument: ptr::null_mut(),
             broadcast_16k: ptr::null_mut(),
             cart_16k: ptr::null_mut(),
-            channel_map: ptr::null_mut(),
+            _channel_map: ptr::null_mut(),
             filelength: 0,
             fileoffset: 0,
             rsrclength: 0,
@@ -685,6 +693,7 @@ impl Default for SF_PRIVATE {
             next_chunk_iterator: None,
             get_chunk_size: None,
             get_chunk_data: None,
+            rs: Box::into_raw(Box::new(RustPrivate::default())) as *mut c_void,
         }
     }
 }
@@ -1112,6 +1121,65 @@ extern "C" fn u_bitwidth_to_subformat(bits: c_int) -> c_int {
     }
 
     return array[(((bits + 7) / 8) - 1) as usize];
+}
+
+#[no_mangle]
+unsafe extern "C" fn psf_channel_map_allocate(psf: *mut SF_PRIVATE, count: usize) {
+    assert_ne!(psf.is_null(), true);
+
+    let psf = &mut *psf;
+    let rs = &mut *(psf.rs as *mut RustPrivate);
+
+    rs.channel_map.clear();
+    rs.channel_map.resize(count, 0);
+}
+
+#[no_mangle]
+unsafe extern "C" fn psf_get_channel_map(psf: *mut SF_PRIVATE) -> *mut i32 {
+    assert_ne!(psf.is_null(), true);
+
+    let psf = &mut *psf;
+    let rs = &mut *(psf.rs as *mut RustPrivate);
+
+    rs.channel_map.as_mut_ptr()
+}
+
+#[no_mangle]
+unsafe extern "C" fn psf_channel_map_set_item(psf: *mut SF_PRIVATE, index: usize, item: c_int) {
+    assert_ne!(psf.is_null(), true);
+
+    let psf = &mut *psf;
+    let rs = &mut *(psf.rs as *mut RustPrivate);
+
+    assert!(index <= rs.channel_map.len());
+    rs.channel_map[index] = item;
+}
+
+#[no_mangle]
+unsafe extern "C" fn psf_channel_map_add_item(psf: *mut SF_PRIVATE, item: i32) {
+    assert_ne!(psf.is_null(), true);
+
+    let psf = &mut *psf;
+    let rs = &mut *(psf.rs as *mut RustPrivate);
+
+    rs.channel_map.push(item);
+}
+
+#[no_mangle]
+unsafe extern "C" fn psf_set_channel_map(
+    psf: *mut SF_PRIVATE,
+    channel_map: *const i32,
+    size: usize,
+) {
+    assert_ne!(psf.is_null(), true);
+    assert_ne!(channel_map.is_null(), true);
+
+    let psf = &mut *psf;
+    let channel_map = slice::from_raw_parts(channel_map, size);
+    let rs = &mut *(psf.rs as *mut RustPrivate);
+
+    rs.channel_map.clear();
+    rs.channel_map.extend_from_slice(channel_map);
 }
 
 extern "C" {

@@ -1420,7 +1420,7 @@ aiff_write_header (SF_PRIVATE *psf, int calc_length)
 	if (comm_type == AIFC_MARKER)
 		psf_binheader_writef (psf, "mb", BHWm (comm_encoding), BHWv (comm_zero_bytes), BHWz (sizeof (comm_zero_bytes))) ;
 
-	if (psf->channel_map && paiff->chanmap_tag)
+	if (psf_get_channel_map (psf) && paiff->chanmap_tag)
 		psf_binheader_writef (psf, "Em4444", BHWm (CHAN_MARKER), BHW4 (12), BHW4 (paiff->chanmap_tag), BHW4 (0), BHW4 (0)) ;
 
 	/* Check if there's a INST chunk to write */
@@ -1571,7 +1571,7 @@ aiff_command (SF_PRIVATE * psf, int command, void * UNUSED (data), int UNUSED (d
 
 	switch (command)
 	{	case SFC_SET_CHANNEL_MAP_INFO :
-			paiff->chanmap_tag = aiff_caf_find_channel_layout_tag (psf->channel_map, psf->sf.channels) ;
+			paiff->chanmap_tag = aiff_caf_find_channel_layout_tag (psf_get_channel_map (psf), psf->sf.channels) ;
 			return (paiff->chanmap_tag != 0) ;
 
 		default :
@@ -1758,14 +1758,9 @@ aiff_read_chanmap (SF_PRIVATE * psf, unsigned dword)
 		psf_binheader_readf (psf, "j", dword - bytesread) ;
 
 	if (map_info->channel_map != NULL)
-	{	size_t chanmap_size = SF_MIN (psf->sf.channels, layout_tag & 0xffff) * sizeof (psf->channel_map [0]) ;
+	{	size_t chanmap_size = SF_MIN (psf->sf.channels, layout_tag & 0xffff) * sizeof (int) ;
 
-		free (psf->channel_map) ;
-
-		if ((psf->channel_map = malloc (chanmap_size)) == NULL)
-			return SFE_MALLOC_FAILED ;
-
-		memcpy (psf->channel_map, map_info->channel_map, chanmap_size) ;
+		psf_set_channel_map (psf, map_info->channel_map, chanmap_size) ;
 		} ;
 
 	return 0 ;

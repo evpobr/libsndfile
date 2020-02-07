@@ -238,7 +238,7 @@ caf_command (SF_PRIVATE * psf, int command, void * UNUSED (data), int UNUSED (da
 
 	switch (command)
 	{	case SFC_SET_CHANNEL_MAP_INFO :
-			pcaf->chanmap_tag = aiff_caf_find_channel_layout_tag (psf->channel_map, psf->sf.channels) ;
+			pcaf->chanmap_tag = aiff_caf_find_channel_layout_tag (psf_get_channel_map (psf), psf->sf.channels) ;
 			return (pcaf->chanmap_tag != 0) ;
 
 		default :
@@ -732,7 +732,7 @@ caf_write_header (SF_PRIVATE *psf, int calc_length)
 			psf_binheader_writef (psf, "Ef8", BHWf ((float) psf->peak_info->peaks [k].value), BHW8 (psf->peak_info->peaks [k].position)) ;
 		} ;
 
-	if (psf->channel_map && pcaf->chanmap_tag)
+	if (psf_get_channel_map (psf) && pcaf->chanmap_tag)
 		psf_binheader_writef (psf, "Em8444", BHWm (chan_MARKER), BHW8 ((sf_count_t) 12), BHW4 (pcaf->chanmap_tag), BHW4 (0), BHW4 (0)) ;
 
 	/* Write custom headers. */
@@ -810,14 +810,9 @@ caf_read_chanmap (SF_PRIVATE * psf, sf_count_t chunk_size)
 		psf_binheader_readf (psf, "j", chunk_size - bytesread) ;
 
 	if (map_info && map_info->channel_map != NULL)
-	{	size_t chanmap_size = SF_MIN (psf->sf.channels, layout_tag & 0xff) * sizeof (psf->channel_map [0]) ;
+	{	size_t chanmap_size = SF_MIN (psf->sf.channels, layout_tag & 0xff) * sizeof (int) ;
 
-		free (psf->channel_map) ;
-
-		if ((psf->channel_map = malloc (chanmap_size)) == NULL)
-			return SFE_MALLOC_FAILED ;
-
-		memcpy (psf->channel_map, map_info->channel_map, chanmap_size) ;
+		psf_set_channel_map (psf, map_info->channel_map, chanmap_size) ;
 		} ;
 
 	return 0 ;

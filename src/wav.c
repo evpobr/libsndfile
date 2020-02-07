@@ -1276,7 +1276,7 @@ wav_command (SF_PRIVATE *psf, int command, void * UNUSED (data), int datasize)
 			return wpriv->wavex_ambisonic ;
 
 		case SFC_SET_CHANNEL_MAP_INFO :
-			wpriv->wavex_channelmask = wavlike_gen_channel_mask (psf->channel_map, psf->sf.channels) ;
+			wpriv->wavex_channelmask = wavlike_gen_channel_mask (psf_get_channel_map (psf), psf->sf.channels) ;
 			return (wpriv->wavex_channelmask != 0) ;
 
 		default :

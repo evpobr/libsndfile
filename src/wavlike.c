@@ -327,11 +327,7 @@ wavlike_read_fmt_chunk (SF_PRIVATE *psf, int fmtsize)
 					wpriv->wavex_channelmask = wav_fmt->ext.channelmask ;
 
 					/* It's probably wise to ignore the channel mask if it is all zero */
-					free (psf->channel_map) ;
-
-					if ((psf->channel_map = calloc (psf->sf.channels, sizeof (psf->channel_map [0]))) == NULL)
-						return SFE_MALLOC_FAILED ;
-
+					psf_channel_map_allocate (psf, psf->sf.channels) ;
 					/* Terminate the buffer we're going to append_snprintf into. */
 					buffer [0] = 0 ;
 
@@ -343,9 +339,11 @@ wavlike_read_fmt_chunk (SF_PRIVATE *psf, int fmtsize)
 								break ;
 								} ;
 
-							psf->channel_map [k++] = channel_mask_bits [bit].id ;
+							psf_channel_map_set_item (psf, k++, channel_mask_bits [bit].id) ;
 							append_snprintf (buffer, sizeof (buffer), "%s, ", channel_mask_bits [bit].name) ;
-							} ;
+							} else
+							{	psf_channel_map_add_item (psf, 0) ;
+								} ;
 						} ;
 
 					/* Remove trailing ", ". */
