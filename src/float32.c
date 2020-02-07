@@ -403,9 +403,9 @@ float32_peak_update	(SF_PRIVATE *psf, const float *buffer, int count, sf_count_t
 				position = k ;
 				} ;
 
-		if (fmaxval > psf->peak_info->peaks [chan].value)
-		{	psf->peak_info->peaks [chan].value = fmaxval ;
-			psf->peak_info->peaks [chan].position = psf->write_current + indx + (position / psf->sf.channels) ;
+		if (fmaxval > psf_peak_info_get_peak_pos (psf, chan)->value)
+		{	psf_peak_info_get_peak_pos (psf, chan)->value = fmaxval ;
+			psf_peak_info_get_peak_pos (psf, chan)->position = psf->write_current + indx + (position / psf->sf.channels) ;
 			} ;
 		} ;
 
@@ -722,7 +722,7 @@ host_write_s2f	(SF_PRIVATE *psf, const short *ptr, sf_count_t len)
 			bufferlen = (int) len ;
 		s2f_array (ptr + total, ubuf.fbuf, bufferlen, scale) ;
 
-		if (psf->peak_info)
+		if (psf_peak_info_exists (psf))
 			float32_peak_update (psf, ubuf.fbuf, bufferlen, total / psf->sf.channels) ;
 
 		if (psf->data_endswap == SF_TRUE)
@@ -753,7 +753,7 @@ host_write_i2f	(SF_PRIVATE *psf, const int *ptr, sf_count_t len)
 			bufferlen = (int) len ;
 		i2f_array (ptr + total, ubuf.fbuf, bufferlen, scale) ;
 
-		if (psf->peak_info)
+		if (psf_peak_info_exists (psf))
 			float32_peak_update (psf, ubuf.fbuf, bufferlen, total / psf->sf.channels) ;
 
 		if (psf->data_endswap == SF_TRUE)
@@ -775,7 +775,7 @@ host_write_f	(SF_PRIVATE *psf, const float *ptr, sf_count_t len)
 	int			bufferlen, writecount ;
 	sf_count_t	total = 0 ;
 
-	if (psf->peak_info)
+	if (psf_peak_info_exists (psf))
 		float32_peak_update (psf, ptr, len, 0) ;
 
 	if (psf->data_endswap != SF_TRUE)
@@ -813,7 +813,7 @@ host_write_d2f	(SF_PRIVATE *psf, const double *ptr, sf_count_t len)
 
 		d2f_array (ptr + total, ubuf.fbuf, bufferlen) ;
 
-		if (psf->peak_info)
+		if (psf_peak_info_exists (psf))
 			float32_peak_update (psf, ubuf.fbuf, bufferlen, total / psf->sf.channels) ;
 
 		if (psf->data_endswap == SF_TRUE)
@@ -966,7 +966,7 @@ replace_write_s2f	(SF_PRIVATE *psf, const short *ptr, sf_count_t len)
 			bufferlen = (int) len ;
 		s2f_array (ptr + total, ubuf.fbuf, bufferlen, scale) ;
 
-		if (psf->peak_info)
+		if (psf_peak_info_exists (psf))
 			float32_peak_update (psf, ubuf.fbuf, bufferlen, total / psf->sf.channels) ;
 
 		f2bf_array (ubuf.fbuf, bufferlen) ;
@@ -999,7 +999,7 @@ replace_write_i2f	(SF_PRIVATE *psf, const int *ptr, sf_count_t len)
 			bufferlen = (int) len ;
 		i2f_array (ptr + total, ubuf.fbuf, bufferlen, scale) ;
 
-		if (psf->peak_info)
+		if (psf_peak_info_exists (psf))
 			float32_peak_update (psf, ubuf.fbuf, bufferlen, total / psf->sf.channels) ;
 
 		f2bf_array (ubuf.fbuf, bufferlen) ;
@@ -1024,7 +1024,7 @@ replace_write_f	(SF_PRIVATE *psf, const float *ptr, sf_count_t len)
 	sf_count_t	total = 0 ;
 
 	/* FIX THIS */
-	if (psf->peak_info)
+	if (psf_peak_info_exists (psf))
 		float32_peak_update (psf, ptr, len, 0) ;
 
 	bufferlen = ARRAY_LEN (ubuf.fbuf) ;
@@ -1063,7 +1063,7 @@ replace_write_d2f	(SF_PRIVATE *psf, const double *ptr, sf_count_t len)
 			bufferlen = (int) len ;
 		d2f_array (ptr + total, ubuf.fbuf, bufferlen) ;
 
-		if (psf->peak_info)
+		if (psf_peak_info_exists (psf))
 			float32_peak_update (psf, ubuf.fbuf, bufferlen, total / psf->sf.channels) ;
 
 		f2bf_array (ubuf.fbuf, bufferlen) ;

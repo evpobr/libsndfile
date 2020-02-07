@@ -262,10 +262,7 @@ aiff_open (SF_PRIVATE *psf)
 			return SFE_BAD_OPEN_FORMAT ;
 
 		if (psf->file.mode == SFM_WRITE && (subformat == SF_FORMAT_FLOAT || subformat == SF_FORMAT_DOUBLE))
-		{	if ((psf->peak_info = peak_info_calloc (psf->sf.channels)) == NULL)
-				return SFE_MALLOC_FAILED ;
-			psf->peak_info->peak_loc = SF_PEAK_START ;
-			} ;
+			psf_peak_info_init (psf) ;
 
 		if (psf->file.mode != SFM_RDWR || psf->filelength < 40)
 		{	psf->filelength = 0 ;
@@ -498,19 +495,24 @@ aiff_read_header (SF_PRIVATE *psf, COMM_CHUNK *comm_fmt)
 						return SFE_WAV_BAD_PEAK ;
 						} ;
 
-					if ((psf->peak_info = peak_info_calloc (psf->sf.channels)) == NULL)
-						return SFE_MALLOC_FAILED ;
+					psf_peak_info_init (psf) ;
 
 					/* read in rest of PEAK chunk. */
-					psf_binheader_readf (psf, "E44", &(psf->peak_info->version), &(psf->peak_info->timestamp)) ;
+					{
+						uint32_t peak_info_version = psf_peak_info_get_version (psf) ;
+						uint32_t peak_info_timestamp = psf_peak_info_get_timestamp (psf) ;
+						psf_binheader_readf (psf, "E44", &peak_info_version, &peak_info_timestamp) ;
+						psf_peak_info_set_version (psf, peak_info_version) ;
+						psf_peak_info_set_timestamp (psf, peak_info_timestamp) ;
 
-					if (psf->peak_info->version != 1)
-						psf_log_printf (psf, "  version    : %d *** (should be version 1)\n", psf->peak_info->version) ;
-					else
-						psf_log_printf (psf, "  version    : %d\n", psf->peak_info->version) ;
+						if (psf_peak_info_get_version (psf) != 1)
+							psf_log_printf (psf, "  version    : %d *** (should be version 1)\n", peak_info_version) ;
+						else
+							psf_log_printf (psf, "  version    : %d\n", peak_info_version) ;
 
-					psf_log_printf (psf, "  time stamp : %d\n", psf->peak_info->timestamp) ;
-					psf_log_printf (psf, "    Ch   Position       Value\n") ;
+						psf_log_printf (psf, "  time stamp : %d\n", peak_info_timestamp) ;
+						psf_log_printf (psf, "    Ch   Position       Value\n") ;
+						} ;
 
 					cptr = ubuf.cbuf ;
 					for (k = 0 ; k < psf->sf.channels ; k++)
@@ -518,16 +520,16 @@ aiff_read_header (SF_PRIVATE *psf, COMM_CHUNK *comm_fmt)
 						uint32_t position ;
 
 						psf_binheader_readf (psf, "Ef4", &value, &position) ;
-						psf->peak_info->peaks [k].value = value ;
-						psf->peak_info->peaks [k].position = position ;
+						psf_peak_info_get_peak_pos (psf, k)->value = value ;
+						psf_peak_info_get_peak_pos (psf, k)->position = position ;
 
 						snprintf (cptr, sizeof (ubuf.scbuf), "    %2d   %-12" PRId64 "   %g\n",
-								k, psf->peak_info->peaks [k].position, psf->peak_info->peaks [k].value) ;
+								k, psf_peak_info_get_peak_pos (psf, k)->position, psf_peak_info_get_peak_pos (psf, k)->value) ;
 						cptr [sizeof (ubuf.scbuf) - 1] = 0 ;
 						psf_log_printf (psf, "%s", cptr) ;
 						} ;
 
-					psf->peak_info->peak_loc = ((found_chunk & HAVE_SSND) == 0) ? SF_PEAK_START : SF_PEAK_END ;
+					psf_peak_info_set_location (psf, ((found_chunk & HAVE_SSND) == 0) ? SF_PEAK_START : SF_PEAK_END) ;
 					break ;
 
 			case SSND_MARKER :
@@ -1178,7 +1180,8 @@ aiff_rewrite_header (SF_PRIVATE *psf)
 		psf_binheader_writef (psf, "Em4", BHWm (PEAK_MARKER), BHW4 (AIFF_PEAK_CHUNK_SIZE (psf->sf.channels))) ;
 		psf_binheader_writef (psf, "E44", BHW4 (1), BHW4 (time (NULL))) ;
 		for (ch = 0 ; ch < psf->sf.channels ; ch++)
-			psf_binheader_writef (psf, "Eft8", BHWf ((float) psf->peak_info->peaks [ch].value), BHW8 (psf->peak_info->peaks [ch].position)) ;
+			psf_binheader_writef (psf, "Eft8", BHWf ((float) psf_peak_info_get_peak_pos (psf, ch)->value),
+				BHW8 (psf_peak_info_get_peak_pos(psf, ch)->position)) ;
 		} ;
 
 
@@ -1451,11 +1454,11 @@ aiff_write_header (SF_PRIVATE *psf, int calc_length)
 	if (psf->strings.flags & SF_STR_LOCATE_START)
 		aiff_write_strings (psf, SF_STR_LOCATE_START) ;
 
-	if (psf->peak_info != NULL && psf->peak_info->peak_loc == SF_PEAK_START)
+	if (psf_peak_info_exists (psf) && psf_peak_info_get_location (psf) == SF_PEAK_START)
 	{	psf_binheader_writef (psf, "Em4", BHWm (PEAK_MARKER), BHW4 (AIFF_PEAK_CHUNK_SIZE (psf->sf.channels))) ;
 		psf_binheader_writef (psf, "E44", BHW4 (1), BHW4 (time (NULL))) ;
 		for (k = 0 ; k < psf->sf.channels ; k++)
-			psf_binheader_writef (psf, "Eft8", BHWf ((float) psf->peak_info->peaks [k].value), BHW8 (psf->peak_info->peaks [k].position)) ;
+			psf_binheader_writef (psf, "Eft8", BHWf ((float) psf_peak_info_get_peak_pos (psf, k)->value), BHW8 (psf_peak_info_get_peak_pos (psf, k)->position)) ;
 		} ;
 
 	/* Write custom headers. */
@@ -1501,11 +1504,11 @@ aiff_write_tailer (SF_PRIVATE *psf)
 		psf->dataend ++ ;
 		} ;
 
-	if (psf->peak_info != NULL && psf->peak_info->peak_loc == SF_PEAK_END)
+	if (psf_peak_info_exists (psf) && psf_peak_info_get_location (psf) == SF_PEAK_END)
 	{	psf_binheader_writef (psf, "Em4", BHWm (PEAK_MARKER), BHW4 (AIFF_PEAK_CHUNK_SIZE (psf->sf.channels))) ;
 		psf_binheader_writef (psf, "E44", BHW4 (1), BHW4 (time (NULL))) ;
 		for (k = 0 ; k < psf->sf.channels ; k++)
-			psf_binheader_writef (psf, "Eft8", BHWf ((float) psf->peak_info->peaks [k].value), BHW8 (psf->peak_info->peaks [k].position)) ;
+			psf_binheader_writef (psf, "Eft8", BHWf ((float) psf_peak_info_get_peak_pos (psf, k)->value), BHW8 (psf_peak_info_get_peak_pos (psf, k)->position)) ;
 		} ;
 
 	if (psf->strings.flags & SF_STR_LOCATE_END)

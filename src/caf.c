@@ -158,10 +158,7 @@ caf_open (SF_PRIVATE *psf)
 		**	can be switched off using sf_command (SFC_SET_PEAK_CHUNK, SF_FALSE).
 		*/
 		if (psf->file.mode == SFM_WRITE && (subformat == SF_FORMAT_FLOAT || subformat == SF_FORMAT_DOUBLE))
-		{	if ((psf->peak_info = peak_info_calloc (psf->sf.channels)) == NULL)
-				return SFE_MALLOC_FAILED ;
-			psf->peak_info->peak_loc = SF_PEAK_START ;
-			} ;
+			psf_peak_info_init (psf) ;
 
 		if ((error = caf_write_header (psf, SF_FALSE)) != 0)
 			return error ;
@@ -416,12 +413,13 @@ caf_read_header (SF_PRIVATE *psf)
 					return SFE_CAF_BAD_PEAK ;
 					} ;
 
-				if ((psf->peak_info = peak_info_calloc (psf->sf.channels)) == NULL)
-					return SFE_MALLOC_FAILED ;
+				psf_peak_info_init (psf) ;
 
 				/* read in rest of PEAK chunk. */
-				psf_binheader_readf (psf, "E4", & (psf->peak_info->edit_number)) ;
-				psf_log_printf (psf, "  edit count : %d\n", psf->peak_info->edit_number) ;
+				uint32_t peak_info_edit_number = psf_peak_info_get_edit_number (psf) ;
+				psf_binheader_readf (psf, "E4", &peak_info_edit_number) ;
+				psf_peak_info_set_edit_number (psf, peak_info_edit_number) ;
+				psf_log_printf (psf, "  edit count : %d\n", peak_info_edit_number) ;
 
 				psf_log_printf (psf, "     Ch   Position       Value\n") ;
 				for (k = 0 ; k < psf->sf.channels ; k++)
@@ -429,14 +427,14 @@ caf_read_header (SF_PRIVATE *psf)
 					float value ;
 
 					psf_binheader_readf (psf, "Ef8", &value, &position) ;
-					psf->peak_info->peaks [k].value = value ;
-					psf->peak_info->peaks [k].position = position ;
+					psf_peak_info_get_peak_pos (psf, k)->value = value ;
+					psf_peak_info_get_peak_pos (psf, k)->position = position ;
 
 					snprintf (ubuf.cbuf, sizeof (ubuf.cbuf), "    %2d   %-12" PRId64 "   %g\n", k, position, value) ;
 					psf_log_printf (psf, ubuf.cbuf) ;
 					} ;
 
-				psf->peak_info->peak_loc = SF_PEAK_START ;
+				psf_peak_info_set_location (psf, SF_PEAK_START) ;
 				break ;
 
 			case chan_MARKER :
@@ -725,11 +723,11 @@ caf_write_header (SF_PRIVATE *psf, int calc_length)
 
 	caf_write_strings (psf, SF_STR_LOCATE_START) ;
 
-	if (psf->peak_info != NULL)
+	if (psf_peak_info_exists (psf))
 	{	int k ;
-		psf_binheader_writef (psf, "Em84", BHWm (peak_MARKER), BHW8 ((sf_count_t) CAF_PEAK_CHUNK_SIZE (psf->sf.channels)), BHW4 (psf->peak_info->edit_number)) ;
+		psf_binheader_writef (psf, "Em84", BHWm (peak_MARKER), BHW8 ((sf_count_t) CAF_PEAK_CHUNK_SIZE (psf->sf.channels)), BHW4 (psf_peak_info_get_edit_number (psf))) ;
 		for (k = 0 ; k < psf->sf.channels ; k++)
-			psf_binheader_writef (psf, "Ef8", BHWf ((float) psf->peak_info->peaks [k].value), BHW8 (psf->peak_info->peaks [k].position)) ;
+			psf_binheader_writef (psf, "Ef8", BHWf ((float) psf_peak_info_get_peak_pos (psf, k)->value), BHW8 (psf_peak_info_get_peak_pos (psf, k)->position)) ;
 		} ;
 
 	if (psf_get_channel_map (psf) && pcaf->chanmap_tag)

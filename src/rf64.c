@@ -292,7 +292,7 @@ rf64_read_header (SF_PRIVATE *psf, int *blockalign, int *framesperblock)
 					psf_log_printf (psf, "%M : %u\n", marker, chunk_size) ;
 					if ((error = wavlike_read_peak_chunk (psf, chunk_size)) != 0)
 						return error ;
-					psf->peak_info->peak_loc = ((parsestage & HAVE_data) == 0) ? SF_PEAK_START : SF_PEAK_END ;
+					psf_peak_info_set_location (psf, ((parsestage & HAVE_data) == 0) ? SF_PEAK_START : SF_PEAK_END) ;
 					break ;
 
 			case data_MARKER :
@@ -706,7 +706,7 @@ rf64_write_header (SF_PRIVATE *psf, int calc_length)
 	if (psf->strings.flags & SF_STR_LOCATE_START)
 		wavlike_write_strings (psf, SF_STR_LOCATE_START) ;
 
-	if (psf->peak_info != NULL && psf->peak_info->peak_loc == SF_PEAK_START)
+	if (psf_peak_info_exists (psf) && psf_peak_info_get_location (psf) == SF_PEAK_START)
 		wavlike_write_peak_chunk (psf) ;
 
 	/* Write custom headers. */

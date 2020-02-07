@@ -1178,18 +1178,21 @@ wavlike_read_peak_chunk (SF_PRIVATE * psf, size_t chunk_size)
 		return SFE_WAV_BAD_PEAK ;
 		} ;
 
-	if ((psf->peak_info = peak_info_calloc (psf->sf.channels)) == NULL)
-		return SFE_MALLOC_FAILED ;
+	psf_peak_info_init (psf) ;
 
 	/* read in rest of PEAK chunk. */
-	psf_binheader_readf (psf, "44", & (psf->peak_info->version), & (psf->peak_info->timestamp)) ;
+	uint32_t peak_info_version = psf_peak_info_get_version (psf) ;
+	uint32_t peak_info_timestamp = psf_peak_info_get_timestamp (psf) ;
+	psf_binheader_readf (psf, "44", &peak_info_version, &peak_info_timestamp) ;
+	psf_peak_info_set_version (psf, peak_info_version) ;
+	psf_peak_info_set_timestamp (psf, peak_info_timestamp) ;
 
-	if (psf->peak_info->version != 1)
-		psf_log_printf (psf, "  version    : %d *** (should be version 1)\n", psf->peak_info->version) ;
+	if (peak_info_version != 1)
+		psf_log_printf (psf, "  version    : %d *** (should be version 1)\n", peak_info_version) ;
 	else
-		psf_log_printf (psf, "  version    : %d\n", psf->peak_info->version) ;
+		psf_log_printf (psf, "  version    : %d\n", peak_info_version) ;
 
-	psf_log_printf (psf, "  time stamp : %d\n", psf->peak_info->timestamp) ;
+	psf_log_printf (psf, "  time stamp : %d\n", peak_info_timestamp) ;
 	psf_log_printf (psf, "    Ch   Position       Value\n") ;
 
 	for (uk = 0 ; uk < (uint32_t) psf->sf.channels ; uk++)
@@ -1197,11 +1200,11 @@ wavlike_read_peak_chunk (SF_PRIVATE * psf, size_t chunk_size)
 		uint32_t position ;
 
 		psf_binheader_readf (psf, "f4", &value, &position) ;
-		psf->peak_info->peaks [uk].value = value ;
-		psf->peak_info->peaks [uk].position = position ;
+		psf_peak_info_get_peak_pos (psf, uk)->value = value ;
+		psf_peak_info_get_peak_pos (psf, uk)->position = position ;
 
 		snprintf (buffer, sizeof (buffer), "    %2d   %-12" PRId64 "   %g\n",
-				uk, psf->peak_info->peaks [uk].position, psf->peak_info->peaks [uk].value) ;
+				uk, psf_peak_info_get_peak_pos (psf, uk)->position, psf_peak_info_get_peak_pos (psf, uk)->value) ;
 		buffer [sizeof (buffer) - 1] = 0 ;
 		psf_log_printf (psf, "%s", buffer) ;
 		} ;
@@ -1213,13 +1216,15 @@ void
 wavlike_write_peak_chunk (SF_PRIVATE * psf)
 {	int k ;
 
-	if (psf->peak_info == NULL)
+	if (!psf_peak_info_exists (psf))
 		return ;
 
 	psf_binheader_writef (psf, "m4", BHWm (PEAK_MARKER), BHW4 (WAVLIKE_PEAK_CHUNK_SIZE (psf->sf.channels))) ;
 	psf_binheader_writef (psf, "44", BHW4 (1), BHW4 (time (NULL))) ;
 	for (k = 0 ; k < psf->sf.channels ; k++)
-		psf_binheader_writef (psf, "ft8", BHWf (psf->peak_info->peaks [k].value), BHW8 (psf->peak_info->peaks [k].position)) ;
+		psf_binheader_writef (psf, "ft8",
+			BHWf (psf_peak_info_get_peak_pos (psf, k)->value),
+			BHW8 (psf_peak_info_get_peak_pos(psf, k)->position)) ;
 } /* wavlike_write_peak_chunk */
 
 /*==============================================================================

@@ -213,10 +213,7 @@ wav_open	(SF_PRIVATE *psf)
 		** can be switched off using sf_command (SFC_SET_PEAK_CHUNK, SF_FALSE).
 		*/
 		if (psf->file.mode == SFM_WRITE && (subformat == SF_FORMAT_FLOAT || subformat == SF_FORMAT_DOUBLE))
-		{	if ((psf->peak_info = peak_info_calloc (psf->sf.channels)) == NULL)
-				return SFE_MALLOC_FAILED ;
-			psf->peak_info->peak_loc = SF_PEAK_START ;
-			} ;
+			psf_peak_info_init (psf) ;
 
 		psf->write_header	= wav_write_header ;
 		psf->set_chunk		= wav_set_chunk ;
@@ -461,7 +458,7 @@ wav_read_header	(SF_PRIVATE *psf, int *blockalign, int *framesperblock)
 					psf_log_printf (psf, "%M : %u\n", marker, chunk_size) ;
 					if ((error = wavlike_read_peak_chunk (psf, chunk_size)) != 0)
 						return error ;
-					psf->peak_info->peak_loc = ((parsestage & HAVE_data) == 0) ? SF_PEAK_START : SF_PEAK_END ;
+					psf_peak_info_set_location (psf, ((parsestage & HAVE_data) == 0) ? SF_PEAK_START : SF_PEAK_END) ;
 					break ;
 
 			case cue_MARKER :
@@ -1113,7 +1110,7 @@ wav_write_header (SF_PRIVATE *psf, int calc_length)
 	if (psf->strings.flags & SF_STR_LOCATE_START)
 		wavlike_write_strings (psf, SF_STR_LOCATE_START) ;
 
-	if (psf->peak_info != NULL && psf->peak_info->peak_loc == SF_PEAK_START)
+	if (psf_peak_info_exists (psf) && psf_peak_info_get_location (psf) == SF_PEAK_START)
 		wavlike_write_peak_chunk (psf) ;
 
 	if (psf->broadcast_16k != NULL)
@@ -1214,7 +1211,7 @@ wav_write_tailer (SF_PRIVATE *psf)
 		psf_binheader_writef (psf, "z", BHWz (1)) ;
 
 	/* Add a PEAK chunk if requested. */
-	if (psf->peak_info != NULL && psf->peak_info->peak_loc == SF_PEAK_END)
+	if (psf_peak_info_exists (psf) && psf_peak_info_get_location (psf) == SF_PEAK_END)
 		wavlike_write_peak_chunk (psf) ;
 
 	if (psf->strings.flags & SF_STR_LOCATE_END)

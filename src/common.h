@@ -457,7 +457,7 @@ typedef struct sf_private_tag
 	SF_INFO			sf ;
 
 	int				have_written ;	/* Has a single write been done to the file? */
-	PEAK_INFO		*peak_info ;
+	PEAK_INFO		*_peak_info ;
 
 	/* Cue Marker Info */
 	SF_CUES		*cues ;
@@ -1134,6 +1134,19 @@ arith_shift_right (int32_t x, int shift)
 		return x >> shift ;
 	return ~ ((~x) >> shift) ;
 } /* arith_shift_right */
+
+extern void psf_peak_info_init (SF_PRIVATE *psf) ;
+extern void psf_peak_info_clear (SF_PRIVATE *psf) ;
+extern int psf_peak_info_exists (const SF_PRIVATE *psf) ;
+extern int psf_peak_info_get_location (const SF_PRIVATE *psf) ;
+extern void psf_peak_info_set_location (SF_PRIVATE *psf, int location) ;
+extern uint32_t psf_peak_info_get_version (const SF_PRIVATE *psf) ;
+extern void psf_peak_info_set_version (SF_PRIVATE *psf, uint32_t version) ;
+extern uint32_t psf_peak_info_get_timestamp (const SF_PRIVATE *psf) ;
+extern void psf_peak_info_set_timestamp (SF_PRIVATE *psf, uint32_t timestamp) ;
+extern uint32_t psf_peak_info_get_edit_number (const SF_PRIVATE *psf) ;
+extern void psf_peak_info_set_edit_number (SF_PRIVATE *psf, uint32_t edit_number) ;
+extern PEAK_POS *psf_peak_info_get_peak_pos (SF_PRIVATE *psf, size_t index) ;
 
 extern const int *psf_channel_map_allocate (SF_PRIVATE *psf, size_t count) ;
 extern const int *psf_get_channel_map (const SF_PRIVATE *psf) ;

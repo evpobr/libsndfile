@@ -1032,15 +1032,10 @@ sf_command	(SNDFILE *sndfile, int command, void *data, int datasize)
 				return SF_FALSE ;
 				} ;
 			/* Everything seems OK, so set psf->has_peak and re-write header. */
-			if (datasize == SF_FALSE && psf->peak_info != NULL)
-			{	free (psf->peak_info) ;
-				psf->peak_info = NULL ;
-				}
-			else if (psf->peak_info == NULL)
-			{	psf->peak_info = peak_info_calloc (psf->sf.channels) ;
-				if (psf->peak_info != NULL)
-					psf->peak_info->peak_loc = SF_PEAK_START ;
-				} ;
+			if (datasize == SF_FALSE && psf_peak_info_exists(psf))
+				psf_peak_info_clear (psf) ;
+			else if (!psf_peak_info_exists (psf))
+				psf_peak_info_init (psf) ;
 
 			if (psf->write_header)
 				psf->write_header (psf, SF_TRUE) ;

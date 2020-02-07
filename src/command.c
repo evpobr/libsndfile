@@ -373,13 +373,13 @@ int
 psf_get_signal_max (SF_PRIVATE *psf, double *peak)
 {	int k ;
 
-	if (psf->peak_info == NULL)
+	if (!psf_peak_info_exists (psf))
 		return SF_FALSE ;
 
-	peak [0] = psf->peak_info->peaks [0].value ;
+	peak [0] = psf_peak_info_get_peak_pos (psf, 0)->value ;
 
 	for (k = 1 ; k < psf->sf.channels ; k++)
-		peak [0] = SF_MAX (peak [0], psf->peak_info->peaks [k].value) ;
+		peak [0] = SF_MAX (peak [0], psf_peak_info_get_peak_pos (psf, k)->value) ;
 
 	return SF_TRUE ;
 } /* psf_get_signal_max */
@@ -388,11 +388,11 @@ int
 psf_get_max_all_channels (SF_PRIVATE *psf, double *peaks)
 {	int k ;
 
-	if (psf->peak_info == NULL)
+	if (!psf_peak_info_exists (psf))
 		return SF_FALSE ;
 
 	for (k = 0 ; k < psf->sf.channels ; k++)
-		peaks [k] = psf->peak_info->peaks [k].value ;
+		peaks [k] = psf_peak_info_get_peak_pos (psf, k)->value ;
 
 	return SF_TRUE ;
 } /* psf_get_max_all_channels */

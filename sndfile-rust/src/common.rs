@@ -58,7 +58,7 @@ pub enum SF_PEAK_LOCATION {
 pub type sfwchar_t = u16;
 
 #[repr(C)]
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct PEAK_POS {
     pub value: f64,           /* signed value of peak */
     pub position: sf_count_t, /* the sample frame for the peak */
@@ -380,7 +380,7 @@ pub struct sf_private_tag {
     pub sf: SF_INFO,
 
     pub have_written: c_int, /* Has a single write been done to the file? */
-    pub peak_info: *mut PEAK_INFO,
+    pub _peak_info: *mut PEAK_INFO,
 
     /* Cue Marker Info */
     pub cues: *mut SF_CUES,
@@ -587,7 +587,7 @@ impl Drop for SF_PRIVATE {
             free(self.codec_data as *mut c_void);
             free(self.interleave as *mut c_void);
             free(self.dither as *mut c_void);
-            free(self.peak_info as *mut c_void);
+            free(self._peak_info as *mut c_void);
             free(self.broadcast_16k as *mut c_void);
             free(self.loop_info as *mut c_void);
             free(self.instrument as *mut c_void);
@@ -611,8 +611,47 @@ impl Drop for SF_PRIVATE {
     }
 }
 
+pub enum PeakLocation {
+    Start,
+    End,
+}
+
+pub struct PeakInfo {
+    pub peak_loc: PeakLocation,
+    pub version: u32,
+    pub timestamp: u32,
+    pub edit_number: u32,
+    pub peaks: Vec<PEAK_POS>,
+}
+
+impl PeakInfo {
+    pub fn new(channels: usize) -> Self {
+        let peaks = vec![PEAK_POS::default(); channels];
+        PeakInfo {
+            peak_loc: PeakLocation::Start,
+            version: 0,
+            timestamp: 0,
+            edit_number: 0,
+            peaks: peaks,
+        }
+    }
+}
+
+impl Default for PeakInfo {
+    fn default() -> Self {
+        PeakInfo {
+            peak_loc: PeakLocation::Start,
+            version: 0,
+            timestamp: 0,
+            edit_number: 0,
+            peaks: Vec::new(),
+        }
+    }
+}
+
 #[derive(Default)]
 pub struct RustPrivate {
+    pub peak_info: Option<PeakInfo>,
     pub channel_map: Vec<i32>,
 }
 
@@ -640,7 +679,7 @@ impl Default for SF_PRIVATE {
             add_clipping: 0,
             sf: SF_INFO::default(),
             have_written: 0,
-            peak_info: ptr::null_mut(),
+            _peak_info: ptr::null_mut(),
             cues: ptr::null_mut(),
             loop_info: ptr::null_mut(),
             instrument: ptr::null_mut(),
@@ -1121,6 +1160,178 @@ extern "C" fn u_bitwidth_to_subformat(bits: c_int) -> c_int {
     }
 
     return array[(((bits + 7) / 8) - 1) as usize];
+}
+
+#[no_mangle]
+unsafe extern "C" fn psf_peak_info_init (psf: *mut SF_PRIVATE) {
+    assert_ne!(psf.is_null(), true);
+
+    let psf = &mut *psf;
+    let rs = &mut *(psf.rs as *mut RustPrivate);
+
+    assert!(psf.sf.channels >= 0);
+
+    rs.peak_info = Some(PeakInfo::new(psf.sf.channels as usize));
+}
+
+#[no_mangle]
+unsafe extern "C" fn psf_peak_info_clear (psf: *mut SF_PRIVATE) {
+    assert_ne!(psf.is_null(), true);
+
+    let psf = &mut *psf;
+    let rs = &mut *(psf.rs as *mut RustPrivate);
+
+    rs.peak_info = None;
+}
+
+#[no_mangle]
+unsafe extern "C" fn psf_peak_info_exists(psf: *const SF_PRIVATE) -> c_int {
+    assert_ne!(psf.is_null(), true);
+
+    let psf = &*psf;
+    let rs = &*(psf.rs as *const RustPrivate);
+
+    if let Some(_) = &rs.peak_info {
+        SF_TRUE
+    } else {
+        SF_FALSE
+    }
+}
+
+#[no_mangle]
+unsafe extern "C" fn psf_peak_info_get_location(psf: *const SF_PRIVATE) -> SF_PEAK_LOCATION {
+    assert_ne!(psf.is_null(), true);
+
+    let psf = &*psf;
+    let rs = &*(psf.rs as *const RustPrivate);
+
+    if let Some(peak_info) = &rs.peak_info {
+        match peak_info.peak_loc {
+            PeakLocation::Start => {
+                SF_PEAK_LOCATION::SF_PEAK_START
+            },
+            PeakLocation::End => {
+                SF_PEAK_LOCATION::SF_PEAK_END
+            }
+        }
+    } else {
+        SF_PEAK_LOCATION::SF_PEAK_START
+    }
+}
+
+#[no_mangle]
+unsafe extern "C" fn psf_peak_info_set_location(psf: *mut SF_PRIVATE, location: SF_PEAK_LOCATION) {
+    assert_ne!(psf.is_null(), true);
+
+    let psf = &mut *psf;
+    let rs = &mut *(psf.rs as *mut RustPrivate);
+
+    if let Some(peak_info) = &mut rs.peak_info {
+        match location {
+            SF_PEAK_LOCATION::SF_PEAK_START => {
+                peak_info.peak_loc = PeakLocation::Start;
+            },
+            SF_PEAK_LOCATION::SF_PEAK_END => {
+                peak_info.peak_loc = PeakLocation::End;
+            },
+        }
+    };
+}
+
+#[no_mangle]
+unsafe extern "C" fn psf_peak_info_get_version(psf: *const SF_PRIVATE) -> u32 {
+    assert_ne!(psf.is_null(), true);
+
+    let psf = &*psf;
+    let rs = &*(psf.rs as *const RustPrivate);
+
+    if let Some(peak_info) = &rs.peak_info {
+        peak_info.version
+    } else {
+        0
+    }
+}
+
+#[no_mangle]
+unsafe extern "C" fn psf_peak_info_set_version(psf: *mut SF_PRIVATE, version: u32) {
+    assert_ne!(psf.is_null(), true);
+
+    let psf = &mut *psf;
+    let rs = &mut *(psf.rs as *mut RustPrivate);
+
+    if let Some(peak_info) = &mut rs.peak_info {
+        peak_info.version = version;
+    };
+}
+
+#[no_mangle]
+unsafe extern "C" fn psf_peak_info_get_timestamp(psf: *const SF_PRIVATE) -> u32 {
+    assert_ne!(psf.is_null(), true);
+
+    let psf = &*psf;
+    let rs = &*(psf.rs as *const RustPrivate);
+
+    if let Some(peak_info) = &rs.peak_info {
+        peak_info.timestamp
+    } else {
+        0
+    }
+}
+
+#[no_mangle]
+unsafe extern "C" fn psf_peak_info_set_timestamp(psf: *mut SF_PRIVATE, timestamp: u32) {
+    assert_ne!(psf.is_null(), true);
+
+    let psf = &mut *psf;
+    let rs = &mut *(psf.rs as *mut RustPrivate);
+
+    if let Some(peak_info) = &mut rs.peak_info {
+        peak_info.timestamp = timestamp;
+    };
+}
+
+#[no_mangle]
+unsafe extern "C" fn psf_peak_info_get_edit_number(psf: *const SF_PRIVATE) -> u32 {
+    assert_ne!(psf.is_null(), true);
+
+    let psf = &*psf;
+    let rs = &*(psf.rs as *const RustPrivate);
+
+    if let Some(peak_info) = &rs.peak_info {
+        peak_info.edit_number
+    } else {
+        0
+    }
+}
+
+#[no_mangle]
+unsafe extern "C" fn psf_peak_info_set_edit_number(psf: *mut SF_PRIVATE, edit_number: u32) {
+    assert_ne!(psf.is_null(), true);
+
+    let psf = &mut *psf;
+    let rs = &mut *(psf.rs as *mut RustPrivate);
+
+    if let Some(peak_info) = &mut rs.peak_info {
+        peak_info.timestamp = edit_number;
+    };
+}
+
+#[no_mangle]
+unsafe extern "C" fn psf_peak_info_get_peak_pos(psf: *mut SF_PRIVATE, index: usize) -> *mut PEAK_POS {
+    assert_ne!(psf.is_null(), true);
+
+    let psf = &mut *psf;
+    let rs = &mut *(psf.rs as *mut RustPrivate);
+
+    if let Some(peak_info) = &mut rs.peak_info {
+        if index <= peak_info.peaks.len() {
+            &mut peak_info.peaks[index]
+        } else {
+            ptr::null_mut()
+        }
+    } else {
+        ptr::null_mut()
+    }
 }
 
 #[no_mangle]
