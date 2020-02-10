@@ -1185,7 +1185,7 @@ unsafe extern "C" fn psf_peak_info_clear (psf: *mut SF_PRIVATE) {
 }
 
 #[no_mangle]
-unsafe extern "C" fn psf_peak_info_exists(psf: *const SF_PRIVATE) -> c_int {
+pub unsafe extern "C" fn psf_peak_info_exists(psf: *const SF_PRIVATE) -> c_int {
     assert_ne!(psf.is_null(), true);
 
     let psf = &*psf;
@@ -1401,6 +1401,7 @@ extern "C" {
         items: sf_count_t,
         psf: *mut SF_PRIVATE,
     ) -> sf_count_t;
+    pub fn psf_fwrite (ptr: * const c_void, bytes: sf_count_t, items: sf_count_t, psf: *mut SF_PRIVATE) -> sf_count_t;
     pub fn psf_fclose(psf: *mut SF_PRIVATE) -> c_int;
     pub fn psf_close_rsrc(psf: *mut SF_PRIVATE) -> c_int;
 }
