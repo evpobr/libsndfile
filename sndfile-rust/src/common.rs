@@ -1317,7 +1317,7 @@ unsafe extern "C" fn psf_peak_info_set_edit_number(psf: *mut SF_PRIVATE, edit_nu
 }
 
 #[no_mangle]
-unsafe extern "C" fn psf_peak_info_get_peak_pos(psf: *mut SF_PRIVATE, index: usize) -> *mut PEAK_POS {
+pub unsafe extern "C" fn psf_peak_info_get_peak_pos(psf: *mut SF_PRIVATE, index: usize) -> *mut PEAK_POS {
     assert_ne!(psf.is_null(), true);
 
     let psf = &mut *psf;

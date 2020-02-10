@@ -395,10 +395,7 @@ unsafe extern "C" fn host_read_f2d(
         );
 
         if psf.data_endswap == SF_TRUE {
-            endswap_int_array(
-                ubuf.ibuf.as_mut_ptr(),
-                bufferlen as c_int,
-            );
+            endswap_int_array(ubuf.ibuf.as_mut_ptr(), bufferlen as c_int);
         }
 
         /* Fix me : Need lef2d_array */
@@ -415,4 +412,45 @@ unsafe extern "C" fn host_read_f2d(
     }
 
     return total;
+}
+
+#[no_mangle]
+unsafe extern "C" fn float32_peak_update(
+    psf: *mut SF_PRIVATE,
+    buffer: *const c_float,
+    count: c_int,
+    indx: sf_count_t,
+) {
+    assert!(indx >= 0);
+    assert!(count >= 0);
+    assert_ne!(buffer.is_null(), true);
+    assert_ne!(psf.is_null(), true);
+
+    let count = count as usize;
+    let buffer = slice::from_raw_parts(buffer, count);
+    let psf = &mut *psf;
+
+    for chan in 0..psf.sf.channels as usize {
+        let mut fmaxval = buffer[chan];
+        let mut position = 0;
+        let mut k = chan;
+        while k < count {
+            if fmaxval < buffer[k].abs() {
+                fmaxval = buffer[k].abs();
+                position = k;
+            };
+            k += psf.sf.channels as usize;
+        }
+
+        let peak_pos = psf_peak_info_get_peak_pos(psf, chan);
+        assert_ne!(peak_pos.is_null(), true);
+        let peak_pos = &mut *peak_pos;
+        if fmaxval as f64 > peak_pos.value {
+            peak_pos.value = fmaxval as f64;
+            peak_pos.position =
+                psf.write_current + indx + (position / psf.sf.channels as usize) as sf_count_t;
+        };
+    }
+
+    return;
 }

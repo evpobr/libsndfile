@@ -58,19 +58,21 @@ RUST_EXTERN sf_count_t	host_read_f2s	(SF_PRIVATE *psf, short *ptr, sf_count_t le
 RUST_EXTERN sf_count_t	host_read_f2i	(SF_PRIVATE *psf, int *ptr, sf_count_t len) ;
 RUST_EXTERN sf_count_t	host_read_f	(SF_PRIVATE *psf, float *ptr, sf_count_t len) ;
 RUST_EXTERN sf_count_t	host_read_f2d	(SF_PRIVATE *psf, double *ptr, sf_count_t len) ;
+
+RUST_EXTERN void		float32_peak_update	(SF_PRIVATE *psf, const float *buffer, int count, sf_count_t indx) ;
 #else
 static sf_count_t	host_read_f2s	(SF_PRIVATE *psf, short *ptr, sf_count_t len) ;
 static sf_count_t	host_read_f2i	(SF_PRIVATE *psf, int *ptr, sf_count_t len) ;
 static sf_count_t	host_read_f	(SF_PRIVATE *psf, float *ptr, sf_count_t len) ;
 static sf_count_t	host_read_f2d	(SF_PRIVATE *psf, double *ptr, sf_count_t len) ;
+
+static void		float32_peak_update	(SF_PRIVATE *psf, const float *buffer, int count, sf_count_t indx) ;
 #endif
 
 static sf_count_t	host_write_s2f	(SF_PRIVATE *psf, const short *ptr, sf_count_t len) ;
 static sf_count_t	host_write_i2f	(SF_PRIVATE *psf, const int *ptr, sf_count_t len) ;
 static sf_count_t	host_write_f	(SF_PRIVATE *psf, const float *ptr, sf_count_t len) ;
 static sf_count_t	host_write_d2f	(SF_PRIVATE *psf, const double *ptr, sf_count_t len) ;
-
-static void		float32_peak_update	(SF_PRIVATE *psf, const float *buffer, int count, sf_count_t indx) ;
 
 static sf_count_t	replace_read_f2s	(SF_PRIVATE *psf, short *ptr, sf_count_t len) ;
 static sf_count_t	replace_read_f2i	(SF_PRIVATE *psf, int *ptr, sf_count_t len) ;
@@ -388,6 +390,8 @@ float32_be_write (float in, unsigned char *out)
 **	Private functions.
 */
 
+#ifndef ENABLE_RUST
+
 static void
 float32_peak_update	(SF_PRIVATE *psf, const float *buffer, int count, sf_count_t indx)
 {	int 	chan ;
@@ -411,6 +415,8 @@ float32_peak_update	(SF_PRIVATE *psf, const float *buffer, int count, sf_count_t
 
 	return ;
 } /* float32_peak_update */
+
+#endif
 
 static int
 float32_get_capability	(SF_PRIVATE *psf)
