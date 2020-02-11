@@ -745,3 +745,35 @@ unsafe extern "C" fn host_write_d2f(
 
     return total as sf_count_t;
 }
+
+#[no_mangle]
+unsafe extern "C" fn bf2f_array(buffer: *mut c_float, count: c_int) {
+    assert!(count >= 0);
+    assert_ne!(buffer.is_null(), true);
+
+    let count = count as usize;
+    let buffer = slice::from_raw_parts_mut(buffer, count);
+    for f in buffer {
+        if cfg!(target_endian = "little") {
+            *f = f32::from_ne_bytes(f.to_le_bytes());
+        } else {
+            *f = f32::from_ne_bytes(f.to_be_bytes());
+        }
+    }
+}
+
+#[no_mangle]
+unsafe extern "C" fn f2bf_array(buffer: *mut c_float, count: c_int) {
+    assert!(count >= 0);
+    assert_ne!(buffer.is_null(), true);
+
+    let count = count as usize;
+    let buffer = slice::from_raw_parts_mut(buffer, count);
+    for f in buffer {
+        if cfg!(target_endian = "little") {
+            *f = f32::from_ne_bytes(f.to_le_bytes());
+        } else {
+            *f = f32::from_ne_bytes(f.to_be_bytes());
+        }
+    }
+}

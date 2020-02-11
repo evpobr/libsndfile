@@ -92,8 +92,13 @@ static sf_count_t	replace_write_i2f	(SF_PRIVATE *psf, const int *ptr, sf_count_t
 static sf_count_t	replace_write_f	(SF_PRIVATE *psf, const float *ptr, sf_count_t len) ;
 static sf_count_t	replace_write_d2f	(SF_PRIVATE *psf, const double *ptr, sf_count_t len) ;
 
+#ifdef ENABLE_RUST
+RUST_EXTERN	void	bf2f_array (float *buffer, int count) ;
+RUST_EXTERN	void	f2bf_array (float *buffer, int count) ;
+#else
 static	void	bf2f_array (float *buffer, int count) ;
 static	void	f2bf_array (float *buffer, int count) ;
+#endif
 
 static int		float32_get_capability	(SF_PRIVATE *psf) ;
 
@@ -1098,6 +1103,8 @@ replace_write_d2f	(SF_PRIVATE *psf, const double *ptr, sf_count_t len)
 /*----------------------------------------------------------------------------------------------
 */
 
+#ifndef ENABLE_RUST
+
 static void
 bf2f_array (float *buffer, int count)
 {	while (--count >= 0)
@@ -1112,3 +1119,4 @@ f2bf_array (float *buffer, int count)
 		} ;
 } /* f2bf_array */
 
+#endif
