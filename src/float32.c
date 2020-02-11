@@ -74,6 +74,7 @@ RUST_EXTERN sf_count_t	replace_read_f2d	(SF_PRIVATE *psf, double *ptr, sf_count_
 
 RUST_EXTERN sf_count_t	replace_write_s2f	(SF_PRIVATE *psf, const short *ptr, sf_count_t len) ;
 RUST_EXTERN sf_count_t	replace_write_i2f	(SF_PRIVATE *psf, const int *ptr, sf_count_t len) ;
+RUST_EXTERN sf_count_t	replace_write_f	(SF_PRIVATE *psf, const float *ptr, sf_count_t len) ;
 #else
 static sf_count_t	host_read_f2s	(SF_PRIVATE *psf, short *ptr, sf_count_t len) ;
 static sf_count_t	host_read_f2i	(SF_PRIVATE *psf, int *ptr, sf_count_t len) ;
@@ -95,9 +96,10 @@ static sf_count_t	replace_read_f2d	(SF_PRIVATE *psf, double *ptr, sf_count_t len
 
 static sf_count_t	replace_write_s2f	(SF_PRIVATE *psf, const short *ptr, sf_count_t len) ;
 static sf_count_t	replace_write_i2f	(SF_PRIVATE *psf, const int *ptr, sf_count_t len) ;
-#endif
 
 static sf_count_t	replace_write_f	(SF_PRIVATE *psf, const float *ptr, sf_count_t len) ;
+#endif
+
 static sf_count_t	replace_write_d2f	(SF_PRIVATE *psf, const double *ptr, sf_count_t len) ;
 
 #ifdef ENABLE_RUST
@@ -1042,8 +1044,6 @@ replace_write_i2f	(SF_PRIVATE *psf, const int *ptr, sf_count_t len)
 	return total ;
 } /* replace_write_i2f */
 
-#endif
-
 static sf_count_t
 replace_write_f	(SF_PRIVATE *psf, const float *ptr, sf_count_t len)
 {	BUF_UNION	ubuf ;
@@ -1076,6 +1076,8 @@ replace_write_f	(SF_PRIVATE *psf, const float *ptr, sf_count_t len)
 
 	return total ;
 } /* replace_write_f */
+
+#endif
 
 static sf_count_t
 replace_write_d2f	(SF_PRIVATE *psf, const double *ptr, sf_count_t len)
