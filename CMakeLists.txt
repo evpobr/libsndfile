@@ -198,7 +198,8 @@ add_library (sndfile
 	src/pcm.c
 	src/ulaw.c
 	src/alaw.c
-	src/float32.c
+	$<$<BOOL:${WIN32}>:src/windows.c>
+	$<$<NOT:$<BOOL:${ENABLE_RUST}>>:src/float32.c>
 	src/double64.c
 	src/ima_adpcm.c
 	src/ms_adpcm.c

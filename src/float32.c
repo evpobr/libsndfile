@@ -53,30 +53,6 @@ enum
 **	Prototypes for private functions.
 */
 
-#ifdef ENABLE_RUST
-RUST_EXTERN sf_count_t	host_read_f2s	(SF_PRIVATE *psf, short *ptr, sf_count_t len) ;
-RUST_EXTERN sf_count_t	host_read_f2i	(SF_PRIVATE *psf, int *ptr, sf_count_t len) ;
-RUST_EXTERN sf_count_t	host_read_f	(SF_PRIVATE *psf, float *ptr, sf_count_t len) ;
-RUST_EXTERN sf_count_t	host_read_f2d	(SF_PRIVATE *psf, double *ptr, sf_count_t len) ;
-
-RUST_EXTERN sf_count_t	host_write_s2f	(SF_PRIVATE *psf, const short *ptr, sf_count_t len) ;
-RUST_EXTERN sf_count_t	host_write_i2f	(SF_PRIVATE *psf, const int *ptr, sf_count_t len) ;
-
-RUST_EXTERN void		float32_peak_update	(SF_PRIVATE *psf, const float *buffer, int count, sf_count_t indx) ;
-
-RUST_EXTERN sf_count_t	host_write_f	(SF_PRIVATE *psf, const float *ptr, sf_count_t len) ;
-RUST_EXTERN sf_count_t	host_write_d2f	(SF_PRIVATE *psf, const double *ptr, sf_count_t len) ;
-
-RUST_EXTERN sf_count_t	replace_read_f2s	(SF_PRIVATE *psf, short *ptr, sf_count_t len) ;
-RUST_EXTERN sf_count_t	replace_read_f2i	(SF_PRIVATE *psf, int *ptr, sf_count_t len) ;
-RUST_EXTERN sf_count_t	replace_read_f	(SF_PRIVATE *psf, float *ptr, sf_count_t len) ;
-RUST_EXTERN sf_count_t	replace_read_f2d	(SF_PRIVATE *psf, double *ptr, sf_count_t len) ;
-
-RUST_EXTERN sf_count_t	replace_write_s2f	(SF_PRIVATE *psf, const short *ptr, sf_count_t len) ;
-RUST_EXTERN sf_count_t	replace_write_i2f	(SF_PRIVATE *psf, const int *ptr, sf_count_t len) ;
-RUST_EXTERN sf_count_t	replace_write_f	(SF_PRIVATE *psf, const float *ptr, sf_count_t len) ;
-RUST_EXTERN sf_count_t	replace_write_d2f	(SF_PRIVATE *psf, const double *ptr, sf_count_t len) ;
-#else
 static sf_count_t	host_read_f2s	(SF_PRIVATE *psf, short *ptr, sf_count_t len) ;
 static sf_count_t	host_read_f2i	(SF_PRIVATE *psf, int *ptr, sf_count_t len) ;
 static sf_count_t	host_read_f	(SF_PRIVATE *psf, float *ptr, sf_count_t len) ;
@@ -84,11 +60,10 @@ static sf_count_t	host_read_f2d	(SF_PRIVATE *psf, double *ptr, sf_count_t len) ;
 
 static sf_count_t	host_write_s2f	(SF_PRIVATE *psf, const short *ptr, sf_count_t len) ;
 static sf_count_t	host_write_i2f	(SF_PRIVATE *psf, const int *ptr, sf_count_t len) ;
-
-static void		float32_peak_update	(SF_PRIVATE *psf, const float *buffer, int count, sf_count_t indx) ;
-
 static sf_count_t	host_write_f	(SF_PRIVATE *psf, const float *ptr, sf_count_t len) ;
 static sf_count_t	host_write_d2f	(SF_PRIVATE *psf, const double *ptr, sf_count_t len) ;
+
+static void		float32_peak_update	(SF_PRIVATE *psf, const float *buffer, int count, sf_count_t indx) ;
 
 static sf_count_t	replace_read_f2s	(SF_PRIVATE *psf, short *ptr, sf_count_t len) ;
 static sf_count_t	replace_read_f2i	(SF_PRIVATE *psf, int *ptr, sf_count_t len) ;
@@ -97,28 +72,17 @@ static sf_count_t	replace_read_f2d	(SF_PRIVATE *psf, double *ptr, sf_count_t len
 
 static sf_count_t	replace_write_s2f	(SF_PRIVATE *psf, const short *ptr, sf_count_t len) ;
 static sf_count_t	replace_write_i2f	(SF_PRIVATE *psf, const int *ptr, sf_count_t len) ;
-
 static sf_count_t	replace_write_f	(SF_PRIVATE *psf, const float *ptr, sf_count_t len) ;
 static sf_count_t	replace_write_d2f	(SF_PRIVATE *psf, const double *ptr, sf_count_t len) ;
-#endif
 
-#ifdef ENABLE_RUST
-RUST_EXTERN	void	bf2f_array (float *buffer, int count) ;
-RUST_EXTERN	void	f2bf_array (float *buffer, int count) ;
-
-RUST_EXTERN int		float32_get_capability	(SF_PRIVATE *psf) ;
-#else
 static	void	bf2f_array (float *buffer, int count) ;
 static	void	f2bf_array (float *buffer, int count) ;
 
 static int		float32_get_capability	(SF_PRIVATE *psf) ;
-#endif
 
 /*--------------------------------------------------------------------------------------------
 **	Exported functions.
 */
-
-#ifndef ENABLE_RUST
 
 int
 float32_init	(SF_PRIVATE *psf)
@@ -432,9 +396,9 @@ float32_peak_update	(SF_PRIVATE *psf, const float *buffer, int count, sf_count_t
 				position = k ;
 				} ;
 
-		if (fmaxval > psf_peak_info_get_peak_pos (psf, chan)->value)
-		{	psf_peak_info_get_peak_pos (psf, chan)->value = fmaxval ;
-			psf_peak_info_get_peak_pos (psf, chan)->position = psf->write_current + indx + (position / psf->sf.channels) ;
+		if (fmaxval > psf->peak_info->peaks [chan].value)
+		{	psf->peak_info->peaks [chan].value = fmaxval ;
+			psf->peak_info->peaks [chan].position = psf->write_current + indx + (position / psf->sf.channels) ;
 			} ;
 		} ;
 
@@ -467,17 +431,8 @@ float32_get_capability	(SF_PRIVATE *psf)
 	return (CPU_IS_LITTLE_ENDIAN) ? FLOAT_BROKEN_LE : FLOAT_BROKEN_BE ;
 } /* float32_get_capability */
 
-#endif
-
 /*=======================================================================================
 */
-
-#ifdef ENABLE_RUST
-
-RUST_EXTERN void
-f2s_array (const float *src, int count, short *dest, float scale) ;
-
-#else
 
 static void
 f2s_array (const float *src, int count, short *dest, float scale)
@@ -486,15 +441,6 @@ f2s_array (const float *src, int count, short *dest, float scale)
 	{	dest [count] = lrintf (scale * src [count]) ;
 		} ;
 } /* f2s_array */
-
-#endif
-
-#ifdef ENABLE_RUST
-
-RUST_EXTERN void
-f2s_clip_array (const float *src, int count, short *dest, float scale) ;
-
-#else
 
 static void
 f2s_clip_array (const float *src, int count, short *dest, float scale)
@@ -510,30 +456,12 @@ f2s_clip_array (const float *src, int count, short *dest, float scale)
 		} ;
 } /* f2s_clip_array */
 
-#endif
-
-#ifdef ENABLE_RUST
-
-RUST_EXTERN void
-f2i_array (const float *src, int count, int *dest, float scale) ;
-
-#else
-
 static inline void
 f2i_array (const float *src, int count, int *dest, float scale)
 {	while (--count >= 0)
 	{	dest [count] = lrintf (scale * src [count]) ;
 		} ;
 } /* f2i_array */
-
-#endif
-
-#ifdef ENABLE_RUST
-
-RUST_EXTERN void
-f2i_clip_array (const float *src, int count, int *dest, float scale) ;
-
-#else
 
 static inline void
 f2i_clip_array (const float *src, int count, int *dest, float scale)
@@ -549,30 +477,12 @@ f2i_clip_array (const float *src, int count, int *dest, float scale)
 		} ;
 } /* f2i_clip_array */
 
-#endif
-
-#ifdef ENABLE_RUST
-
-RUST_EXTERN void
-f2d_array (const float *src, int count, double *dest) ;
-
-#else
-
 static inline void
 f2d_array (const float *src, int count, double *dest)
 {	while (--count >= 0)
 	{	dest [count] = src [count] ;
 		} ;
 } /* f2d_array */
-
-#endif
-
-#ifdef ENABLE_RUST
-
-RUST_EXTERN void
-s2f_array (const short *src, float *dest, int count, float scale) ;
-
-#else
 
 static inline void
 s2f_array (const short *src, float *dest, int count, float scale)
@@ -581,30 +491,12 @@ s2f_array (const short *src, float *dest, int count, float scale)
 		} ;
 } /* s2f_array */
 
-#endif
-
-#ifdef ENABLE_RUST
-
-RUST_EXTERN void
-i2f_array (const int *src, float *dest, int count, float scale) ;
-
-#else
-
 static inline void
 i2f_array (const int *src, float *dest, int count, float scale)
 {	while (--count >= 0)
 	{	dest [count] = scale * src [count] ;
 		} ;
 } /* i2f_array */
-
-#endif
-
-#ifdef ENABLE_RUST
-
-RUST_EXTERN void
-d2f_array (const double *src, float *dest, int count) ;
-
-#else
 
 static inline void
 d2f_array (const double *src, float *dest, int count)
@@ -613,12 +505,8 @@ d2f_array (const double *src, float *dest, int count)
 		} ;
 } /* d2f_array */
 
-#endif
-
 /*----------------------------------------------------------------------------------------------
 */
-
-#ifndef ENABLE_RUST
 
 static sf_count_t
 host_read_f2s	(SF_PRIVATE *psf, short *ptr, sf_count_t len)
@@ -751,7 +639,7 @@ host_write_s2f	(SF_PRIVATE *psf, const short *ptr, sf_count_t len)
 			bufferlen = (int) len ;
 		s2f_array (ptr + total, ubuf.fbuf, bufferlen, scale) ;
 
-		if (psf_peak_info_exists (psf))
+		if (psf->peak_info)
 			float32_peak_update (psf, ubuf.fbuf, bufferlen, total / psf->sf.channels) ;
 
 		if (psf->data_endswap == SF_TRUE)
@@ -782,7 +670,7 @@ host_write_i2f	(SF_PRIVATE *psf, const int *ptr, sf_count_t len)
 			bufferlen = (int) len ;
 		i2f_array (ptr + total, ubuf.fbuf, bufferlen, scale) ;
 
-		if (psf_peak_info_exists (psf))
+		if (psf->peak_info)
 			float32_peak_update (psf, ubuf.fbuf, bufferlen, total / psf->sf.channels) ;
 
 		if (psf->data_endswap == SF_TRUE)
@@ -804,7 +692,7 @@ host_write_f	(SF_PRIVATE *psf, const float *ptr, sf_count_t len)
 	int			bufferlen, writecount ;
 	sf_count_t	total = 0 ;
 
-	if (psf_peak_info_exists (psf))
+	if (psf->peak_info)
 		float32_peak_update (psf, ptr, len, 0) ;
 
 	if (psf->data_endswap != SF_TRUE)
@@ -842,7 +730,7 @@ host_write_d2f	(SF_PRIVATE *psf, const double *ptr, sf_count_t len)
 
 		d2f_array (ptr + total, ubuf.fbuf, bufferlen) ;
 
-		if (psf_peak_info_exists (psf))
+		if (psf->peak_info)
 			float32_peak_update (psf, ubuf.fbuf, bufferlen, total / psf->sf.channels) ;
 
 		if (psf->data_endswap == SF_TRUE)
@@ -995,7 +883,7 @@ replace_write_s2f	(SF_PRIVATE *psf, const short *ptr, sf_count_t len)
 			bufferlen = (int) len ;
 		s2f_array (ptr + total, ubuf.fbuf, bufferlen, scale) ;
 
-		if (psf_peak_info_exists (psf))
+		if (psf->peak_info)
 			float32_peak_update (psf, ubuf.fbuf, bufferlen, total / psf->sf.channels) ;
 
 		f2bf_array (ubuf.fbuf, bufferlen) ;
@@ -1028,7 +916,7 @@ replace_write_i2f	(SF_PRIVATE *psf, const int *ptr, sf_count_t len)
 			bufferlen = (int) len ;
 		i2f_array (ptr + total, ubuf.fbuf, bufferlen, scale) ;
 
-		if (psf_peak_info_exists (psf))
+		if (psf->peak_info)
 			float32_peak_update (psf, ubuf.fbuf, bufferlen, total / psf->sf.channels) ;
 
 		f2bf_array (ubuf.fbuf, bufferlen) ;
@@ -1053,7 +941,7 @@ replace_write_f	(SF_PRIVATE *psf, const float *ptr, sf_count_t len)
 	sf_count_t	total = 0 ;
 
 	/* FIX THIS */
-	if (psf_peak_info_exists (psf))
+	if (psf->peak_info)
 		float32_peak_update (psf, ptr, len, 0) ;
 
 	bufferlen = ARRAY_LEN (ubuf.fbuf) ;
@@ -1092,7 +980,7 @@ replace_write_d2f	(SF_PRIVATE *psf, const double *ptr, sf_count_t len)
 			bufferlen = (int) len ;
 		d2f_array (ptr + total, ubuf.fbuf, bufferlen) ;
 
-		if (psf_peak_info_exists (psf))
+		if (psf->peak_info)
 			float32_peak_update (psf, ubuf.fbuf, bufferlen, total / psf->sf.channels) ;
 
 		f2bf_array (ubuf.fbuf, bufferlen) ;
@@ -1110,12 +998,8 @@ replace_write_d2f	(SF_PRIVATE *psf, const double *ptr, sf_count_t len)
 	return total ;
 } /* replace_write_d2f */
 
-#endif
-
 /*----------------------------------------------------------------------------------------------
 */
-
-#ifndef ENABLE_RUST
 
 static void
 bf2f_array (float *buffer, int count)
@@ -1131,4 +1015,3 @@ f2bf_array (float *buffer, int count)
 		} ;
 } /* f2bf_array */
 
-#endif
