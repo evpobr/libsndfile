@@ -1,4 +1,5 @@
 use crate::sfendian::*;
+use std::ffi::CString;
 use std::mem;
 use std::slice;
 
@@ -49,6 +50,33 @@ unsafe extern "C" fn float32_be_write(input: f32, output: *mut u8) {
 
     let output = slice::from_raw_parts_mut(output, 4);
     output.clone_from_slice(&input.to_be_bytes());
+}
+
+#[no_mangle]
+unsafe extern "C" fn float32_get_capability(psf: *mut SF_PRIVATE) -> c_int {
+    assert_ne!(psf.is_null(), true);
+
+    let psf = &mut *psf;
+
+    let f = 1.23456789_f32 ; /* Some abitrary value. */
+    let data = f.to_ne_bytes();
+
+	if psf.ieee_replace == SF_FALSE {
+        /* If this test is true ints and floats are compatible and little endian. */
+		if data [0] == 0x52 && data[1] == 0x06 && data [2] == 0x9e && data [3] == 0x3f {
+            return FLOAT_CAN_RW_LE ;
+        }
+
+		/* If this test is true ints and floats are compatible and big endian. */
+		if data [3] == 0x52 && data [2] == 0x06 && data [1] == 0x9e && data [0] == 0x3f {
+			return FLOAT_CAN_RW_BE ;
+        } ;
+    }
+
+	/* Floats are broken. Don't expect reading or writing to be fast. */
+	psf_log_printf (psf, CString::new("Using IEEE replacement code for float.\n").unwrap().as_ptr()) ;
+
+	if cfg!(target_endian = "little") { FLOAT_BROKEN_LE } else { FLOAT_BROKEN_BE }
 }
 
 #[no_mangle]

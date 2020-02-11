@@ -105,12 +105,14 @@ static sf_count_t	replace_write_d2f	(SF_PRIVATE *psf, const double *ptr, sf_coun
 #ifdef ENABLE_RUST
 RUST_EXTERN	void	bf2f_array (float *buffer, int count) ;
 RUST_EXTERN	void	f2bf_array (float *buffer, int count) ;
+
+RUST_EXTERN int		float32_get_capability	(SF_PRIVATE *psf) ;
 #else
 static	void	bf2f_array (float *buffer, int count) ;
 static	void	f2bf_array (float *buffer, int count) ;
-#endif
 
 static int		float32_get_capability	(SF_PRIVATE *psf) ;
+#endif
 
 /*--------------------------------------------------------------------------------------------
 **	Exported functions.
@@ -439,8 +441,6 @@ float32_peak_update	(SF_PRIVATE *psf, const float *buffer, int count, sf_count_t
 	return ;
 } /* float32_peak_update */
 
-#endif
-
 static int
 float32_get_capability	(SF_PRIVATE *psf)
 {	union
@@ -466,6 +466,8 @@ float32_get_capability	(SF_PRIVATE *psf)
 
 	return (CPU_IS_LITTLE_ENDIAN) ? FLOAT_BROKEN_LE : FLOAT_BROKEN_BE ;
 } /* float32_get_capability */
+
+#endif
 
 /*=======================================================================================
 */
