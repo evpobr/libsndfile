@@ -14,6 +14,44 @@ const FLOAT_BROKEN_LE: c_int = 0x34;
 const FLOAT_BROKEN_BE: c_int = 0x45;
 
 #[no_mangle]
+unsafe extern "C" fn float32_be_read(cptr: *mut u8) -> f32 {
+    assert_ne!(cptr.is_null(), true);
+
+    let cptr = slice::from_raw_parts_mut(cptr, 4);
+
+    let mut fbytes = [0; 4];
+    fbytes.clone_from_slice(&cptr[0..4]);
+    f32::from_be_bytes(fbytes)
+}
+
+#[no_mangle]
+unsafe extern "C" fn float32_le_read(cptr: *mut u8) -> f32 {
+    assert_ne!(cptr.is_null(), true);
+
+    let cptr = slice::from_raw_parts_mut(cptr, 4);
+
+    let mut fbytes = [0; 4];
+    fbytes.clone_from_slice(&cptr[0..4]);
+    f32::from_le_bytes(fbytes)
+}
+
+#[no_mangle]
+unsafe extern "C" fn float32_le_write(input: f32, output: *mut u8) {
+    assert_ne!(output.is_null(), true);
+
+    let output = slice::from_raw_parts_mut(output, 4);
+    output.clone_from_slice(&input.to_le_bytes());
+}
+
+#[no_mangle]
+unsafe extern "C" fn float32_be_write(input: f32, output: *mut u8) {
+    assert_ne!(output.is_null(), true);
+
+    let output = slice::from_raw_parts_mut(output, 4);
+    output.clone_from_slice(&input.to_be_bytes());
+}
+
+#[no_mangle]
 unsafe extern "C" fn f2s_array(
     src: *const c_float,
     count: c_int,

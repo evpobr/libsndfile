@@ -268,6 +268,8 @@ float32_init	(SF_PRIVATE *psf)
 	return 0 ;
 } /* float32_init */
 
+#ifndef ENABLE_RUST
+
 float
 float32_be_read (const unsigned char *cptr)
 {	int		exponent, mantissa, negative ;
@@ -397,8 +399,6 @@ float32_be_write (float in, unsigned char *out)
 /*==============================================================================================
 **	Private functions.
 */
-
-#ifndef ENABLE_RUST
 
 static void
 float32_peak_update	(SF_PRIVATE *psf, const float *buffer, int count, sf_count_t indx)
