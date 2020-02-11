@@ -118,6 +118,8 @@ static int		float32_get_capability	(SF_PRIVATE *psf) ;
 **	Exported functions.
 */
 
+#ifndef ENABLE_RUST
+
 int
 float32_init	(SF_PRIVATE *psf)
 {	static int float_caps ;
@@ -284,8 +286,6 @@ float32_init	(SF_PRIVATE *psf)
 
 	return 0 ;
 } /* float32_init */
-
-#ifndef ENABLE_RUST
 
 float
 float32_be_read (const unsigned char *cptr)

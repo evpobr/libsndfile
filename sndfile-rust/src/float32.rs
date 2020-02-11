@@ -15,6 +15,187 @@ const FLOAT_BROKEN_LE: c_int = 0x34;
 const FLOAT_BROKEN_BE: c_int = 0x45;
 
 #[no_mangle]
+unsafe extern "C" fn float32_init(psf: *mut SF_PRIVATE) -> c_int {
+    assert_ne!(psf.is_null(), true);
+
+    let psf = &mut *psf;
+
+    if psf.sf.channels < 1 {
+        psf_log_printf(
+            psf,
+            CString::new("float32_init : internal error : channels = %d\n")
+                .unwrap()
+                .as_ptr(),
+            psf.sf.channels,
+        );
+        return SFE_INTERNAL;
+    };
+
+    let float_caps = float32_get_capability(psf);
+
+    psf.blockwidth = mem::size_of::<c_float>() as c_int * psf.sf.channels;
+
+    if psf.file.mode == SFM_READ || psf.file.mode == SFM_RDWR {
+        match psf.endian + float_caps {
+            x if x == SF_ENDIAN_BIG + FLOAT_CAN_RW_BE => {
+                psf.data_endswap = SF_FALSE;
+                psf.read_short = Some(host_read_f2s);
+                psf.read_int = Some(host_read_f2i);
+                psf.read_float = Some(host_read_f);
+                psf.read_double = Some(host_read_f2d);
+            }
+
+            x if x == SF_ENDIAN_LITTLE + FLOAT_CAN_RW_LE => {
+                psf.data_endswap = SF_FALSE;
+                psf.read_short = Some(host_read_f2s);
+                psf.read_int = Some(host_read_f2i);
+                psf.read_float = Some(host_read_f);
+                psf.read_double = Some(host_read_f2d);
+            }
+
+            x if x == SF_ENDIAN_BIG + FLOAT_CAN_RW_LE => {
+                psf.data_endswap = SF_TRUE;
+                psf.read_short = Some(host_read_f2s);
+                psf.read_int = Some(host_read_f2i);
+                psf.read_float = Some(host_read_f);
+                psf.read_double = Some(host_read_f2d);
+            }
+
+            x if x == SF_ENDIAN_LITTLE + FLOAT_CAN_RW_BE => {
+                psf.data_endswap = SF_TRUE;
+                psf.read_short = Some(host_read_f2s);
+                psf.read_int = Some(host_read_f2i);
+                psf.read_float = Some(host_read_f);
+                psf.read_double = Some(host_read_f2d);
+            }
+
+            /* When the CPU is not IEEE compatible. */
+            x if x == SF_ENDIAN_BIG + FLOAT_BROKEN_LE => {
+                psf.data_endswap = SF_TRUE;
+                psf.read_short = Some(replace_read_f2s);
+                psf.read_int = Some(replace_read_f2i);
+                psf.read_float = Some(replace_read_f);
+                psf.read_double = Some(replace_read_f2d);
+            }
+
+            x if x == SF_ENDIAN_LITTLE + FLOAT_BROKEN_LE => {
+                psf.data_endswap = SF_FALSE;
+                psf.read_short = Some(replace_read_f2s);
+                psf.read_int = Some(replace_read_f2i);
+                psf.read_float = Some(replace_read_f);
+                psf.read_double = Some(replace_read_f2d);
+            }
+
+            x if x == SF_ENDIAN_BIG + FLOAT_BROKEN_BE => {
+                psf.data_endswap = SF_FALSE;
+                psf.read_short = Some(replace_read_f2s);
+                psf.read_int = Some(replace_read_f2i);
+                psf.read_float = Some(replace_read_f);
+                psf.read_double = Some(replace_read_f2d);
+            }
+
+            x if x == SF_ENDIAN_LITTLE + FLOAT_BROKEN_BE => {
+                psf.data_endswap = SF_TRUE;
+                psf.read_short = Some(replace_read_f2s);
+                psf.read_int = Some(replace_read_f2i);
+                psf.read_float = Some(replace_read_f);
+                psf.read_double = Some(replace_read_f2d);
+            }
+            _ => {}
+        }
+    };
+
+    if psf.file.mode == SFM_WRITE || psf.file.mode == SFM_RDWR {
+        match psf.endian + float_caps {
+            x if x == SF_ENDIAN_LITTLE + FLOAT_CAN_RW_LE => {
+                psf.data_endswap = SF_FALSE;
+                psf.write_short = Some(host_write_s2f);
+                psf.write_int = Some(host_write_i2f);
+                psf.write_float = Some(host_write_f);
+                psf.write_double = Some(host_write_d2f);
+            }
+
+            x if x == SF_ENDIAN_BIG + FLOAT_CAN_RW_BE => {
+                psf.data_endswap = SF_FALSE;
+                psf.write_short = Some(host_write_s2f);
+                psf.write_int = Some(host_write_i2f);
+                psf.write_float = Some(host_write_f);
+                psf.write_double = Some(host_write_d2f);
+            }
+
+            x if x == SF_ENDIAN_BIG + FLOAT_CAN_RW_LE => {
+                psf.data_endswap = SF_TRUE;
+                psf.write_short = Some(host_write_s2f);
+                psf.write_int = Some(host_write_i2f);
+                psf.write_float = Some(host_write_f);
+                psf.write_double = Some(host_write_d2f);
+            }
+
+            x if x == SF_ENDIAN_LITTLE + FLOAT_CAN_RW_BE => {
+                psf.data_endswap = SF_TRUE;
+                psf.write_short = Some(host_write_s2f);
+                psf.write_int = Some(host_write_i2f);
+                psf.write_float = Some(host_write_f);
+                psf.write_double = Some(host_write_d2f);
+            }
+
+            /* When the CPU is not IEEE compatible. */
+            x if x == SF_ENDIAN_BIG + FLOAT_BROKEN_LE => {
+                psf.data_endswap = SF_TRUE;
+                psf.write_short = Some(replace_write_s2f);
+                psf.write_int = Some(replace_write_i2f);
+                psf.write_float = Some(replace_write_f);
+                psf.write_double = Some(replace_write_d2f);
+            }
+
+            x if x == SF_ENDIAN_LITTLE + FLOAT_BROKEN_LE => {
+                psf.data_endswap = SF_FALSE;
+                psf.write_short = Some(replace_write_s2f);
+                psf.write_int = Some(replace_write_i2f);
+                psf.write_float = Some(replace_write_f);
+                psf.write_double = Some(replace_write_d2f);
+            }
+
+            x if x == SF_ENDIAN_BIG + FLOAT_BROKEN_BE => {
+                psf.data_endswap = SF_FALSE;
+                psf.write_short = Some(replace_write_s2f);
+                psf.write_int = Some(replace_write_i2f);
+                psf.write_float = Some(replace_write_f);
+                psf.write_double = Some(replace_write_d2f);
+            }
+
+            x if x == SF_ENDIAN_LITTLE + FLOAT_BROKEN_BE => {
+                psf.data_endswap = SF_TRUE;
+                psf.write_short = Some(replace_write_s2f);
+                psf.write_int = Some(replace_write_i2f);
+                psf.write_float = Some(replace_write_f);
+                psf.write_double = Some(replace_write_d2f);
+            }
+
+            _ => {}
+        }
+    };
+
+    psf.datalength = if psf.filelength > psf.dataoffset {
+        if psf.dataend > 0 {
+            psf.dataend - psf.dataoffset
+        } else {
+            psf.filelength - psf.dataoffset
+        }
+    } else {
+        0
+    };
+
+    psf.sf.frames = if psf.blockwidth > 0 {
+        psf.datalength / psf.blockwidth as sf_count_t
+    } else {
+        0
+    };
+
+    return 0;
+}
+
+#[no_mangle]
 unsafe extern "C" fn float32_be_read(cptr: *mut u8) -> f32 {
     assert_ne!(cptr.is_null(), true);
 
@@ -58,25 +239,34 @@ unsafe extern "C" fn float32_get_capability(psf: *mut SF_PRIVATE) -> c_int {
 
     let psf = &mut *psf;
 
-    let f = 1.23456789_f32 ; /* Some abitrary value. */
+    let f = 1.23456789_f32; /* Some abitrary value. */
     let data = f.to_ne_bytes();
 
-	if psf.ieee_replace == SF_FALSE {
+    if psf.ieee_replace == SF_FALSE {
         /* If this test is true ints and floats are compatible and little endian. */
-		if data [0] == 0x52 && data[1] == 0x06 && data [2] == 0x9e && data [3] == 0x3f {
-            return FLOAT_CAN_RW_LE ;
+        if data[0] == 0x52 && data[1] == 0x06 && data[2] == 0x9e && data[3] == 0x3f {
+            return FLOAT_CAN_RW_LE;
         }
 
-		/* If this test is true ints and floats are compatible and big endian. */
-		if data [3] == 0x52 && data [2] == 0x06 && data [1] == 0x9e && data [0] == 0x3f {
-			return FLOAT_CAN_RW_BE ;
-        } ;
+        /* If this test is true ints and floats are compatible and big endian. */
+        if data[3] == 0x52 && data[2] == 0x06 && data[1] == 0x9e && data[0] == 0x3f {
+            return FLOAT_CAN_RW_BE;
+        };
     }
 
-	/* Floats are broken. Don't expect reading or writing to be fast. */
-	psf_log_printf (psf, CString::new("Using IEEE replacement code for float.\n").unwrap().as_ptr()) ;
+    /* Floats are broken. Don't expect reading or writing to be fast. */
+    psf_log_printf(
+        psf,
+        CString::new("Using IEEE replacement code for float.\n")
+            .unwrap()
+            .as_ptr(),
+    );
 
-	if cfg!(target_endian = "little") { FLOAT_BROKEN_LE } else { FLOAT_BROKEN_BE }
+    if cfg!(target_endian = "little") {
+        FLOAT_BROKEN_LE
+    } else {
+        FLOAT_BROKEN_BE
+    }
 }
 
 #[no_mangle]

@@ -438,28 +438,28 @@ pub struct sf_private_tag {
     /* A set of file specific function pointers */
     pub read_short: Option<
         unsafe extern "C" fn(
-            psf: &mut sf_private_tag,
+            psf: *mut sf_private_tag,
             ptr: *mut c_short,
             len: sf_count_t,
         ) -> sf_count_t,
     >,
     pub read_int: Option<
         unsafe extern "C" fn(
-            psf: &mut sf_private_tag,
+            psf: *mut sf_private_tag,
             ptr: *mut c_int,
             len: sf_count_t,
         ) -> sf_count_t,
     >,
     pub read_float: Option<
         unsafe extern "C" fn(
-            psf: &mut sf_private_tag,
+            psf: *mut sf_private_tag,
             ptr: *mut c_float,
             len: sf_count_t,
         ) -> sf_count_t,
     >,
     pub read_double: Option<
         unsafe extern "C" fn(
-            psf: &mut sf_private_tag,
+            psf: *mut sf_private_tag,
             ptr: *mut c_double,
             len: sf_count_t,
         ) -> sf_count_t,
@@ -467,28 +467,28 @@ pub struct sf_private_tag {
 
     pub write_short: Option<
         unsafe extern "C" fn(
-            psf: &mut sf_private_tag,
+            psf: *mut sf_private_tag,
             ptr: *const c_short,
             len: sf_count_t,
         ) -> sf_count_t,
     >,
     pub write_int: Option<
         unsafe extern "C" fn(
-            psf: &mut sf_private_tag,
+            psf: *mut sf_private_tag,
             ptr: *const c_int,
             len: sf_count_t,
         ) -> sf_count_t,
     >,
     pub write_float: Option<
         unsafe extern "C" fn(
-            psf: &mut sf_private_tag,
+            psf: *mut sf_private_tag,
             ptr: *const c_float,
             len: sf_count_t,
         ) -> sf_count_t,
     >,
     pub write_double: Option<
         unsafe extern "C" fn(
-            psf: &mut sf_private_tag,
+            psf: *mut sf_private_tag,
             ptr: *const c_double,
             len: sf_count_t,
         ) -> sf_count_t,
@@ -496,7 +496,7 @@ pub struct sf_private_tag {
 
     pub seek: Option<
         unsafe extern "C" fn(
-            psf: &mut sf_private_tag,
+            psf: *mut sf_private_tag,
             mode: c_int,
             samples_from_start: sf_count_t,
         ) -> sf_count_t,
