@@ -863,6 +863,54 @@ unsafe extern "C" fn replace_read_f2i(
 }
 
 #[no_mangle]
+unsafe extern "C" fn replace_read_f(
+    psf: *mut SF_PRIVATE,
+    ptr: *mut c_float,
+    len: sf_count_t,
+) -> sf_count_t {
+    assert!(len >= 0);
+    assert_ne!(ptr.is_null(), true);
+    assert_ne!(psf.is_null(), true);
+
+    let mut len = len as usize;
+    let ptr = slice::from_raw_parts_mut(ptr, len);
+    let psf = &mut *psf;
+
+    let mut ubuf = BUF_UNION {
+        fbuf: [0.0; SF_BUFFER_LEN / mem::size_of::<c_float>()],
+    };
+    let mut bufferlen = ubuf.fbuf.len();
+    let mut total = 0;
+
+    while len > 0 {
+        if len < bufferlen {
+            bufferlen = len;
+        }
+        let readcount = psf_fread(
+            ubuf.fbuf.as_mut_ptr() as *mut c_void,
+            mem::size_of::<c_float>() as sf_count_t,
+            bufferlen as sf_count_t,
+            psf,
+        ) as usize;
+
+        if psf.data_endswap == SF_TRUE {
+            endswap_int_array(ubuf.ibuf.as_mut_ptr(), bufferlen as c_int);
+        }
+
+        bf2f_array(ubuf.fbuf.as_mut_ptr(), bufferlen as c_int);
+        ptr[total..total + readcount].clone_from_slice(&ubuf.fbuf[0..readcount]);
+
+        total += readcount;
+        if readcount < bufferlen {
+            break;
+        }
+        len -= readcount;
+    }
+
+    return total as sf_count_t;
+}
+
+#[no_mangle]
 unsafe extern "C" fn bf2f_array(buffer: *mut c_float, count: c_int) {
     assert!(count >= 0);
     assert_ne!(buffer.is_null(), true);
