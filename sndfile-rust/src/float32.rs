@@ -978,7 +978,7 @@ unsafe extern "C" fn replace_read_f2s(
             endswap_int_array(ubuf.ibuf.as_mut_ptr(), bufferlen as c_int);
         }
 
-        bf2f_array(ubuf.fbuf.as_mut_ptr(), bufferlen as c_int);
+        bf2f_array(&mut ubuf.fbuf[..bufferlen]);
 
         f2s_array(
             &ubuf.fbuf[..readcount],
@@ -1035,7 +1035,7 @@ unsafe extern "C" fn replace_read_f2i(
             endswap_int_array(ubuf.ibuf.as_mut_ptr(), bufferlen as c_int);
         }
 
-        bf2f_array(ubuf.fbuf.as_mut_ptr(), bufferlen as c_int);
+        bf2f_array(&mut ubuf.fbuf[..bufferlen]);
 
         f2i_array(
             ubuf.fbuf.as_mut_ptr(),
@@ -1088,7 +1088,7 @@ unsafe extern "C" fn replace_read_f(
             endswap_int_array(ubuf.ibuf.as_mut_ptr(), bufferlen as c_int);
         }
 
-        bf2f_array(ubuf.fbuf.as_mut_ptr(), bufferlen as c_int);
+        bf2f_array(&mut ubuf.fbuf[..bufferlen]);
         ptr[total..total + readcount].clone_from_slice(&ubuf.fbuf[0..readcount]);
 
         total += readcount;
@@ -1136,7 +1136,7 @@ unsafe extern "C" fn replace_read_f2d(
             endswap_int_array(ubuf.ibuf.as_mut_ptr(), bufferlen as c_int);
         }
 
-        bf2f_array(ubuf.fbuf.as_mut_ptr(), bufferlen as c_int);
+        bf2f_array(&mut ubuf.fbuf[..bufferlen]);
 
         f2d_array(
             ubuf.fbuf.as_mut_ptr(),
@@ -1200,7 +1200,7 @@ unsafe extern "C" fn replace_write_s2f(
             );
         }
 
-        f2bf_array(ubuf.fbuf.as_mut_ptr(), bufferlen as c_int);
+        f2bf_array(&mut ubuf.fbuf[..bufferlen]);
 
         if psf.data_endswap == SF_TRUE {
             endswap_int_array(ubuf.ibuf.as_mut_ptr(), bufferlen as c_int);
@@ -1269,7 +1269,7 @@ unsafe extern "C" fn replace_write_i2f(
             );
         }
 
-        f2bf_array(ubuf.fbuf.as_mut_ptr(), bufferlen as c_int);
+        f2bf_array(&mut ubuf.fbuf[..bufferlen]);
 
         if psf.data_endswap == SF_TRUE {
             endswap_int_array(ubuf.ibuf.as_mut_ptr(), bufferlen as c_int);
@@ -1323,7 +1323,7 @@ unsafe extern "C" fn replace_write_f(
 
         ubuf.fbuf[..bufferlen].clone_from_slice(&ptr[total..total + bufferlen]);
 
-        f2bf_array(ubuf.fbuf.as_mut_ptr(), bufferlen as c_int);
+        f2bf_array(&mut ubuf.fbuf[..bufferlen]);
 
         if psf.data_endswap == SF_TRUE {
             endswap_int_array(ubuf.ibuf.as_mut_ptr(), bufferlen as c_int);
@@ -1384,7 +1384,7 @@ unsafe extern "C" fn replace_write_d2f(
             );
         }
 
-        f2bf_array(ubuf.fbuf.as_mut_ptr(), bufferlen as c_int);
+        f2bf_array(&mut ubuf.fbuf[..bufferlen]);
 
         if psf.data_endswap == SF_TRUE {
             endswap_int_array(ubuf.ibuf.as_mut_ptr(), bufferlen as c_int);
@@ -1406,13 +1406,7 @@ unsafe extern "C" fn replace_write_d2f(
     return total as sf_count_t;
 }
 
-#[no_mangle]
-unsafe extern "C" fn bf2f_array(buffer: *mut c_float, count: c_int) {
-    assert!(count >= 0);
-    assert_ne!(buffer.is_null(), true);
-
-    let count = count as usize;
-    let buffer = slice::from_raw_parts_mut(buffer, count);
+fn bf2f_array(buffer: &mut [f32]) {
     for f in buffer {
         if cfg!(target_endian = "little") {
             *f = f32::from_ne_bytes(f.to_le_bytes());
@@ -1422,13 +1416,7 @@ unsafe extern "C" fn bf2f_array(buffer: *mut c_float, count: c_int) {
     }
 }
 
-#[no_mangle]
-unsafe extern "C" fn f2bf_array(buffer: *mut c_float, count: c_int) {
-    assert!(count >= 0);
-    assert_ne!(buffer.is_null(), true);
-
-    let count = count as usize;
-    let buffer = slice::from_raw_parts_mut(buffer, count);
+fn f2bf_array(buffer: &mut [f32]) {
     for f in buffer {
         if cfg!(target_endian = "little") {
             *f = f32::from_ne_bytes(f.to_le_bytes());
