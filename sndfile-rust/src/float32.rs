@@ -290,48 +290,23 @@ fn f2s_clip_array(src: &[f32], dest: &mut [i16], scale: f32) {
     });
 }
 
-#[no_mangle]
-unsafe extern "C" fn f2i_array(
-    src: *const c_float,
-    count: c_int,
-    dest: *mut c_int,
-    scale: c_float,
-) {
-    assert_ne!(src.is_null(), true);
-    assert_ne!(dest.is_null(), true);
-    assert!(count >= 0);
-
-    let count = count as usize;
-    let src = slice::from_raw_parts(src, count);
-    let dest = slice::from_raw_parts_mut(dest, count);
+fn f2i_array(src: &[f32], dest: &mut [i32], scale: f32) {
+    assert_eq!(src.len(), dest.len());
 
     dest.iter_mut()
-        .zip(src.iter().map(|s| (scale * (*s)).round() as c_int))
-        .take(count)
+        .zip(src.iter().map(|s| (scale * (*s)).round() as i32))
         .for_each(|(d, s)| *d = s);
 }
 
-#[no_mangle]
-unsafe extern "C" fn f2i_clip_array(
-    src: *const c_float,
-    count: c_int,
-    dest: *mut c_int,
-    scale: c_float,
-) {
-    assert_ne!(src.is_null(), true);
-    assert_ne!(dest.is_null(), true);
-    assert!(count >= 0);
-
-    let count = count as usize;
-    let src = slice::from_raw_parts(src, count);
-    let dest = slice::from_raw_parts_mut(dest, count);
+fn f2i_clip_array(src: &[f32], dest: &mut [i32], scale: f32) {
+    assert_eq!(src.len(), dest.len());
 
     dest.iter_mut().zip(src.iter()).for_each(|(d, s)| {
         let tmp = scale * (*s);
 
-        if !cfg!(cpu_clips_positive) && tmp > 1.0 * std::i32::MAX as c_float {
+        if !cfg!(cpu_clips_positive) && tmp > 1.0 * std::i32::MAX as f32 {
             *d = std::i32::MAX;
-        } else if !cfg!(cpu_clips_negative) && tmp < 1.0 * std::i32::MIN as c_float {
+        } else if !cfg!(cpu_clips_negative) && tmp < 1.0 * std::i32::MIN as f32 {
             *d = std::i32::MIN;
         } else {
             *d = tmp.round() as i32;
@@ -339,75 +314,35 @@ unsafe extern "C" fn f2i_clip_array(
     });
 }
 
-#[no_mangle]
-unsafe extern "C" fn f2d_array(src: *const c_float, count: c_int, dest: *mut c_double) {
-    assert_ne!(src.is_null(), true);
-    assert_ne!(dest.is_null(), true);
-    assert!(count >= 0);
-
-    let count = count as usize;
-    let src = slice::from_raw_parts(src, count);
-    let dest = slice::from_raw_parts_mut(dest, count);
+fn f2d_array(src: &[f32], dest: &mut [f64]) {
+    assert_eq!(src.len(), dest.len());
 
     dest.iter_mut()
-        .zip(src.iter().map(|s| *s as c_double))
+        .zip(src.iter().map(|s| *s as f64))
         .for_each(|(d, s)| *d = s);
 }
 
-#[no_mangle]
-unsafe extern "C" fn s2f_array(
-    src: *const c_short,
-    dest: *mut c_float,
-    count: c_int,
-    scale: c_float,
-) {
-    assert_ne!(src.is_null(), true);
-    assert_ne!(dest.is_null(), true);
-    assert!(count >= 0);
-
-    let count = count as usize;
-    let src = slice::from_raw_parts(src, count);
-    let dest = slice::from_raw_parts_mut(dest, count);
+fn s2f_array(src: &[i16], dest: &mut [f32], scale: f32) {
+    assert_eq!(src.len(), dest.len());
 
     dest.iter_mut()
-        .zip(src.iter().map(|s| scale * ((*s) as c_float)))
+        .zip(src.iter().map(|s| scale * ((*s) as f32)))
         .for_each(|(d, s)| *d = s);
 }
 
-#[no_mangle]
-unsafe extern "C" fn i2f_array(
-    src: *const c_int,
-    dest: *mut c_float,
-    count: c_int,
-    scale: c_float,
-) {
-    assert_ne!(src.is_null(), true);
-    assert_ne!(dest.is_null(), true);
-    assert!(count >= 0);
-
-    let count = count as usize;
-    let src = slice::from_raw_parts(src, count);
-    let dest = slice::from_raw_parts_mut(dest, count);
+fn i2f_array(src: &[i32], dest: &mut [f32], scale: f32) {
+    assert_eq!(src.len(), dest.len());
 
     dest.iter_mut()
-        .zip(src.iter().map(|s| scale * (*s) as c_float))
-        .take(count)
+        .zip(src.iter().map(|s| scale * (*s) as f32))
         .for_each(|(d, s)| *d = s);
 }
 
-#[no_mangle]
-unsafe extern "C" fn d2f_array(src: *const c_double, dest: *mut c_float, count: c_int) {
-    assert_ne!(src.is_null(), true);
-    assert_ne!(dest.is_null(), true);
-    assert!(count >= 0);
-
-    let count = count as usize;
-    let src = slice::from_raw_parts(src, count);
-    let dest = slice::from_raw_parts_mut(dest, count);
+fn d2f_array(src: &[f64], dest: &mut [f32]) {
+    assert_eq!(src.len(), dest.len());
 
     dest.iter_mut()
-        .zip(src.iter().map(|s| *s as c_float))
-        .take(count)
+        .zip(src.iter().map(|s| *s as f32))
         .for_each(|(d, s)| *d = s);
 }
 
@@ -510,12 +445,7 @@ unsafe extern "C" fn host_read_f2i(
             endswap_float_array(&mut buf[..readcount]);
         }
 
-        convert(
-            buf.as_ptr(),
-            readcount as c_int,
-            ptr[total..].as_mut_ptr(),
-            scale,
-        );
+        convert(&buf[..readcount], &mut ptr[total..total + readcount], scale);
         total += readcount;
         if readcount < bufferlen {
             break;
@@ -588,13 +518,14 @@ unsafe extern "C" fn host_read_f2d(
     assert!(len >= 0);
 
     let mut len = len as usize;
+    let ptr = slice::from_raw_parts_mut(ptr, len);
     let psf = &mut *psf;
 
     let mut buf = [0.0; SF_BUFFER_LEN / mem::size_of::<f32>()];
 
     let mut bufferlen = buf.len();
 
-    let mut total: sf_count_t = 0;
+    let mut total = 0;
     while len > 0 {
         if len < bufferlen {
             bufferlen = len;
@@ -604,22 +535,22 @@ unsafe extern "C" fn host_read_f2d(
             mem::size_of::<c_float>() as sf_count_t,
             bufferlen as sf_count_t,
             psf,
-        );
+        ) as usize;
 
         if psf.data_endswap == SF_TRUE {
             endswap_float_array(&mut buf[..bufferlen]);
         }
 
         /* Fix me : Need lef2d_array */
-        f2d_array(buf.as_ptr(), readcount as c_int, ptr.offset(total as isize));
+        f2d_array(&buf[..readcount], &mut ptr[total..total + readcount]);
         total += readcount;
-        if readcount < bufferlen as sf_count_t {
+        if readcount < bufferlen {
             break;
         }
         len -= readcount as usize;
     }
 
-    return total;
+    return total as sf_count_t;
 }
 
 #[no_mangle]
@@ -650,12 +581,7 @@ unsafe extern "C" fn host_write_s2f(
         if len < bufferlen {
             bufferlen = len;
         }
-        s2f_array(
-            ptr[total..].as_ptr(),
-            buf.as_mut_ptr(),
-            bufferlen as c_int,
-            scale,
-        );
+        s2f_array(&ptr[total..total + bufferlen], &mut buf[..bufferlen], scale);
 
         if psf_peak_info_exists(psf) != 0 {
             float32_peak_update(
@@ -714,12 +640,7 @@ unsafe extern "C" fn host_write_i2f(
         if len < bufferlen {
             bufferlen = len;
         }
-        i2f_array(
-            ptr[total..].as_ptr(),
-            buf.as_mut_ptr(),
-            bufferlen as c_int,
-            scale,
-        );
+        i2f_array(&ptr[total..total + bufferlen], &mut buf[..bufferlen], scale);
 
         if psf_peak_info_exists(psf) != 0 {
             float32_peak_update(
@@ -869,11 +790,7 @@ unsafe extern "C" fn host_write_d2f(
             bufferlen = len;
         }
 
-        d2f_array(
-            ptr.as_ptr().add(total),
-            buf.as_mut_ptr(),
-            bufferlen as c_int,
-        );
+        d2f_array(&ptr[total..total + bufferlen], &mut buf[..bufferlen]);
 
         if psf_peak_info_exists(psf) != 0 {
             float32_peak_update(
@@ -995,12 +912,7 @@ unsafe extern "C" fn replace_read_f2i(
 
         bf2f_array(&mut buf[..bufferlen]);
 
-        f2i_array(
-            buf.as_mut_ptr(),
-            readcount as c_int,
-            ptr[total..].as_mut_ptr(),
-            scale,
-        );
+        f2i_array(&buf[..readcount], &mut ptr[total..total + readcount], scale);
         total += readcount;
         if (readcount as usize) < bufferlen {
             break;
@@ -1092,11 +1004,7 @@ unsafe extern "C" fn replace_read_f2d(
 
         bf2f_array(&mut buf[..bufferlen]);
 
-        f2d_array(
-            buf.as_mut_ptr(),
-            readcount as c_int,
-            ptr[total..].as_mut_ptr(),
-        );
+        f2d_array(&buf[..readcount], &mut ptr[total..total + readcount]);
         total += readcount;
         if readcount < bufferlen {
             break;
@@ -1136,12 +1044,7 @@ unsafe extern "C" fn replace_write_s2f(
         if len < bufferlen {
             bufferlen = len;
         }
-        s2f_array(
-            ptr[total..].as_ptr(),
-            buf.as_mut_ptr(),
-            bufferlen as c_int,
-            scale,
-        );
+        s2f_array(&ptr[total..], &mut buf[..bufferlen], scale);
 
         if psf_peak_info_exists(psf) != 0 {
             float32_peak_update(
@@ -1203,12 +1106,7 @@ unsafe extern "C" fn replace_write_i2f(
         if len < bufferlen {
             bufferlen = len;
         }
-        i2f_array(
-            ptr[total..].as_ptr(),
-            buf.as_mut_ptr(),
-            bufferlen as c_int,
-            scale,
-        );
+        i2f_array(&ptr[total..total + bufferlen], &mut buf[..bufferlen], scale);
 
         if psf_peak_info_exists(psf) != 0 {
             float32_peak_update(
@@ -1315,7 +1213,7 @@ unsafe extern "C" fn replace_write_d2f(
         if len < bufferlen {
             bufferlen = len;
         }
-        d2f_array(ptr[total..].as_ptr(), buf.as_mut_ptr(), bufferlen as c_int);
+        d2f_array(&ptr[total..total + bufferlen], &mut buf[..bufferlen]);
 
         if psf_peak_info_exists(psf) != 0 {
             float32_peak_update(
