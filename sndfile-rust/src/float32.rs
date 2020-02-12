@@ -233,12 +233,7 @@ unsafe extern "C" fn float32_be_write(input: f32, output: *mut u8) {
     output.clone_from_slice(&input.to_be_bytes());
 }
 
-#[no_mangle]
-unsafe extern "C" fn float32_get_capability(psf: *mut SF_PRIVATE) -> c_int {
-    assert_ne!(psf.is_null(), true);
-
-    let psf = &mut *psf;
-
+fn float32_get_capability(psf: &mut SF_PRIVATE) -> c_int {
     let f = 1.23456789_f32; /* Some abitrary value. */
     let data = f.to_ne_bytes();
 
@@ -255,12 +250,14 @@ unsafe extern "C" fn float32_get_capability(psf: *mut SF_PRIVATE) -> c_int {
     }
 
     /* Floats are broken. Don't expect reading or writing to be fast. */
-    psf_log_printf(
-        psf,
-        CString::new("Using IEEE replacement code for float.\n")
-            .unwrap()
-            .as_ptr(),
-    );
+    unsafe {
+        psf_log_printf(
+            psf,
+            CString::new("Using IEEE replacement code for float.\n")
+                .unwrap()
+                .as_ptr(),
+        );
+    }
 
     if cfg!(target_endian = "little") {
         FLOAT_BROKEN_LE
