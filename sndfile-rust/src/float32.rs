@@ -269,41 +269,16 @@ unsafe extern "C" fn float32_get_capability(psf: *mut SF_PRIVATE) -> c_int {
     }
 }
 
-#[no_mangle]
-unsafe extern "C" fn f2s_array(
-    src: *const c_float,
-    count: c_int,
-    dest: *mut c_short,
-    scale: c_float,
-) {
-    assert_ne!(src.is_null(), true);
-    assert_ne!(dest.is_null(), true);
-    assert!(count >= 0);
-
-    let count = count as usize;
-    let src = slice::from_raw_parts(src, count);
-    let dest = slice::from_raw_parts_mut(dest, count);
+fn f2s_array(src: &[f32], dest: &mut [i16], scale: f32) {
+    assert_eq!(src.len(), dest.len());
 
     dest.iter_mut()
-        .zip(src.iter().map(|s| (scale * (*s)).round() as c_short))
-        .take(count)
+        .zip(src.iter().map(|s| (scale * (*s)).round() as i16))
         .for_each(|(d, s)| *d = s);
 }
 
-#[no_mangle]
-unsafe extern "C" fn f2s_clip_array(
-    src: *const c_float,
-    count: c_int,
-    dest: *mut c_short,
-    scale: c_float,
-) {
-    assert_ne!(src.is_null(), true);
-    assert_ne!(dest.is_null(), true);
-    assert!(count >= 0);
-
-    let count = count as usize;
-    let src = slice::from_raw_parts(src, count);
-    let dest = slice::from_raw_parts_mut(dest, count);
+fn f2s_clip_array(src: &[f32], dest: &mut [i16], scale: f32) {
+    assert_eq!(src.len(), dest.len());
 
     dest.iter_mut().zip(src.iter()).for_each(|(d, s)| {
         let tmp = scale * (*s);
@@ -468,7 +443,7 @@ unsafe extern "C" fn host_read_f2s(
         0x7FFF as c_float / psf.float_max
     };
 
-    let mut total: sf_count_t = 0;
+    let mut total = 0;
     while len > 0 {
         if len < bufferlen {
             bufferlen = len;
@@ -478,7 +453,7 @@ unsafe extern "C" fn host_read_f2s(
             mem::size_of::<c_float>() as sf_count_t,
             bufferlen as sf_count_t,
             psf,
-        );
+        ) as usize;
 
         /* Fix me : Need lef2s_array */
         if psf.data_endswap == SF_TRUE {
@@ -486,19 +461,18 @@ unsafe extern "C" fn host_read_f2s(
         }
 
         convert(
-            ubuf.fbuf.as_ptr(),
-            readcount as c_int,
-            ptr[total as usize..].as_mut_ptr(),
+            &ubuf.fbuf[..readcount],
+            &mut ptr[total..total + readcount],
             scale,
         );
         total += readcount;
-        if readcount < bufferlen as sf_count_t {
+        if readcount < bufferlen {
             break;
         }
-        len -= readcount as usize;
+        len -= readcount;
     }
 
-    return total;
+    return total as sf_count_t;
 }
 
 #[no_mangle]
@@ -1007,9 +981,8 @@ unsafe extern "C" fn replace_read_f2s(
         bf2f_array(ubuf.fbuf.as_mut_ptr(), bufferlen as c_int);
 
         f2s_array(
-            ubuf.fbuf.as_mut_ptr(),
-            readcount as c_int,
-            ptr[total..].as_mut_ptr(),
+            &ubuf.fbuf[..readcount],
+            &mut ptr[total..total + readcount],
             scale,
         );
         total += readcount;
