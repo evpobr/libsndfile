@@ -457,7 +457,7 @@ typedef struct sf_private_tag
 	SF_INFO			sf ;
 
 	int				have_written ;	/* Has a single write been done to the file? */
-	PEAK_INFO		*_peak_info ;
+	PEAK_INFO		*peak_info ;
 
 	/* Cue Marker Info */
 	SF_CUES		*cues ;
