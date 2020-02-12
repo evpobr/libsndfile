@@ -280,31 +280,6 @@ psf_get_be16 (uint8_t *ptr, int offset)
 ** Generic functions for performing endian swapping on integer arrays.
 */
 
-#ifdef ENABLE_RUST
-
-extern void
-endswap_short_array (short *ptr, int len) ;
-extern void
-endswap_short_copy (short *dest, const short *src, int len) ;
-extern void
-endswap_int_array (int *ptr, int len) ;
-extern void
-endswap_int_copy (int *dest, const int *src, int len) ;
-extern void
-endswap_int64_t_array (int64_t *ptr, int len) ;
-extern void
-endswap_int64_t_copy (int64_t *dest, const int64_t *src, int len) ;
-extern void
-endswap_float_array (float *ptr, int len) ;
-extern void
-endswap_double_array (double *ptr, int len) ;
-extern void
-endswap_float_copy (float *dest, const float *src, int len) ;
-extern void
-endswap_double_copy (double *dest, const double *src, int len) ;
-
-#else
-
 static inline void
 endswap_short_array (short *ptr, int len)
 {	short	temp ;
@@ -385,8 +360,6 @@ static inline void
 endswap_double_copy (double *dest, const double *src, int len)
 {	endswap_int64_t_copy ((int64_t *) dest, (const int64_t *) src, len) ;
 } /* endswap_double_copy */
-
-#endif
 
 #endif /* SFENDIAN_INCLUDED */
 

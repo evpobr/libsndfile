@@ -457,7 +457,7 @@ unsafe extern "C" fn host_read_f2s(
 
         /* Fix me : Need lef2s_array */
         if psf.data_endswap == SF_TRUE {
-            endswap_int_array(ubuf.ibuf.as_mut_ptr(), readcount as c_int);
+            endswap_int_array(&mut ubuf.ibuf[..readcount]);
         }
 
         convert(
@@ -504,7 +504,7 @@ unsafe extern "C" fn host_read_f2i(
         0x7FFFFFFF as c_float / psf.float_max
     };
 
-    let mut total: sf_count_t = 0;
+    let mut total = 0;
     while len > 0 {
         if len < bufferlen {
             bufferlen = len;
@@ -514,11 +514,11 @@ unsafe extern "C" fn host_read_f2i(
             mem::size_of::<c_int>() as sf_count_t,
             bufferlen as sf_count_t,
             psf,
-        );
+        ) as usize;
 
         /* Fix me : Need lef2s_array */
         if psf.data_endswap == SF_TRUE {
-            endswap_int_array(ubuf.ibuf.as_mut_ptr(), readcount as c_int);
+            endswap_int_array(&mut ubuf.ibuf[..readcount]);
         }
 
         convert(
@@ -528,13 +528,13 @@ unsafe extern "C" fn host_read_f2i(
             scale,
         );
         total += readcount;
-        if readcount < bufferlen as sf_count_t {
+        if readcount < bufferlen {
             break;
         }
-        len -= readcount as usize;
+        len -= readcount;
     }
 
-    return total;
+    return total as sf_count_t;
 }
 
 #[no_mangle]
@@ -548,6 +548,7 @@ unsafe extern "C" fn host_read_f(
     assert!(len >= 0);
 
     let mut len = len as usize;
+    let ptr = slice::from_raw_parts_mut(ptr, len);
     let psf = &mut *psf;
 
     let mut ubuf = BUF_UNION {
@@ -556,7 +557,7 @@ unsafe extern "C" fn host_read_f(
 
     if psf.data_endswap != SF_TRUE {
         return psf_fread(
-            ptr as *mut c_void,
+            ptr.as_mut_ptr() as *mut c_void,
             mem::size_of::<c_float>() as sf_count_t,
             len as sf_count_t,
             psf,
@@ -565,7 +566,7 @@ unsafe extern "C" fn host_read_f(
 
     let mut bufferlen = ubuf.fbuf.len();
 
-    let mut total: sf_count_t = 0;
+    let mut total = 0;
     while len > 0 {
         if len < bufferlen {
             bufferlen = len;
@@ -575,22 +576,18 @@ unsafe extern "C" fn host_read_f(
             mem::size_of::<c_float>() as sf_count_t,
             bufferlen as sf_count_t,
             psf,
-        );
+        ) as usize;
 
-        endswap_int_copy(
-            ptr.offset(total as isize) as *mut c_int,
-            ubuf.ibuf.as_ptr(),
-            readcount as c_int,
-        );
+        endswap_f32_int_copy(&mut ptr[total..total + readcount], &ubuf.ibuf[..readcount]);
 
         total += readcount;
-        if readcount < bufferlen as sf_count_t {
+        if readcount < bufferlen {
             break;
         }
         len -= readcount as usize;
     }
 
-    return total;
+    return total as sf_count_t;
 }
 
 #[no_mangle]
@@ -625,7 +622,7 @@ unsafe extern "C" fn host_read_f2d(
         );
 
         if psf.data_endswap == SF_TRUE {
-            endswap_int_array(ubuf.ibuf.as_mut_ptr(), bufferlen as c_int);
+            endswap_int_array(&mut ubuf.ibuf[..bufferlen]);
         }
 
         /* Fix me : Need lef2d_array */
@@ -691,7 +688,7 @@ unsafe extern "C" fn host_write_s2f(
         }
 
         if psf.data_endswap == SF_TRUE {
-            endswap_int_array(ubuf.ibuf.as_mut_ptr(), bufferlen as c_int);
+            endswap_int_array(&mut ubuf.ibuf[..bufferlen]);
         }
 
         let writecount = psf_fwrite(
@@ -757,7 +754,7 @@ unsafe extern "C" fn host_write_i2f(
         }
 
         if psf.data_endswap == SF_TRUE {
-            endswap_int_array(ubuf.ibuf.as_mut_ptr(), bufferlen as c_int);
+            endswap_int_array(&mut ubuf.ibuf[..bufferlen]);
         }
 
         let writecount = psf_fwrite(
@@ -855,11 +852,7 @@ unsafe extern "C" fn host_write_f(
             bufferlen = len;
         }
 
-        endswap_int_copy(
-            ubuf.ibuf.as_mut_ptr(),
-            ptr.as_ptr().add(total) as *const c_int,
-            bufferlen as c_int,
-        );
+        endswap_int_f32_copy(&mut ubuf.ibuf[..bufferlen], &ptr[total..total + bufferlen]);
 
         let writecount = psf_fwrite(
             ubuf.fbuf.as_ptr() as *const c_void,
@@ -919,7 +912,7 @@ unsafe extern "C" fn host_write_d2f(
         }
 
         if psf.data_endswap == SF_TRUE {
-            endswap_int_array(ubuf.ibuf.as_mut_ptr(), bufferlen as c_int);
+            endswap_int_array(&mut ubuf.ibuf[..bufferlen]);
         }
 
         let writecount = psf_fwrite(
@@ -975,7 +968,7 @@ unsafe extern "C" fn replace_read_f2s(
         ) as usize;
 
         if psf.data_endswap == SF_TRUE {
-            endswap_int_array(ubuf.ibuf.as_mut_ptr(), bufferlen as c_int);
+            endswap_int_array(&mut ubuf.ibuf[..bufferlen]);
         }
 
         bf2f_array(&mut ubuf.fbuf[..bufferlen]);
@@ -1032,7 +1025,7 @@ unsafe extern "C" fn replace_read_f2i(
         ) as usize;
 
         if psf.data_endswap == SF_TRUE {
-            endswap_int_array(ubuf.ibuf.as_mut_ptr(), bufferlen as c_int);
+            endswap_int_array(&mut ubuf.ibuf[..bufferlen]);
         }
 
         bf2f_array(&mut ubuf.fbuf[..bufferlen]);
@@ -1085,7 +1078,7 @@ unsafe extern "C" fn replace_read_f(
         ) as usize;
 
         if psf.data_endswap == SF_TRUE {
-            endswap_int_array(ubuf.ibuf.as_mut_ptr(), bufferlen as c_int);
+            endswap_int_array(&mut ubuf.ibuf[..bufferlen]);
         }
 
         bf2f_array(&mut ubuf.fbuf[..bufferlen]);
@@ -1133,7 +1126,7 @@ unsafe extern "C" fn replace_read_f2d(
         ) as usize;
 
         if psf.data_endswap == SF_TRUE {
-            endswap_int_array(ubuf.ibuf.as_mut_ptr(), bufferlen as c_int);
+            endswap_int_array(&mut ubuf.ibuf[..bufferlen]);
         }
 
         bf2f_array(&mut ubuf.fbuf[..bufferlen]);
@@ -1203,7 +1196,7 @@ unsafe extern "C" fn replace_write_s2f(
         f2bf_array(&mut ubuf.fbuf[..bufferlen]);
 
         if psf.data_endswap == SF_TRUE {
-            endswap_int_array(ubuf.ibuf.as_mut_ptr(), bufferlen as c_int);
+            endswap_int_array(&mut ubuf.ibuf[..bufferlen]);
         }
 
         let writecount = psf_fwrite(
@@ -1272,7 +1265,7 @@ unsafe extern "C" fn replace_write_i2f(
         f2bf_array(&mut ubuf.fbuf[..bufferlen]);
 
         if psf.data_endswap == SF_TRUE {
-            endswap_int_array(ubuf.ibuf.as_mut_ptr(), bufferlen as c_int);
+            endswap_int_array(&mut ubuf.ibuf[..bufferlen]);
         }
 
         let writecount = psf_fwrite(
@@ -1326,7 +1319,7 @@ unsafe extern "C" fn replace_write_f(
         f2bf_array(&mut ubuf.fbuf[..bufferlen]);
 
         if psf.data_endswap == SF_TRUE {
-            endswap_int_array(ubuf.ibuf.as_mut_ptr(), bufferlen as c_int);
+            endswap_int_array(&mut ubuf.ibuf[..bufferlen]);
         }
 
         let writecount = psf_fwrite(
@@ -1387,7 +1380,7 @@ unsafe extern "C" fn replace_write_d2f(
         f2bf_array(&mut ubuf.fbuf[..bufferlen]);
 
         if psf.data_endswap == SF_TRUE {
-            endswap_int_array(ubuf.ibuf.as_mut_ptr(), bufferlen as c_int);
+            endswap_int_array(&mut ubuf.ibuf[..bufferlen]);
         }
 
         let writecount = psf_fwrite(
