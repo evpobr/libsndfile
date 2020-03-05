@@ -96,3 +96,17 @@ unsafe extern "C" fn bei2s_array(src: *const c_int, count: c_int, dest: *mut c_s
         count -= 1;
     }
 }
+
+#[no_mangle]
+unsafe extern "C" fn sc2i_array(src: *const c_schar, count: c_int, dest: *mut c_int) {
+    assert!(src.is_null() != true);
+    assert!(dest.is_null() != true);
+    assert!(count >= 0);
+
+    let count = count as usize;
+    let src = slice::from_raw_parts(src, count);
+    let dest = slice::from_raw_parts_mut(dest, count);
+    for (d, s) in dest.iter_mut().zip(src).take(count) {
+        *d = (*s as i32) << 24;
+    }
+}
