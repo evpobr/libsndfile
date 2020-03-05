@@ -84,3 +84,15 @@ unsafe extern "C" fn lei2s_array(src: *const c_int, count: c_int, dest: *mut c_s
         *d = (x >> 16) as c_short;
     }
 }
+
+#[no_mangle]
+unsafe extern "C" fn bei2s_array(src: *const c_int, count: c_int, dest: *mut c_short) {
+    let mut count = count as isize;
+
+    count -= 1;
+    while count >= 0 {
+        let value = c_int::from_be(src.offset(count).read());
+        dest.offset(count).write((value >> 16) as c_short);
+        count -= 1;
+    }
+}

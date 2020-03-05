@@ -286,6 +286,7 @@ RUST_EXTERN void uc2s_array	(unsigned char *src, int count, short *dest) ;
 RUST_EXTERN void let2s_array (tribyte *src, int count, short *dest) ;
 RUST_EXTERN void bet2s_array (tribyte *src, int count, short *dest) ;
 RUST_EXTERN void lei2s_array (int *src, int count, short *dest) ;
+RUST_EXTERN void bei2s_array (int *src, int count, short *dest) ;
 
 #else
 
@@ -335,8 +336,6 @@ lei2s_array (int *src, int count, short *dest)
 		} ;
 } /* lei2s_array */
 
-#endif
-
 static inline void
 bei2s_array (int *src, int count, short *dest)
 {	int value ;
@@ -346,6 +345,8 @@ bei2s_array (int *src, int count, short *dest)
 		dest [count] = value >> 16 ;
 		} ;
 } /* bei2s_array */
+
+#endif
 
 /*--------------------------------------------------------------------------
 */
