@@ -110,3 +110,15 @@ unsafe extern "C" fn sc2i_array(src: *const c_schar, count: c_int, dest: *mut c_
         *d = (*s as i32) << 24;
     }
 }
+
+#[no_mangle]
+unsafe extern "C" fn uc2i_array(src: *const c_uchar, count: c_int, dest: *mut c_int) {
+    let mut count = count as isize;
+
+    count -= 1;
+    while count >= 0 {
+        dest.offset(count)
+            .write(src.offset(count).read() as c_int - 128 << 24);
+        count -= 1;
+    }
+}
