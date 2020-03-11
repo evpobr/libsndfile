@@ -295,6 +295,7 @@ RUST_EXTERN void bet2i_array (tribyte *src, int count, int *dest) ;
 RUST_EXTERN void let2i_array (tribyte *src, int count, int *dest) ;
 
 RUST_EXTERN void sc2f_array	(signed char *src, int count, float *dest, float normfact) ;
+RUST_EXTERN void uc2f_array	(unsigned char *src, int count, float *dest, float normfact) ;
 
 #else
 
@@ -422,13 +423,13 @@ sc2f_array	(signed char *src, int count, float *dest, float normfact)
 		dest [count] = ((float) src [count]) * normfact ;
 } /* sc2f_array */
 
-#endif
-
 static inline void
 uc2f_array	(unsigned char *src, int count, float *dest, float normfact)
 {	while (--count >= 0)
 		dest [count] = (((int) src [count]) - 128) * normfact ;
 } /* uc2f_array */
+
+#endif
 
 static inline void
 les2f_array (short *src, int count, float *dest, float normfact)

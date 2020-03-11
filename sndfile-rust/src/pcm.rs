@@ -187,3 +187,19 @@ unsafe extern "C" fn sc2f_array(
         count -= 1;
     }
 }
+
+#[no_mangle]
+unsafe extern "C" fn uc2f_array(
+    src: *const c_uchar,
+    count: c_int,
+    dest: *mut c_float,
+    normfact: c_float,
+) {
+    let mut count = count as isize;
+
+    count -= 1;
+    while count >= 0 {
+        *dest.offset(count) = ((*src.offset(count) as c_int - 128) as c_float) * normfact;
+        count -= 1;
+    }
+}
