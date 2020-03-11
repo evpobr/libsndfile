@@ -122,3 +122,15 @@ unsafe extern "C" fn uc2i_array(src: *const c_uchar, count: c_int, dest: *mut c_
         count -= 1;
     }
 }
+
+#[no_mangle]
+unsafe extern "C" fn bes2i_array(src: *const c_short, count: c_int, dest: *mut c_int) {
+    let mut count = count as isize;
+
+    count -= 1;
+    while count >= 0 {
+        let value = c_short::from_be(src.offset(count).read()) as c_int;
+        dest.offset(count).write(value << 16);
+        count -= 1;
+    }
+}

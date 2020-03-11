@@ -289,6 +289,7 @@ RUST_EXTERN void lei2s_array (int *src, int count, short *dest) ;
 RUST_EXTERN void bei2s_array (int *src, int count, short *dest) ;
 RUST_EXTERN void sc2i_array	(signed char *src, int count, int *dest) ;
 RUST_EXTERN void uc2i_array	(unsigned char *src, int count, int *dest) ;
+RUST_EXTERN void bes2i_array (short *src, int count, int *dest) ;
 
 #else
 
@@ -365,8 +366,6 @@ uc2i_array	(unsigned char *src, int count, int *dest)
 		} ;
 } /* uc2i_array */
 
-#endif
-
 static inline void
 bes2i_array (short *src, int count, int *dest)
 {	short value ;
@@ -376,6 +375,8 @@ bes2i_array (short *src, int count, int *dest)
 		dest [count] = arith_shift_left (value, 16) ;
 		} ;
 } /* bes2i_array */
+
+#endif
 
 static inline void
 les2i_array (short *src, int count, int *dest)
