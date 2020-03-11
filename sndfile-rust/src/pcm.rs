@@ -1,7 +1,7 @@
 use crate::sfendian::{psf_get_be24, psf_get_le24};
 use std::slice;
 
-use libc::{c_int, c_schar, c_short, c_uchar};
+use libc::{c_float, c_int, c_schar, c_short, c_uchar};
 
 type tribyte = c_uchar;
 
@@ -168,6 +168,22 @@ unsafe extern "C" fn let2i_array(src: *const tribyte, count: c_int, dest: *mut c
     while count >= 0 {
         ucptr = ucptr.offset(-3);
         *dest.offset(count) = psf_get_le24(ucptr, 0);
+        count -= 1;
+    }
+}
+
+#[no_mangle]
+unsafe extern "C" fn sc2f_array(
+    src: *const c_schar,
+    count: c_int,
+    dest: *mut c_float,
+    normfact: c_float,
+) {
+    let mut count = count as isize;
+
+    count -= 1;
+    while count >= 0 {
+        *dest.offset(count) = (*src.offset(count) as f32) * normfact;
         count -= 1;
     }
 }
