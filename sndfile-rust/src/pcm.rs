@@ -221,3 +221,21 @@ unsafe extern "C" fn les2f_array(
         count -= 1;
     }
 }
+
+#[no_mangle]
+unsafe extern "C" fn bes2f_array(
+    src: *const c_short,
+    count: c_int,
+    dest: *mut c_float,
+    normfact: c_float,
+) {
+    let mut count = count as isize;
+
+    count -= 1;
+    while count >= 0 {
+        let mut value = *src.offset(count);
+        value = c_short::from_be(value);
+        *dest.offset(count) = (value as c_float) * normfact;
+        count -= 1;
+    }
+}
