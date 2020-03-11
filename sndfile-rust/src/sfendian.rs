@@ -1,3 +1,17 @@
+pub unsafe fn psf_get_be24(ptr: *const u8, offset: isize) -> i32 {
+    let mut value = ((ptr.offset(offset).read() as u32) << 24) as i32;
+    value += (ptr.offset(offset + 1).read() as i32) << 16;
+    value += (ptr.offset(offset + 2).read() as i32) << 8;
+    value
+}
+
+pub unsafe fn psf_get_le24(ptr: *const u8, offset: isize) -> i32 {
+    let mut value = ((ptr.offset(offset + 2).read() as u32) << 24) as i32;
+    value += (ptr.offset(offset + 1).read() as i32) << 16;
+    value += (ptr.offset(offset).read() as i32) << 8;
+    value
+}
+
 pub fn endswap_short_array(ptr: &mut [i16]) {
     ptr.iter_mut().for_each(|p| *p = p.swap_bytes());
 }

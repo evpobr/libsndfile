@@ -1,3 +1,4 @@
+use crate::sfendian::{psf_get_be24, psf_get_le24};
 use std::slice;
 
 use libc::{c_int, c_schar, c_short, c_uchar};
@@ -143,6 +144,30 @@ unsafe extern "C" fn les2i_array(src: *const c_short, count: c_int, dest: *mut c
     while count >= 0 {
         let value = c_short::from_le(src.offset(count).read()) as c_int;
         dest.offset(count).write(value << 16);
+        count -= 1;
+    }
+}
+
+#[no_mangle]
+unsafe extern "C" fn bet2i_array(src: *const tribyte, count: c_int, dest: *mut c_int) {
+    let mut count = count as isize;
+    let mut ucptr = src.offset(3 * count);
+    count -= 1;
+    while count >= 0 {
+        ucptr = ucptr.offset(-3);
+        *dest.offset(count) = psf_get_be24(ucptr, 0);
+        count -= 1;
+    }
+}
+
+#[no_mangle]
+unsafe extern "C" fn let2i_array(src: *const tribyte, count: c_int, dest: *mut c_int) {
+    let mut count = count as isize;
+    let mut ucptr = src.offset(3 * count);
+    count -= 1;
+    while count >= 0 {
+        ucptr = ucptr.offset(-3);
+        *dest.offset(count) = psf_get_le24(ucptr, 0);
         count -= 1;
     }
 }

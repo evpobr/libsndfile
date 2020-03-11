@@ -291,6 +291,8 @@ RUST_EXTERN void sc2i_array	(signed char *src, int count, int *dest) ;
 RUST_EXTERN void uc2i_array	(unsigned char *src, int count, int *dest) ;
 RUST_EXTERN void bes2i_array (short *src, int count, int *dest) ;
 RUST_EXTERN void les2i_array (short *src, int count, int *dest) ;
+RUST_EXTERN void bet2i_array (tribyte *src, int count, int *dest) ;
+RUST_EXTERN void let2i_array (tribyte *src, int count, int *dest) ;
 
 #else
 
@@ -387,8 +389,6 @@ les2i_array (short *src, int count, int *dest)
 		} ;
 } /* les2i_array */
 
-#endif
-
 static inline void
 bet2i_array (tribyte *src, int count, int *dest)
 {	unsigned char	*ucptr ;
@@ -410,6 +410,8 @@ let2i_array (tribyte *src, int count, int *dest)
 		dest [count] = psf_get_le24 (ucptr, 0) ;
 		} ;
 } /* let2i_array */
+
+#endif
 
 /*--------------------------------------------------------------------------
 */
