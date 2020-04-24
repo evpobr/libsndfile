@@ -49,12 +49,19 @@ option (BUILD_EXAMPLES "Build examples" ON)
 option (ENABLE_CPACK "Enable CPack support" ON)
 option (ENABLE_EXPERIMENTAL "Enable experimental code" OFF)
 option (ENABLE_BOW_DOCS "Enable black-on-white html docs" OFF)
+option (ENABLE_RUST "Enable Rust code" OFF)
+
 if (MSVC OR MINGW)
 	option (ENABLE_STATIC_RUNTIME "Enable static runtime" OFF)
 endif ()
 option (ENABLE_PACKAGE_CONFIG "Generate and install package config file" ON)
 
 list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+if (ENABLE_RUST)
+	enable_language (Rust)
+	include (CMakeCargo)
+	add_subdirectory(sndfile-rust)
+endif ()
 
 #
 # Setup definitions
@@ -90,6 +97,7 @@ add_feature_info (ENABLE_CPACK ENABLE_CPACK "enable CPack support")
 add_feature_info (ENABLE_CPU_CLIP ENABLE_CPU_CLIP "Enable tricky cpu specific clipper")
 add_feature_info (ENABLE_BOW_DOCS ENABLE_BOW_DOCS "enable black-on-white html docs")
 add_feature_info (ENABLE_PACKAGE_CONFIG ENABLE_PACKAGE_CONFIG "generate and install package config file")
+add_feature_info (ENABLE_RUST ENABLE_RUST "enable Rust code")
 if (WIN32 AND (NOT MINGW) AND BUILD_SHARED_LIBS)
 	add_feature_info (ENABLE_COMPATIBLE_LIBSNDFILE_NAME ENABLE_COMPATIBLE_LIBSNDFILE_NAME "Set DLL name to libsndfile-1.dll (canonical name), sndfile.dll otherwise")
 endif ()
@@ -308,7 +316,10 @@ target_link_libraries (sndfile
 		$<$<BOOL:${HAVE_EXTERNAL_XIPH_LIBS}>:Vorbis::vorbisenc>
 		$<$<BOOL:${HAVE_EXTERNAL_XIPH_LIBS}>:FLAC::FLAC>
 		$<$<AND:$<BOOL:${ENABLE_EXPERIMENTAL}>,$<BOOL:${HAVE_EXTERNAL_XIPH_LIBS}>,$<BOOL:${HAVE_SPEEX}>>:Speex::Speex>
-		$<$<BOOL:${HAVE_EXTERNAL_XIPH_LIBS}>:Opus::opus>
+		$<$<BOOL:${HAVE_EXTERNAL_XIPH_LIBS}>:Opus::Opus>
+		$<$<BOOL:${ENABLE_RUST}>:sndfile-rust>
+		$<$<AND:$<BOOL:${ENABLE_RUST}>,$<BOOL:${WIN32}>>:ws2_32>
+		$<$<AND:$<BOOL:${ENABLE_RUST}>,$<BOOL:${WIN32}>>:userenv>
 	)
 set_target_properties (sndfile PROPERTIES
 	PUBLIC_HEADER "${sndfile_HDRS}"

@@ -142,3 +142,6 @@ CMakeSettings.json
 
 /.vscode/
 /.vs/
+
+target
+Cacgo.lock
