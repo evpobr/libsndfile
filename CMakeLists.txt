@@ -206,7 +206,7 @@ add_library (sndfile
 	src/dwvw.c
 	src/vox_adpcm.c
 	src/interleave.c
-	src/strings.c
+	$<$<NOT:$<BOOL:${ENABLE_RUST}>>:src/strings.c>
 	src/dither.c
 	src/cart.c
 	src/broadcast.c

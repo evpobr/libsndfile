@@ -5,6 +5,7 @@ use std::ptr;
 use libc::{c_char, c_double, c_int, c_short, c_uint, c_void};
 
 mod common;
+mod strings;
 
 /// Microsoft WAV format (little endian default).
 pub const SF_FORMAT_WAV: c_int = 0x010000;

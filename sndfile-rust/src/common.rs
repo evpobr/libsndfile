@@ -7,6 +7,9 @@ use std::slice;
 
 use libc::*;
 
+pub(crate) const PACKAGE_NAME: &str = "libsndfile";
+pub(crate) const PACKAGE_VERSION: &str = "1.0.29pre2";
+
 pub const SF_BUFFER_LEN: usize = 8192;
 pub const SF_FILENAME_LEN: usize = 1024;
 pub const SF_SYSERR_LEN: usize = 256;
@@ -38,6 +41,12 @@ pub enum SF_PEAK_LOCATION {
     SF_PEAK_START = 42,
     SF_PEAK_END = 43,
 }
+
+pub(crate) const SF_STR_ALLOW_START: u32 = 0x0100;
+pub(crate) const SF_STR_ALLOW_END: u32 = 0x0200;
+
+pub(crate) const SF_STR_LOCATE_START: u32 = 0x0400;
+pub(crate) const SF_STR_LOCATE_END: u32 = 0x0800;
 
 pub type sfwchar_t = u16;
 
@@ -891,4 +900,5 @@ const INITIAL_HEADER_SIZE: sf_count_t = 256;
 extern "C" {
     fn psf_fclose(psf: *mut SF_PRIVATE) -> c_int;
     fn psf_close_rsrc(psf: *mut SF_PRIVATE) -> c_int;
+    pub(crate) fn psf_log_printf(psf: *mut SF_PRIVATE, format: *const c_char, ...);
 }
