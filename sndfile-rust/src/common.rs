@@ -22,17 +22,23 @@ pub const SF_MAX_CHANNELS: sf_count_t = 1024;
 
 macro_rules! SF_CONTAINER {
     ($x:expr) => {
-        $x & SF_FORMAT.SF_FORMAT_TYPEMASK
+        $x & SF_FORMAT_TYPEMASK
     };
 }
 macro_rules! SF_CODEC {
     ($x:expr) => {
-        $x & SF_FORMAT.SF_FORMAT_SUBMASK
+        $x & SF_FORMAT_SUBMASK
     };
 }
 macro_rules! SF_ENDIAN {
     ($x:expr) => {
-        $x & SF_FORMAT.SF_FORMAT_ENDMASK
+        $x & SF_FORMAT_ENDMASK
+    };
+}
+
+macro_rules! BHW4 {
+    ($x:expr) => {
+        $x as u32
     };
 }
 
@@ -495,7 +501,7 @@ pub struct sf_private_tag {
         ) -> sf_count_t,
     >,
     pub write_header:
-        Option<unsafe extern "C" fn(psf: &mut sf_private_tag, calc_length: c_int) -> c_int>,
+        Option<unsafe extern "C" fn(psf: *mut sf_private_tag, calc_length: c_int) -> c_int>,
     pub command: Option<
         unsafe extern "C" fn(
             psf: &mut sf_private_tag,
@@ -504,14 +510,14 @@ pub struct sf_private_tag {
             datasize: c_int,
         ) -> c_int,
     >,
-    pub byterate: Option<unsafe extern "C" fn(psf: &mut sf_private_tag) -> c_int>,
+    pub byterate: Option<unsafe extern "C" fn(psf: *mut sf_private_tag) -> c_int>,
 
     /*
      * Separate close functions for the codec and the container.
      * The codec close function is always called first.
      */
-    pub codec_close: Option<unsafe extern "C" fn(psf: &mut sf_private_tag) -> c_int>,
-    pub container_close: Option<unsafe extern "C" fn(psf: &mut sf_private_tag) -> c_int>,
+    pub codec_close: Option<unsafe extern "C" fn(psf: *mut sf_private_tag) -> c_int>,
+    pub container_close: Option<unsafe extern "C" fn(psf: *mut sf_private_tag) -> c_int>,
 
     pub format_desc: *mut c_char,
 

@@ -230,7 +230,7 @@ add_library (sndfile
 	src/dwd.c
 	src/flac.c
 	src/g72x.c
-	src/htk.c
+	$<$<NOT:$<BOOL:${ENABLE_RUST}>>:src/htk.c>
 	src/ircam.c
 	src/macos.c
 	src/mat4.c

@@ -2,9 +2,12 @@
 
 use std::ptr;
 
+use common::SF_PRIVATE;
 use libc::{c_char, c_double, c_int, c_short, c_uint, c_void};
 
+#[macro_use]
 mod common;
+mod htk;
 mod strings;
 
 /// Microsoft WAV format (little endian default).
@@ -595,4 +598,20 @@ pub struct SF_CHUNK_INFO {
     pub id_size: c_uint,   /* The size of the chunk identifier. */
     pub datalen: c_uint,   /* The size of that data. */
     pub data: *mut c_void, /* Pointer to the data. */
+}
+
+extern "C" {
+    fn psf_ftell(psf: *mut SF_PRIVATE) -> sf_count_t;
+    fn psf_get_filelen(psf: *mut SF_PRIVATE) -> sf_count_t;
+    fn psf_fseek(psf: *mut SF_PRIVATE, offset: sf_count_t, whence: c_int) -> sf_count_t;
+    fn psf_binheader_readf(psf: *mut SF_PRIVATE, format: *const c_char, ...) -> c_int;
+    fn psf_binheader_writef(psf: *mut SF_PRIVATE, format: *const c_char, ...) -> c_int;
+    fn psf_fwrite(
+        ptr: *const c_void,
+        bytes: sf_count_t,
+        items: sf_count_t,
+        psf: *mut SF_PRIVATE,
+    ) -> sf_count_t;
+
+    fn pcm_init(psf: *mut SF_PRIVATE) -> c_int;
 }
