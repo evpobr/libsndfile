@@ -901,8 +901,6 @@ pub const SFE_OPUS_BAD_SAMPLERATE: c_int = 176;
 
 pub const SFE_MAX_ERROR: c_int = 177; /* This must be last in list. */
 
-const INITIAL_HEADER_SIZE: sf_count_t = 256;
-
 extern "C" {
     fn psf_fclose(psf: *mut SF_PRIVATE) -> c_int;
     fn psf_close_rsrc(psf: *mut SF_PRIVATE) -> c_int;

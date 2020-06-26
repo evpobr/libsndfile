@@ -37,50 +37,9 @@
 
 #define	INITIAL_HEADER_SIZE	256
 
-/* Allocate and initialize the SF_PRIVATE struct. */
-SF_PRIVATE *
-psf_allocate (void)
-{	SF_PRIVATE * psf ;
 
-	if ((psf = calloc (1, sizeof (SF_PRIVATE))) == NULL)
-		return	NULL ;
-
-	if ((psf->header.ptr = calloc (1, INITIAL_HEADER_SIZE)) == NULL)
-	{	free (psf) ;
-		return	NULL ;
-		} ;
-	psf->header.len = INITIAL_HEADER_SIZE ;
-
-	return psf ;
-} /* psf_allocate */
-
-static int
-psf_bump_header_allocation (SF_PRIVATE * psf, sf_count_t needed)
-{
-	sf_count_t newlen, smallest = INITIAL_HEADER_SIZE ;
-	void * ptr ;
-
-	newlen = (needed > psf->header.len) ? 2 * SF_MAX (needed, smallest) : 2 * psf->header.len ;
-
-	if (newlen > 100 * 1024)
-	{	psf_log_printf (psf, "Request for header allocation of %D denied.\n", newlen) ;
-		return 1 ;
-		}
-
-	if ((ptr = realloc (psf->header.ptr, newlen)) == NULL)
-	{	psf_log_printf (psf, "realloc (%p, %D) failed\n", psf->header.ptr, newlen) ;
-		psf->error = SFE_MALLOC_FAILED ;
-		return 1 ;
-		} ;
-
-	/* Always zero-out new header memory to avoid un-initializer memory accesses. */
-	if (newlen > psf->header.len)
-		memset ((char *) ptr + psf->header.len, 0, newlen - psf->header.len) ;
-
-	psf->header.ptr = ptr ;
-	psf->header.len = newlen ;
-	return 0 ;
-} /* psf_bump_header_allocation */
+extern int
+psf_bump_header_allocation (SF_PRIVATE * psf, sf_count_t needed) ;
 
 /*-----------------------------------------------------------------------------------------------
 ** psf_log_printf allows libsndfile internal functions to print to an internal parselog which

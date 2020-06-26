@@ -764,7 +764,7 @@ enum
 } ;
 
 /* Allocate and initialize the SF_PRIVATE struct. */
-SF_PRIVATE * psf_allocate (void) ;
+extern SF_PRIVATE * psf_allocate (void) ;
 
 int subformat_to_bytewidth (int format) ;
 int s_bitwidth_to_subformat (int bits) ;

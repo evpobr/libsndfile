@@ -1,8 +1,11 @@
 #![allow(non_camel_case_types, unused_macros, non_snake_case, dead_code)]
 
+use std::cmp;
+use std::ffi::CString;
+use std::mem;
 use std::ptr;
 
-use common::SF_PRIVATE;
+use common::*;
 use libc::*;
 
 #[macro_use]
@@ -598,6 +601,70 @@ pub struct SF_CHUNK_INFO {
     pub id_size: c_uint,   /* The size of the chunk identifier. */
     pub datalen: c_uint,   /* The size of that data. */
     pub data: *mut c_void, /* Pointer to the data. */
+}
+
+const INITIAL_HEADER_SIZE: sf_count_t = 256;
+
+/* Allocate and initialize the SF_PRIVATE struct. */
+#[no_mangle]
+unsafe fn psf_allocate() -> *mut SF_PRIVATE {
+    let psf = calloc(1, mem::size_of::<SF_PRIVATE>()) as *mut SF_PRIVATE;
+    if psf.is_null() {
+        return ptr::null_mut();
+    }
+
+    (*psf).header.ptr = calloc(1, INITIAL_HEADER_SIZE as size_t) as *mut u8;
+    if (*psf).header.ptr.is_null() {
+        free(psf as *mut c_void);
+        return ptr::null_mut();
+    }
+    (*psf).header.len = INITIAL_HEADER_SIZE;
+
+    return psf;
+}
+
+#[no_mangle]
+unsafe fn psf_bump_header_allocation(psf: *mut SF_PRIVATE, needed: sf_count_t) -> c_int {
+    assert!(!psf.is_null());
+    let psf = &mut *psf;
+
+    // sf_count_t newlen
+    let smallest = INITIAL_HEADER_SIZE;
+    // void * ptr ;
+
+    let newlen = if needed > psf.header.len {
+        2 * cmp::max(needed, smallest)
+    } else {
+        2 * psf.header.len
+    };
+
+    let format = CString::new("Request for header allocation of %D denied.\n").unwrap();
+    if newlen > 100 * 1024 {
+        psf_log_printf(psf, format.as_ptr(), newlen);
+        return 1;
+    }
+
+    let ptr = realloc(psf.header.ptr as _, newlen as size_t);
+    if ptr.is_null() {
+        let format = CString::new("realloc (%p, %D) failed\n").unwrap();
+        psf_log_printf(psf, format.as_ptr(), psf.header.ptr, newlen);
+        psf.error = SFE_MALLOC_FAILED;
+        return 1;
+    }
+
+    /* Always zero-out new header memory to avoid un-initializer memory accesses. */
+    if newlen > psf.header.len {
+        memset(
+            ptr.offset(psf.header.len as isize),
+            0,
+            (newlen - psf.header.len) as size_t,
+        );
+    }
+
+    psf.header.ptr = ptr as _;
+    psf.header.len = newlen;
+
+    0
 }
 
 #[no_mangle]
