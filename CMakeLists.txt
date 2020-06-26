@@ -316,7 +316,7 @@ target_link_libraries (sndfile
 		$<$<BOOL:${HAVE_EXTERNAL_XIPH_LIBS}>:Vorbis::vorbisenc>
 		$<$<BOOL:${HAVE_EXTERNAL_XIPH_LIBS}>:FLAC::FLAC>
 		$<$<AND:$<BOOL:${ENABLE_EXPERIMENTAL}>,$<BOOL:${HAVE_EXTERNAL_XIPH_LIBS}>,$<BOOL:${HAVE_SPEEX}>>:Speex::Speex>
-		$<$<BOOL:${HAVE_EXTERNAL_XIPH_LIBS}>:Opus::Opus>
+		$<$<BOOL:${HAVE_EXTERNAL_XIPH_LIBS}>:Opus::opus>
 		$<$<BOOL:${ENABLE_RUST}>:sndfile-rust>
 		$<$<AND:$<BOOL:${ENABLE_RUST}>,$<BOOL:${WIN32}>>:ws2_32>
 		$<$<AND:$<BOOL:${ENABLE_RUST}>,$<BOOL:${WIN32}>>:userenv>
