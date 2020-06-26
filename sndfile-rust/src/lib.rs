@@ -3,7 +3,7 @@
 use std::ptr;
 
 use common::SF_PRIVATE;
-use libc::{c_char, c_double, c_int, c_short, c_uint, c_void};
+use libc::*;
 
 #[macro_use]
 mod common;
@@ -600,6 +600,57 @@ pub struct SF_CHUNK_INFO {
     pub data: *mut c_void, /* Pointer to the data. */
 }
 
+#[no_mangle]
+unsafe fn psf_close(psf: *mut SF_PRIVATE) -> c_int {
+    assert!(!psf.is_null());
+    let psf = &mut *psf;
+
+    let mut error: c_int = SF_ERR_NO_ERROR;
+
+    if let Some(codec_close) = psf.codec_close {
+        error = codec_close(psf);
+        /* To prevent it being called in psf->container_close(). */
+        psf.codec_close = None;
+    }
+
+    if let Some(container_close) = psf.container_close {
+        error = container_close(psf);
+    }
+
+    error = psf_fclose(psf);
+    psf_close_rsrc(psf);
+
+    /* For an ISO C compliant implementation it is ok to free a NULL pointer. */
+    free(psf.header.ptr as *mut c_void);
+    free(psf.container_data as *mut c_void);
+    free(psf.codec_data as *mut c_void);
+    free(psf.interleave as *mut c_void);
+    free(psf.dither as *mut c_void);
+    free(psf.peak_info as *mut c_void);
+    free(psf.broadcast_16k as *mut c_void);
+    free(psf.loop_info as *mut c_void);
+    free(psf.instrument as *mut c_void);
+    free(psf.cues as *mut c_void);
+    free(psf.channel_map as *mut c_void);
+    free(psf.format_desc as *mut c_void);
+    free(psf.strings.storage as *mut c_void);
+
+    if !psf.wchunks.chunks.is_null() {
+        for k in 0..psf.wchunks.used as isize {
+            free((*psf.wchunks.chunks.offset(k)).data);
+        }
+    }
+
+    free(psf.rchunks.chunks as *mut c_void);
+    free(psf.wchunks.chunks as *mut c_void);
+    free(psf.iterator as *mut c_void);
+    free(psf.cart_16k as *mut c_void);
+
+    free(psf as *mut SF_PRIVATE as *mut c_void);
+
+    error
+}
+
 extern "C" {
     fn psf_ftell(psf: *mut SF_PRIVATE) -> sf_count_t;
     fn psf_get_filelen(psf: *mut SF_PRIVATE) -> sf_count_t;
@@ -612,6 +663,8 @@ extern "C" {
         items: sf_count_t,
         psf: *mut SF_PRIVATE,
     ) -> sf_count_t;
+    fn psf_close_rsrc(psf: *mut SF_PRIVATE) -> c_int;
+    fn psf_fclose(psf: *mut SF_PRIVATE) -> c_int;
 
     fn pcm_init(psf: *mut SF_PRIVATE) -> c_int;
 }

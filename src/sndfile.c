@@ -2860,6 +2860,7 @@ copy_filename (SF_PRIVATE *psf, const char *path)
 /*==============================================================================
 */
 
+#if 0
 static int
 psf_close (SF_PRIVATE *psf)
 {	uint32_t k ;
@@ -2904,6 +2905,7 @@ psf_close (SF_PRIVATE *psf)
 
 	return error ;
 } /* psf_close */
+#endif
 
 SNDFILE *
 psf_open_file (SF_PRIVATE *psf, SF_INFO *sfinfo)
