@@ -219,7 +219,7 @@ add_library (sndfile
 	src/ogg.c
 	src/chanmap.h
 	src/chanmap.c
-	src/id3.c
+	$<$<NOT:$<BOOL:${ENABLE_RUST}>>:src/id3.c>
 	$<$<BOOL:${WIN32}>:src/windows.c>
 	$<$<AND:$<BOOL:${WIN32}>,$<BOOL:${WIN32}>>:src/version-metadata.rc>
 	src/sndfile.c

@@ -11,6 +11,7 @@ use libc::*;
 mod audio_detect;
 #[macro_use]
 mod common;
+mod id3;
 mod htk;
 mod strings;
 
