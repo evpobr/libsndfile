@@ -210,7 +210,7 @@ add_library (sndfile
 	src/dither.c
 	src/cart.c
 	src/broadcast.c
-	src/audio_detect.c
+	$<$<NOT:$<BOOL:${ENABLE_RUST}>>:src/audio_detect.c>
  	src/ima_oki_adpcm.c
 	src/ima_oki_adpcm.h
 	src/alac.c

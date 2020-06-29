@@ -8,6 +8,7 @@ use std::ptr;
 use common::*;
 use libc::*;
 
+mod audio_detect;
 #[macro_use]
 mod common;
 mod htk;
