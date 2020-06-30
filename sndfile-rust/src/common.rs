@@ -7,8 +7,6 @@ use std::mem;
 use std::ptr;
 use std::slice;
 
-use libc::*;
-
 pub(crate) const PACKAGE_NAME: &str = "libsndfile";
 pub(crate) const PACKAGE_VERSION: &str = "1.0.29pre2";
 

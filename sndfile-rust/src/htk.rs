@@ -1,10 +1,7 @@
 
 use crate::common::{psf_log_printf, SF_PRIVATE};
 use crate::*;
-use crate::file_io::*;
-
 use common::{SFE_BAD_OPEN_FORMAT, SFE_HTK_NO_PIPE};
-use libc::*;
 use std::ffi::CString;
 
 const SFE_HTK_BAD_FILE_LEN: c_int = 1666;

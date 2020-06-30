@@ -683,7 +683,7 @@ unsafe fn psf_close(psf: *mut SF_PRIVATE) -> c_int {
     assert!(!psf.is_null());
     let psf = &mut *psf;
 
-    let mut error: c_int = SF_ERR_NO_ERROR;
+    let mut error: c_int;
 
     if let Some(codec_close) = psf.codec_close {
         error = codec_close(psf);
