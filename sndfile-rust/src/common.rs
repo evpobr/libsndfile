@@ -1,5 +1,7 @@
 use crate::*;
 
+pub use file_io::*;
+
 use std::fmt;
 use std::mem;
 use std::ptr;
@@ -19,6 +21,38 @@ pub const SF_PARSELOG_LEN: usize = 2048;
 pub const PSF_SEEK_ERROR: sf_count_t = -1;
 
 pub const SF_MAX_CHANNELS: sf_count_t = 1024;
+
+#[repr(C)]
+#[derive(Debug, Ord, PartialOrd, Eq, PartialEq)]
+pub enum SF_BOOL {
+    FALSE,
+    TRUE,
+}
+
+impl Default for SF_BOOL {
+    fn default() -> Self {
+        SF_BOOL::FALSE
+    }
+}
+
+impl From<c_int> for SF_BOOL {
+    fn from(value: c_int) -> Self {
+        if value != SF_FALSE { SF_BOOL::TRUE } else { SF_BOOL::FALSE }
+    }
+}
+
+impl From<bool> for SF_BOOL {
+    fn from(value: bool) -> Self {
+        if value { SF_BOOL::TRUE } else { SF_BOOL::FALSE }
+    }
+}
+
+#[repr(C)]
+pub enum SF_SEEK_MODE {
+    SET =  0,
+    CUR =  1,
+    END =  2,
+}
 
 macro_rules! SF_CONTAINER {
     ($x:expr) => {
@@ -213,7 +247,7 @@ pub struct PSF_FILE {
     pub savedes: c_int,
 
     pub do_not_close_descriptor: c_int,
-    pub mode: c_int,
+    pub mode: SFM_OPEN_MODE,
 }
 
 impl fmt::Debug for PSF_FILE {
@@ -239,7 +273,7 @@ impl Default for PSF_FILE {
             #[cfg(not(windows))]
             savedes: 0,
             do_not_close_descriptor: 0,
-            mode: 0,
+            mode: SFM_OPEN_MODE::READ,
         }
     }
 }
@@ -902,7 +936,5 @@ pub const SFE_OPUS_BAD_SAMPLERATE: c_int = 176;
 pub const SFE_MAX_ERROR: c_int = 177; /* This must be last in list. */
 
 extern "C" {
-    fn psf_fclose(psf: *mut SF_PRIVATE) -> c_int;
-    fn psf_close_rsrc(psf: *mut SF_PRIVATE) -> c_int;
     pub(crate) fn psf_log_printf(psf: *mut SF_PRIVATE, format: *const c_char, ...);
 }

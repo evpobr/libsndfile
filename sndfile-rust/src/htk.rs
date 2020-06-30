@@ -1,6 +1,7 @@
 
 use crate::common::{psf_log_printf, SF_PRIVATE};
 use crate::*;
+use crate::file_io::*;
 
 use common::{SFE_BAD_OPEN_FORMAT, SFE_HTK_NO_PIPE};
 use libc::*;
@@ -20,7 +21,7 @@ unsafe fn htk_open(psf: *mut SF_PRIVATE) -> c_int {
         return SFE_HTK_NO_PIPE;
     }
 
-    if psf.file.mode == SFM_READ || (psf.file.mode == SFM_RDWR && psf.filelength > 0) {
+    if psf.file.mode == SFM_OPEN_MODE::READ || (psf.file.mode == SFM_OPEN_MODE::RDWR && psf.filelength > 0) {
         error = htk_read_header(psf);
         if error != 0 {
             return error;
@@ -29,7 +30,7 @@ unsafe fn htk_open(psf: *mut SF_PRIVATE) -> c_int {
 
     let subformat = SF_CODEC!(psf.sf.format);
 
-    if psf.file.mode == SFM_WRITE || psf.file.mode == SFM_RDWR {
+    if psf.file.mode == SFM_OPEN_MODE::WRITE || psf.file.mode == SFM_OPEN_MODE::RDWR {
         if (SF_CONTAINER!(psf.sf.format)) != SF_FORMAT_HTK {
             return SFE_BAD_OPEN_FORMAT;
         }
@@ -64,7 +65,7 @@ unsafe extern "C" fn htk_close(psf: *mut SF_PRIVATE) -> c_int {
 
     let psf = &mut *psf;
 
-    if psf.file.mode == SFM_WRITE || psf.file.mode == SFM_RDWR {
+    if psf.file.mode == SFM_OPEN_MODE::WRITE || psf.file.mode == SFM_OPEN_MODE::RDWR {
         htk_write_header(psf, SF_TRUE);
     }
 
@@ -86,7 +87,7 @@ unsafe extern "C" fn htk_write_header(psf: *mut SF_PRIVATE, calc_length: c_int) 
     /* Reset the current header length to zero. */
     psf.header.ptr.write(0);
     psf.header.indx = 0;
-    psf_fseek(psf, 0, SEEK_SET);
+    psf_fseek(psf, 0, SF_SEEK_MODE::SET);
 
     let sample_count = if psf.filelength > 12 {
         (psf.filelength - 12) / 2
@@ -115,7 +116,7 @@ unsafe extern "C" fn htk_write_header(psf: *mut SF_PRIVATE, calc_length: c_int) 
     psf.dataoffset = psf.header.indx;
 
     if current > 0 {
-        psf_fseek(psf, current, SEEK_SET);
+        psf_fseek(psf, current, SF_SEEK_MODE::SET);
     }
 
     return psf.error;

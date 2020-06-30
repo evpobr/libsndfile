@@ -193,7 +193,7 @@ add_library (sndfile
 	src/sf_unistd.h
 	src/common.h
 	src/common.c
-	src/file_io.c
+	$<$<NOT:$<AND:$<BOOL:${ENABLE_RUST}>,$<BOOL:${WIN32}>>>:src/file_io.c>
 	src/command.c
 	src/pcm.c
 	src/ulaw.c

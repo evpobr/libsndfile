@@ -19,7 +19,7 @@ unsafe fn psf_store_string(psf: *mut SF_PRIVATE, str_type: c_int, str: *const c_
     let str_len = str.len();
 
     /* A few extra checks for write mode. */
-    if psf.file.mode == SFM_WRITE || psf.file.mode == SFM_RDWR {
+    if psf.file.mode == SFM_OPEN_MODE::WRITE || psf.file.mode == SFM_OPEN_MODE::RDWR {
         if psf.strings.flags & SF_STR_ALLOW_START == 0 {
             return SFE_STR_NO_SUPPORT;
         }
@@ -52,7 +52,7 @@ unsafe fn psf_store_string(psf: *mut SF_PRIVATE, str_type: c_int, str: *const c_
 
     /* Determine flags */
     let mut str_flags = SF_STR_LOCATE_START;
-    if psf.file.mode == SFM_RDWR || psf.have_written != SF_FALSE {
+    if psf.file.mode == SFM_OPEN_MODE::RDWR || psf.have_written != SF_FALSE {
         if psf.strings.flags & SF_STR_ALLOW_END == 0 {
             return SFE_STR_NO_ADD_END;
         }
@@ -86,7 +86,7 @@ unsafe fn psf_store_string(psf: *mut SF_PRIVATE, str_type: c_int, str: *const c_
     match str_type {
         SF_STR_SOFTWARE => {
             /* In write mode, want to append libsndfile-version to string. */
-            if psf.file.mode == SFM_WRITE || psf.file.mode == SFM_RDWR {
+            if psf.file.mode == SFM_OPEN_MODE::WRITE || psf.file.mode == SFM_OPEN_MODE::RDWR {
                 if !str.contains(PACKAGE_NAME) {
                     /*
                     	** If the supplied string does not already contain a
@@ -157,7 +157,7 @@ unsafe fn psf_set_string(psf: *mut SF_PRIVATE, str_type: c_int, str: *const c_ch
     assert!(!psf.is_null());
     let psf = &mut *psf;
 
-    if psf.file.mode == SFM_READ {
+    if psf.file.mode == SFM_OPEN_MODE::READ {
         return SFE_STR_NOT_WRITE;
     }
 

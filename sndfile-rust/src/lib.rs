@@ -12,6 +12,7 @@ mod audio_detect;
 #[macro_use]
 mod common;
 mod id3;
+mod file_io;
 mod htk;
 mod strings;
 
@@ -275,6 +276,14 @@ pub const SF_TRUE: c_int = 1;
 pub const SFM_READ: c_int = 0x10;
 pub const SFM_WRITE: c_int = 0x20;
 pub const SFM_RDWR: c_int = 0x30;
+
+#[repr(C)]
+#[derive(Debug, Ord, PartialOrd, Eq, PartialEq)]
+pub enum SFM_OPEN_MODE {
+    READ = 0x10,
+    WRITE = 0x20,
+    RDWR = 0x30,
+}
 
 pub const SF_AMBISONIC_NONE: c_int = 0x40;
 pub const SF_AMBISONIC_B_FORMAT: c_int = 0x41;
@@ -573,7 +582,7 @@ SF_CART_INFO_VAR!(256, SF_CART_INFO);
 
 pub type sf_vio_get_filelen = unsafe extern "C" fn(user_data: *mut c_void) -> sf_count_t;
 pub type sf_vio_seek =
-    unsafe extern "C" fn(offset: sf_count_t, whence: c_int, user_data: *mut c_void) -> sf_count_t;
+    unsafe extern "C" fn(offset: sf_count_t, whence: SF_SEEK_MODE, user_data: *mut c_void) -> sf_count_t;
 pub type sf_vio_read =
     unsafe extern "C" fn(ptr: *mut c_void, count: sf_count_t, user_data: *mut c_void) -> sf_count_t;
 pub type sf_vio_write = unsafe extern "C" fn(
@@ -721,19 +730,8 @@ unsafe fn psf_close(psf: *mut SF_PRIVATE) -> c_int {
 }
 
 extern "C" {
-    fn psf_ftell(psf: *mut SF_PRIVATE) -> sf_count_t;
-    fn psf_get_filelen(psf: *mut SF_PRIVATE) -> sf_count_t;
-    fn psf_fseek(psf: *mut SF_PRIVATE, offset: sf_count_t, whence: c_int) -> sf_count_t;
     fn psf_binheader_readf(psf: *mut SF_PRIVATE, format: *const c_char, ...) -> c_int;
     fn psf_binheader_writef(psf: *mut SF_PRIVATE, format: *const c_char, ...) -> c_int;
-    fn psf_fwrite(
-        ptr: *const c_void,
-        bytes: sf_count_t,
-        items: sf_count_t,
-        psf: *mut SF_PRIVATE,
-    ) -> sf_count_t;
-    fn psf_close_rsrc(psf: *mut SF_PRIVATE) -> c_int;
-    fn psf_fclose(psf: *mut SF_PRIVATE) -> c_int;
 
     fn pcm_init(psf: *mut SF_PRIVATE) -> c_int;
 }
