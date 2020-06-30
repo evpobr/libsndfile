@@ -6,6 +6,8 @@ use libc::*;
 use crate::common::*;
 use crate::*;
 
+use byte_strings::c_str;
+
 #[no_mangle]
 unsafe fn psf_store_string(psf: *mut SF_PRIVATE, str_type: c_int, str: *const c_char) -> c_int {
     assert!(!psf.is_null());
@@ -60,20 +62,18 @@ unsafe fn psf_store_string(psf: *mut SF_PRIVATE, str_type: c_int, str: *const c_
     }
 
     if k == 0 && psf.strings.storage_used != 0 {
-        if let Ok(message) =
-            CString::new("SFE_STR_WEIRD : k == 0 && psf->strings.storage_used != 0\n")
-        {
-            psf_log_printf(psf, message.as_ptr());
-        }
+        psf_log_printf(
+            psf,
+            c_str!("SFE_STR_WEIRD : k == 0 && psf->strings.storage_used != 0\n").as_ptr(),
+        );
         return SFE_STR_WEIRD;
     }
 
     if k != 0 && psf.strings.storage_used == 0 {
-        if let Ok(message) =
-            CString::new("SFE_STR_WEIRD : k != 0 && psf->strings.storage_used == 0\n")
-        {
-            psf_log_printf(psf, message.as_ptr());
-        }
+        psf_log_printf(
+            psf,
+            c_str!("SFE_STR_WEIRD : k != 0 && psf->strings.storage_used == 0\n").as_ptr(),
+        );
         return SFE_STR_WEIRD;
     }
 
@@ -107,9 +107,10 @@ unsafe fn psf_store_string(psf: *mut SF_PRIVATE, str_type: c_int, str: *const c_
         SF_STR_TITLE | SF_STR_COPYRIGHT | SF_STR_ARTIST | SF_STR_COMMENT | SF_STR_DATE
         | SF_STR_ALBUM | SF_STR_LICENSE | SF_STR_TRACKNUMBER | SF_STR_GENRE => {}
         _ => {
-            if let Ok(message) = CString::new("psf_store_string : SFE_STR_BAD_TYPE\n") {
-                psf_log_printf(psf, message.as_ptr());
-            }
+            psf_log_printf(
+                psf,
+                c_str!("psf_store_string : SFE_STR_BAD_TYPE\n").as_ptr(),
+            );
             return SFE_STR_BAD_TYPE;
         }
     };

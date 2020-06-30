@@ -1,19 +1,20 @@
 #![allow(non_camel_case_types, unused_macros, non_snake_case, dead_code)]
 
 use std::cmp;
-use std::ffi::CString;
 use std::mem;
 use std::ptr;
 
 use common::*;
 use libc::*;
 
+use byte_strings::c_str;
+
 mod audio_detect;
 #[macro_use]
 mod common;
-mod id3;
 mod file_io;
 mod htk;
+mod id3;
 mod strings;
 
 /// Microsoft WAV format (little endian default).
@@ -581,8 +582,11 @@ SF_CART_INFO_VAR!(256, SF_CART_INFO);
 // Virtual I/O functionality.
 
 pub type sf_vio_get_filelen = unsafe extern "C" fn(user_data: *mut c_void) -> sf_count_t;
-pub type sf_vio_seek =
-    unsafe extern "C" fn(offset: sf_count_t, whence: SF_SEEK_MODE, user_data: *mut c_void) -> sf_count_t;
+pub type sf_vio_seek = unsafe extern "C" fn(
+    offset: sf_count_t,
+    whence: SF_SEEK_MODE,
+    user_data: *mut c_void,
+) -> sf_count_t;
 pub type sf_vio_read =
     unsafe extern "C" fn(ptr: *mut c_void, count: sf_count_t, user_data: *mut c_void) -> sf_count_t;
 pub type sf_vio_write = unsafe extern "C" fn(
@@ -649,16 +653,23 @@ unsafe fn psf_bump_header_allocation(psf: *mut SF_PRIVATE, needed: sf_count_t) -
         2 * psf.header.len
     };
 
-    let format = CString::new("Request for header allocation of %D denied.\n").unwrap();
     if newlen > 100 * 1024 {
-        psf_log_printf(psf, format.as_ptr(), newlen);
+        psf_log_printf(
+            psf,
+            c_str!("Request for header allocation of %D denied.\n").as_ptr(),
+            newlen,
+        );
         return 1;
     }
 
     let ptr = realloc(psf.header.ptr as _, newlen as size_t);
     if ptr.is_null() {
-        let format = CString::new("realloc (%p, %D) failed\n").unwrap();
-        psf_log_printf(psf, format.as_ptr(), psf.header.ptr, newlen);
+        psf_log_printf(
+            psf,
+            c_str!("realloc (%p, %D) failed\n").as_ptr(),
+            psf.header.ptr,
+            newlen,
+        );
         psf.error = SFE_MALLOC_FAILED;
         return 1;
     }

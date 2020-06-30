@@ -1,8 +1,8 @@
-
 use crate::common::{psf_log_printf, SF_PRIVATE};
 use crate::*;
 use common::{SFE_BAD_OPEN_FORMAT, SFE_HTK_NO_PIPE};
-use std::ffi::CString;
+
+use byte_strings::c_str;
 
 const SFE_HTK_BAD_FILE_LEN: c_int = 1666;
 const SFE_HTK_NOT_WAVEFORM: c_int = 1667;
@@ -18,7 +18,9 @@ unsafe fn htk_open(psf: *mut SF_PRIVATE) -> c_int {
         return SFE_HTK_NO_PIPE;
     }
 
-    if psf.file.mode == SFM_OPEN_MODE::READ || (psf.file.mode == SFM_OPEN_MODE::RDWR && psf.filelength > 0) {
+    if psf.file.mode == SFM_OPEN_MODE::READ
+        || (psf.file.mode == SFM_OPEN_MODE::RDWR && psf.filelength > 0)
+    {
         error = htk_read_header(psf);
         if error != 0 {
             return error;
@@ -94,10 +96,9 @@ unsafe extern "C" fn htk_write_header(psf: *mut SF_PRIVATE, calc_length: c_int) 
 
     let sample_period = 10000000 / psf.sf.samplerate;
 
-    let format = CString::new("E444").unwrap();
     psf_binheader_writef(
         psf,
-        format.as_ptr(),
+        c_str!("E444").as_ptr(),
         BHW4!(sample_count),
         BHW4!(sample_period),
         BHW4!(0x20000),
@@ -130,10 +131,9 @@ unsafe fn htk_read_header(psf: *mut SF_PRIVATE) -> c_int {
     let mut sample_count: c_int = 0;
     let mut sample_period: c_int = 0;
     let mut marker: c_int = 0;
-    let format = CString::new("pE444").unwrap();
     psf_binheader_readf(
         psf,
-        format.as_ptr(),
+        c_str!("pE444").as_ptr(),
         0,
         &mut sample_count,
         &mut sample_period,
@@ -152,23 +152,19 @@ unsafe fn htk_read_header(psf: *mut SF_PRIVATE) -> c_int {
 
     if sample_period > 0 {
         psf.sf.samplerate = 10000000 / sample_period;
-        let format = CString::new(
-            "HTK Waveform file\n  Sample Count  : %d\n  Sample Period : %d => %d Hz\n",
-        )
-        .unwrap();
         psf_log_printf(
             psf,
-            format.as_ptr(),
+            c_str!("HTK Waveform file\n  Sample Count  : %d\n  Sample Period : %d => %d Hz\n")
+                .as_ptr(),
             sample_count,
             sample_period,
             psf.sf.samplerate,
         );
     } else {
         psf.sf.samplerate = 16000;
-        let format = CString::new("HTK Waveform file\n  Sample Count  : %d\n  Sample Period : %d (should be > 0) => Guessed sample rate %d Hz\n").unwrap();
         psf_log_printf(
             psf,
-            format.as_ptr(),
+            c_str!("HTK Waveform file\n  Sample Count  : %d\n  Sample Period : %d (should be > 0) => Guessed sample rate %d Hz\n").as_ptr(),
             sample_count,
             sample_period,
             psf.sf.samplerate,
