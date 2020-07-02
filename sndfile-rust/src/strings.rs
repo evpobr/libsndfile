@@ -156,7 +156,7 @@ unsafe fn psf_store_string(psf: *mut SF_PRIVATE, str_type: c_int, str: *const c_
 }
 
 #[no_mangle]
-unsafe fn psf_set_string(psf: *mut SF_PRIVATE, str_type: c_int, str: *const c_char) -> c_int {
+pub(crate) unsafe fn psf_set_string(psf: *mut SF_PRIVATE, str_type: c_int, str: *const c_char) -> c_int {
     assert!(!psf.is_null());
     let psf = &mut *psf;
 
@@ -168,7 +168,7 @@ unsafe fn psf_set_string(psf: *mut SF_PRIVATE, str_type: c_int, str: *const c_ch
 }
 
 #[no_mangle]
-unsafe fn psf_get_string(psf: *mut SF_PRIVATE, str_type: c_int) -> *const c_char {
+pub(crate) unsafe fn psf_get_string(psf: *mut SF_PRIVATE, str_type: c_int) -> *const c_char {
     assert!(!psf.is_null());
     let psf = &mut *psf;
 

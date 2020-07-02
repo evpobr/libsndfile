@@ -17,6 +17,8 @@ mod htk;
 mod id3;
 mod strings;
 
+use strings::*;
+
 /// Microsoft WAV format (little endian default).
 pub const SF_FORMAT_WAV: c_int = 0x010000;
 /// Apple/SGI AIFF format (big endian).
@@ -1565,6 +1567,30 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
 #[no_mangle]
 pub unsafe fn sf_version_string() -> *const c_char {
     PACKAGE_VERSION_STRING.as_ptr()
+}
+
+#[no_mangle]
+pub unsafe fn sf_get_string(sndfile: *mut SNDFILE, str_type: c_int) -> *const c_char {
+    let psf = sndfile as *mut c_void as *mut SF_PRIVATE;
+
+    if psf.is_null() {
+        return ptr::null_mut();
+    }
+    let psf = &mut *psf;
+    if psf.Magick != SNDFILE_MAGICK {
+        return ptr::null_mut();
+    }
+
+    return psf_get_string(psf, str_type);
+}
+
+#[no_mangle]
+pub unsafe fn sf_set_string(sndfile: *mut SNDFILE, str_type: c_int, r#str: *const c_char) -> c_int {
+    let psf: *mut SF_PRIVATE;
+
+    VALIDATE_SNDFILE_AND_ASSIGN_PSF!(sndfile, psf, 1);
+
+    return psf_set_string(psf, str_type, r#str);
 }
 
 extern "C" {

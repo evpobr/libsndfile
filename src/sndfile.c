@@ -1531,6 +1531,7 @@ sf_seek	(SNDFILE *sndfile, sf_count_t offset, int whence)
 /*------------------------------------------------------------------------------
 */
 
+#if 0
 const char*
 sf_get_string (SNDFILE *sndfile, int str_type)
 {	SF_PRIVATE 	*psf ;
@@ -1551,6 +1552,7 @@ sf_set_string (SNDFILE *sndfile, int str_type, const char* str)
 
 	return psf_set_string (psf, str_type, str) ;
 } /* sf_get_string */
+#endif
 
 /*------------------------------------------------------------------------------
 */
