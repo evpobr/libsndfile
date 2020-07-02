@@ -891,6 +891,7 @@ sf_format_check	(const SF_INFO *info)
 /*------------------------------------------------------------------------------
 */
 
+#if 0
 const char *
 sf_version_string (void)
 {
@@ -900,6 +901,7 @@ sf_version_string (void)
 	return PACKAGE_NAME "-" PACKAGE_VERSION ;
 #endif
 }
+#endif
 
 
 /*------------------------------------------------------------------------------

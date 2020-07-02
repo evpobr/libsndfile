@@ -1562,6 +1562,11 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
     0
 }
 
+#[no_mangle]
+pub unsafe fn sf_version_string() -> *const c_char {
+    PACKAGE_VERSION_STRING.as_ptr()
+}
+
 extern "C" {
     fn psf_get_sf_errno() -> c_int;
     fn psf_set_sf_errno(errnum: c_int);

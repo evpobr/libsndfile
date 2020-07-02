@@ -7,8 +7,15 @@ use std::mem;
 use std::ptr;
 use std::slice;
 
-pub(crate) const PACKAGE_NAME: &str = "libsndfile";
-pub(crate) const PACKAGE_VERSION: &str = "1.0.29pre2";
+use byte_strings::c_str;
+
+pub(crate) static PACKAGE_NAME: &CStr = c_str!("libsndfile");
+pub(crate) static PACKAGE_VERSION: &CStr = c_str!("1.0.29pre2");
+
+#[cfg(not(ENABLE_EXPERIMENTAL_CODE))]
+pub(crate) static PACKAGE_VERSION_STRING: &CStr = c_str!("libsndfile", "-", "1.0.29pre2");
+#[cfg(ENABLE_EXPERIMENTAL_CODE)]
+pub(crate) static PACKAGE_VERSION_STRING: &CStr = c_str!("libsndfile", "-", "1.0.29pre2", "-exp");
 
 pub const SF_BUFFER_LEN: usize = 8192;
 pub const SF_FILENAME_LEN: usize = 1024;

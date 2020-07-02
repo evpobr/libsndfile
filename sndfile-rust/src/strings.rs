@@ -87,15 +87,17 @@ unsafe fn psf_store_string(psf: *mut SF_PRIVATE, str_type: c_int, str: *const c_
         SF_STR_SOFTWARE => {
             /* In write mode, want to append libsndfile-version to string. */
             if psf.file.mode == SFM_OPEN_MODE::WRITE || psf.file.mode == SFM_OPEN_MODE::RDWR {
-                if !str.contains(PACKAGE_NAME) {
+                let package_name = PACKAGE_NAME.to_string_lossy().to_string();
+                let package_version = PACKAGE_VERSION.to_string_lossy().to_string();
+                if !str.contains(&package_name) {
                     /*
                     	** If the supplied string does not already contain a
                     	** libsndfile-X.Y.Z component, then add it.
                     	*/
                     if str.is_empty() {
-                        new_str = format!("{}-{}", PACKAGE_NAME, PACKAGE_VERSION);
+                        new_str = format!("{}-{}", package_name, package_version);
                     } else {
-                        new_str = format!("{} ({}-{})", str, PACKAGE_NAME, PACKAGE_VERSION);
+                        new_str = format!("{} ({}-{})", str, package_name, package_version);
                     }
                 } else {
                     new_str = str.to_string();
