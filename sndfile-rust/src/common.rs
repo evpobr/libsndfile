@@ -18,7 +18,7 @@ pub const SF_PARSELOG_LEN: usize = 2048;
 
 pub const PSF_SEEK_ERROR: sf_count_t = -1;
 
-pub const SF_MAX_CHANNELS: sf_count_t = 1024;
+pub const SF_MAX_CHANNELS: c_int = 1024;
 
 #[repr(C)]
 #[derive(Debug, Ord, PartialOrd, Eq, PartialEq)]

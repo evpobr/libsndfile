@@ -2,7 +2,7 @@
 
 use std::cmp;
 use std::mem;
-use std::ptr;
+use std::{ffi::CStr, ptr};
 
 use common::*;
 use libc::*;
@@ -740,9 +740,837 @@ unsafe fn psf_close(psf: *mut SF_PRIVATE) -> c_int {
     error
 }
 
+const SNDFILE_MAGICK: c_int = 0x1234C0DE;
+
+#[repr(C)]
+struct ErrorStruct<'a> {
+    pub error: c_int,
+    pub r#str: &'a CStr,
+}
+
+impl<'a> ErrorStruct<'a> {
+    pub fn new(error: c_int, r#str: &'a CStr) -> ErrorStruct {
+        ErrorStruct { error, r#str }
+    }
+}
+
+static SndfileErrors: [ErrorStruct; 179] = [
+    ErrorStruct { error: SF_ERR_NO_ERROR, r#str: c_str!("No Error.")},
+	ErrorStruct {	error: SF_ERR_UNRECOGNISED_FORMAT	, r#str: c_str!("Format not recognised.") },
+	ErrorStruct {	error: SF_ERR_SYSTEM				, r#str: c_str!("System error.") /* Often replaced. */ 	},
+	ErrorStruct {	error: SF_ERR_MALFORMED_FILE		, r#str: c_str!("Supported file format but file is malformed.") },
+	ErrorStruct {	error: SF_ERR_UNSUPPORTED_ENCODING	, r#str: c_str!("Supported file format but unsupported encoding.") },
+
+	/* Private error values and their associated strings. */
+	ErrorStruct {	error: SFE_ZERO_MAJOR_FORMAT	, r#str: c_str!("Error : major format is 0.") },
+	ErrorStruct {	error: SFE_ZERO_MINOR_FORMAT	, r#str: c_str!("Error : minor format is 0.") },
+	ErrorStruct {	error: SFE_BAD_FILE			, r#str: c_str!("File does not exist or is not a regular file (possibly a pipe?).") },
+	ErrorStruct {	error: SFE_BAD_FILE_READ		, r#str: c_str!("File exists but no data could be read.") },
+	ErrorStruct {	error: SFE_OPEN_FAILED			, r#str: c_str!("Could not open file.") },
+	ErrorStruct {	error: SFE_BAD_SNDFILE_PTR		, r#str: c_str!("Not a valid SNDFILE* pointer.") },
+	ErrorStruct {	error: SFE_BAD_SF_INFO_PTR		, r#str: c_str!("NULL SF_INFO pointer passed to libsndfile.") },
+	ErrorStruct {	error: SFE_BAD_SF_INCOMPLETE	, r#str: c_str!("SF_PRIVATE struct incomplete and end of header parsing.") },
+	ErrorStruct {	error: SFE_BAD_FILE_PTR		, r#str: c_str!("Bad FILE pointer.") },
+	ErrorStruct {	error: SFE_BAD_INT_PTR			, r#str: c_str!("Internal error, Bad pointer.") },
+	ErrorStruct {	error: SFE_BAD_STAT_SIZE		, r#str: c_str!("Error : software was misconfigured at compile time (sizeof statbuf.st_size).") },
+	ErrorStruct {	error: SFE_NO_TEMP_DIR			, r#str: c_str!("Error : Could not file temp dir.") },
+
+	ErrorStruct {	error: SFE_MALLOC_FAILED		, r#str: c_str!("Internal malloc () failed.") },
+	ErrorStruct {	error: SFE_UNIMPLEMENTED		, r#str: c_str!("File contains data in an unimplemented format.") },
+	ErrorStruct {	error: SFE_BAD_READ_ALIGN		, r#str: c_str!("Attempt to read a non-integer number of channels.") },
+	ErrorStruct {	error: SFE_BAD_WRITE_ALIGN 	    , r#str: c_str!("Attempt to write a non-integer number of channels.") },
+	ErrorStruct {	error: SFE_NOT_READMODE		    , r#str: c_str!("Read attempted on file currently open for write.") },
+	ErrorStruct {	error: SFE_NOT_WRITEMODE		, r#str: c_str!("Write attempted on file currently open for read.") },
+	ErrorStruct {	error: SFE_BAD_MODE_RW			, r#str: c_str!("Error : This file format does not support read/write mode.") },
+	ErrorStruct {	error: SFE_BAD_SF_INFO			, r#str: c_str!("Internal error : SF_INFO struct incomplete.") },
+	ErrorStruct {	error: SFE_BAD_OFFSET			, r#str: c_str!("Error : supplied offset beyond end of file.") },
+	ErrorStruct {	error: SFE_NO_EMBED_SUPPORT     , r#str: c_str!("Error : embedding not supported for this file format.") },
+	ErrorStruct {	error: SFE_NO_EMBEDDED_RDWR     , r#str: c_str!("Error : cannot open embedded file read/write.") },
+	ErrorStruct {	error: SFE_NO_PIPE_WRITE		, r#str: c_str!("Error : this file format does not support pipe write.") },
+	ErrorStruct {	error: SFE_BAD_VIRTUAL_IO		, r#str: c_str!("Error : bad pointer on SF_VIRTUAL_IO struct.") },
+	ErrorStruct {	error: SFE_BAD_BROADCAST_INFO_SIZE, r#str: c_str!("Error : bad coding_history_size in SF_BROADCAST_INFO struct.") },
+    ErrorStruct {	error: SFE_BAD_BROADCAST_INFO_TOO_BIG, r#str: c_str!("Error : SF_BROADCAST_INFO struct too large.") },
+	ErrorStruct {	error: SFE_BAD_CART_INFO_SIZE				, r#str: c_str!("Error: SF_CART_INFO struct too large.") },
+	ErrorStruct {	error: SFE_BAD_CART_INFO_TOO_BIG			, r#str: c_str!("Error: bad tag_text_size in SF_CART_INFO struct.") },
+	ErrorStruct {	error: SFE_INTERLEAVE_MODE		, r#str: c_str!("Attempt to write to file with non-interleaved data.") },
+	ErrorStruct {	error: SFE_INTERLEAVE_SEEK		, r#str: c_str!("Bad karma in seek during interleave read operation.") },
+	ErrorStruct {	error: SFE_INTERLEAVE_READ		, r#str: c_str!("Bad karma in read during interleave read operation.") },
+
+	ErrorStruct {	error: SFE_INTERNAL			, r#str: c_str!("Unspecified internal error.") },
+	ErrorStruct {	error: SFE_BAD_COMMAND_PARAM	, r#str: c_str!("Bad parameter passed to function sf_command.") },
+	ErrorStruct {	error: SFE_BAD_ENDIAN			, r#str: c_str!("Bad endian-ness. Try default endian-ness") },
+	ErrorStruct {	error: SFE_CHANNEL_COUNT_ZERO	, r#str: c_str!("Channel count is zero.") },
+	ErrorStruct {	error: SFE_CHANNEL_COUNT		, r#str: c_str!("Too many channels specified.") },
+	ErrorStruct {	error: SFE_CHANNEL_COUNT_BAD	, r#str: c_str!("Bad channel count.") },
+
+	ErrorStruct {	error: SFE_BAD_SEEK			    , r#str: c_str!("Internal psf_fseek() failed.") },
+	ErrorStruct {	error: SFE_NOT_SEEKABLE		    , r#str: c_str!("Seek attempted on unseekable file type.") },
+	ErrorStruct {	error: SFE_AMBIGUOUS_SEEK		, r#str: c_str!("Error : combination of file open mode and seek command is ambiguous.") },
+	ErrorStruct {	error: SFE_WRONG_SEEK			, r#str: c_str!("Error : invalid seek parameters.") },
+	ErrorStruct {	error: SFE_SEEK_FAILED			, r#str: c_str!("Error : parameters OK, but psf_seek() failed.") },
+
+	ErrorStruct {	error: SFE_BAD_OPEN_MODE		, r#str: c_str!("Error : bad mode parameter for file open.") },
+	ErrorStruct {	error: SFE_OPEN_PIPE_RDWR		, r#str: c_str!("Error : attempt to open a pipe in read/write mode.") },
+	ErrorStruct {	error: SFE_RDWR_POSITION		, r#str: c_str!("Error on RDWR position (cryptic).") },
+	ErrorStruct {	error: SFE_RDWR_BAD_HEADER		, r#str: c_str!("Error : Cannot open file in read/write mode due to string data in header.") },
+	ErrorStruct {	error: SFE_CMD_HAS_DATA		    , r#str: c_str!("Error : Command fails because file already has audio data.") },
+
+	ErrorStruct {	error: SFE_STR_NO_SUPPORT		, r#str: c_str!("Error : File type does not support string data.") },
+	ErrorStruct {	error: SFE_STR_NOT_WRITE		, r#str: c_str!("Error : Trying to set a string when file is not in write mode.") },
+	ErrorStruct {	error: SFE_STR_MAX_DATA		    , r#str: c_str!("Error : Maximum string data storage reached.") },
+	ErrorStruct {	error: SFE_STR_MAX_COUNT		, r#str: c_str!("Error : Maximum string data count reached.") },
+	ErrorStruct {	error: SFE_STR_BAD_TYPE		    , r#str: c_str!("Error : Bad string data type.") },
+	ErrorStruct {	error: SFE_STR_NO_ADD_END		, r#str: c_str!("Error : file type does not support strings added at end of file.") },
+	ErrorStruct {	error: SFE_STR_BAD_STRING		, r#str: c_str!("Error : bad string.") },
+	ErrorStruct {	error: SFE_STR_WEIRD			, r#str: c_str!("Error : Weird string error.") },
+
+	ErrorStruct {	error: SFE_WAV_NO_RIFF			, r#str: c_str!("Error in WAV file. No 'RIFF' chunk marker.") },
+	ErrorStruct {	error: SFE_WAV_NO_WAVE			, r#str: c_str!("Error in WAV file. No 'WAVE' chunk marker.") },
+	ErrorStruct {	error: SFE_WAV_NO_FMT			, r#str: c_str!("Error in WAV/W64/RF64 file. No 'fmt ' chunk marker.") },
+	ErrorStruct {	error: SFE_WAV_BAD_FMT			, r#str: c_str!("Error in WAV/W64/RF64 file. Malformed 'fmt ' chunk.") },
+	ErrorStruct {	error: SFE_WAV_FMT_SHORT		, r#str: c_str!("Error in WAV/W64/RF64 file. Short 'fmt ' chunk.") },
+
+	ErrorStruct {	error: SFE_WAV_BAD_FACT		    , r#str: c_str!("Error in WAV file. 'fact' chunk out of place.") },
+	ErrorStruct {	error: SFE_WAV_BAD_PEAK		    , r#str: c_str!("Error in WAV file. Bad 'PEAK' chunk.") },
+	ErrorStruct {	error: SFE_WAV_PEAK_B4_FMT		, r#str: c_str!("Error in WAV file. 'PEAK' chunk found before 'fmt ' chunk.") },
+
+	ErrorStruct {	error: SFE_WAV_BAD_FORMAT		, r#str: c_str!("Error in WAV file. Errors in 'fmt ' chunk.") },
+	ErrorStruct {	error: SFE_WAV_BAD_BLOCKALIGN	, r#str: c_str!("Error in WAV file. Block alignment in 'fmt ' chunk is incorrect.") },
+	ErrorStruct {	error: SFE_WAV_NO_DATA			, r#str: c_str!("Error in WAV file. No 'data' chunk marker.") },
+	ErrorStruct {	error: SFE_WAV_BAD_LIST		    , r#str: c_str!("Error in WAV file. Malformed LIST chunk.") },
+	ErrorStruct {	error: SFE_WAV_UNKNOWN_CHUNK	, r#str: c_str!("Error in WAV file. File contains an unknown chunk marker.") },
+	ErrorStruct {	error: SFE_WAV_WVPK_DATA		, r#str: c_str!("Error in WAV file. Data is in WAVPACK format.") },
+
+	ErrorStruct {	error: SFE_WAV_ADPCM_NOT4BIT	, r#str: c_str!("Error in ADPCM WAV file. Invalid bit width.") },
+	ErrorStruct {	error: SFE_WAV_ADPCM_CHANNELS	, r#str: c_str!("Error in ADPCM WAV file. Invalid number of channels.") },
+	ErrorStruct {	error: SFE_WAV_ADPCM_SAMPLES	, r#str: c_str!("Error in ADPCM WAV file. Invalid number of samples per block.") },
+	ErrorStruct {	error: SFE_WAV_GSM610_FORMAT	, r#str: c_str!("Error in GSM610 WAV file. Invalid format chunk.") },
+	ErrorStruct {	error: SFE_WAV_NMS_FORMAT		, r#str: c_str!("Error in NMS ADPCM WAV file. Invalid format chunk.") },
+
+	ErrorStruct {	error: SFE_AIFF_NO_FORM		    , r#str: c_str!("Error in AIFF file, bad 'FORM' marker.") },
+	ErrorStruct {	error: SFE_AIFF_AIFF_NO_FORM	, r#str: c_str!("Error in AIFF file, 'AIFF' marker without 'FORM'.") },
+	ErrorStruct {	error: SFE_AIFF_COMM_NO_FORM	, r#str: c_str!("Error in AIFF file, 'COMM' marker without 'FORM'.") },
+	ErrorStruct {	error: SFE_AIFF_SSND_NO_COMM	, r#str: c_str!("Error in AIFF file, 'SSND' marker without 'COMM'.") },
+	ErrorStruct {	error: SFE_AIFF_UNKNOWN_CHUNK	, r#str: c_str!("Error in AIFF file, unknown chunk.") },
+	ErrorStruct {	error: SFE_AIFF_COMM_CHUNK_SIZE , r#str: c_str!("Error in AIFF file, bad 'COMM' chunk size.") },
+	ErrorStruct {	error: SFE_AIFF_BAD_COMM_CHUNK  , r#str: c_str!("Error in AIFF file, bad 'COMM' chunk.") },
+	ErrorStruct {	error: SFE_AIFF_PEAK_B4_COMM	, r#str: c_str!("Error in AIFF file. 'PEAK' chunk found before 'COMM' chunk.") },
+	ErrorStruct {	error: SFE_AIFF_BAD_PEAK		, r#str: c_str!("Error in AIFF file. Bad 'PEAK' chunk.") },
+	ErrorStruct {	error: SFE_AIFF_NO_SSND		    , r#str: c_str!("Error in AIFF file, bad 'SSND' chunk.") },
+	ErrorStruct {	error: SFE_AIFF_NO_DATA		    , r#str: c_str!("Error in AIFF file, no sound data.") },
+	ErrorStruct {	error: SFE_AIFF_RW_SSND_NOT_LAST, r#str: c_str!("Error in AIFF file, RDWR only possible if SSND chunk at end of file.") },
+
+	ErrorStruct {	error: SFE_AU_UNKNOWN_FORMAT	, r#str: c_str!("Error in AU file, unknown format.") },
+	ErrorStruct {	error: SFE_AU_NO_DOTSND		    , r#str: c_str!("Error in AU file, missing '.snd' or 'dns.' marker.") },
+	ErrorStruct {	error: SFE_AU_EMBED_BAD_LEN	    , r#str: c_str!("Embedded AU file with unknown length.") },
+
+	ErrorStruct {	error: SFE_RAW_READ_BAD_SPEC	, r#str: c_str!("Error while opening RAW file for read. Must specify format and channels.\nPossibly trying to open unsupported format.") },
+	ErrorStruct {	error: SFE_RAW_BAD_BITWIDTH	    , r#str: c_str!("Error. RAW file bitwidth must be a multiple of 8.") },
+	ErrorStruct {	error: SFE_RAW_BAD_FORMAT		, r#str: c_str!("Error. Bad format field in SF_INFO struct when opening a RAW file for read.") },
+
+	ErrorStruct {	error: SFE_PAF_NO_MARKER		, r#str: c_str!("Error in PAF file, no marker.") },
+	ErrorStruct {	error: SFE_PAF_VERSION			, r#str: c_str!("Error in PAF file, bad version.") },
+	ErrorStruct {	error: SFE_PAF_UNKNOWN_FORMAT	, r#str: c_str!("Error in PAF file, unknown format.") },
+	ErrorStruct {	error: SFE_PAF_SHORT_HEADER	    , r#str: c_str!("Error in PAF file. File shorter than minimal header.") },
+	ErrorStruct {	error: SFE_PAF_BAD_CHANNELS	    , r#str: c_str!("Error in PAF file. Bad channel count.") },
+
+	ErrorStruct {	error: SFE_SVX_NO_FORM			, r#str: c_str!("Error in 8SVX / 16SV file, no 'FORM' marker.") },
+	ErrorStruct {	error: SFE_SVX_NO_BODY			, r#str: c_str!("Error in 8SVX / 16SV file, no 'BODY' marker.") },
+	ErrorStruct {	error: SFE_SVX_NO_DATA			, r#str: c_str!("Error in 8SVX / 16SV file, no sound data.") },
+	ErrorStruct {	error: SFE_SVX_BAD_COMP		    , r#str: c_str!("Error in 8SVX / 16SV file, unsupported compression format.") },
+	ErrorStruct {	error: SFE_SVX_BAD_NAME_LENGTH	, r#str: c_str!("Error in 8SVX / 16SV file, NAME chunk too long.") },
+
+	ErrorStruct {	error: SFE_NIST_BAD_HEADER		, r#str: c_str!("Error in NIST file, bad header.") },
+	ErrorStruct {	error: SFE_NIST_CRLF_CONVERISON , r#str: c_str!("Error : NIST file damaged by Windows CR -> CRLF conversion process.")	},
+	ErrorStruct {	error: SFE_NIST_BAD_ENCODING	, r#str: c_str!("Error in NIST file, unsupported compression format.") },
+
+	ErrorStruct {	error: SFE_VOC_NO_CREATIVE		, r#str: c_str!("Error in VOC file, no 'Creative Voice File' marker.") },
+	ErrorStruct {	error: SFE_VOC_BAD_FORMAT		, r#str: c_str!("Error in VOC file, bad format.") },
+	ErrorStruct {	error: SFE_VOC_BAD_VERSION		, r#str: c_str!("Error in VOC file, bad version number.") },
+	ErrorStruct {	error: SFE_VOC_BAD_MARKER		, r#str: c_str!("Error in VOC file, bad marker in file.") },
+	ErrorStruct {	error: SFE_VOC_BAD_SECTIONS	    , r#str: c_str!("Error in VOC file, incompatible VOC sections.") },
+	ErrorStruct {	error: SFE_VOC_MULTI_SAMPLERATE , r#str: c_str!("Error in VOC file, more than one sample rate defined.") },
+	ErrorStruct {	error: SFE_VOC_MULTI_SECTION	, r#str: c_str!("Unimplemented VOC file feature, file contains multiple sound sections.") },
+	ErrorStruct {	error: SFE_VOC_MULTI_PARAM		, r#str: c_str!("Error in VOC file, file contains multiple bit or channel widths.") },
+	ErrorStruct {	error: SFE_VOC_SECTION_COUNT	, r#str: c_str!("Error in VOC file, too many sections.") },
+	ErrorStruct {	error: SFE_VOC_NO_PIPE			, r#str: c_str!("Error : not able to operate on VOC files over a pipe.") },
+
+	ErrorStruct {	error: SFE_IRCAM_NO_MARKER		, r#str: c_str!("Error in IRCAM file, bad IRCAM marker.") },
+	ErrorStruct {	error: SFE_IRCAM_BAD_CHANNELS	, r#str: c_str!("Error in IRCAM file, bad channel count.") },
+	ErrorStruct {	error: SFE_IRCAM_UNKNOWN_FORMAT , r#str: c_str!("Error in IRCAM file, unknown encoding format.") },
+
+	ErrorStruct {	error: SFE_W64_64_BIT			, r#str: c_str!("Error in W64 file, file contains 64 bit offset.") },
+	ErrorStruct {	error: SFE_W64_NO_RIFF			, r#str: c_str!("Error in W64 file. No 'riff' chunk marker.") },
+	ErrorStruct {	error: SFE_W64_NO_WAVE			, r#str: c_str!("Error in W64 file. No 'wave' chunk marker.") },
+	ErrorStruct {	error: SFE_W64_NO_DATA			, r#str: c_str!("Error in W64 file. No 'data' chunk marker.") },
+	ErrorStruct {	error: SFE_W64_ADPCM_NOT4BIT	, r#str: c_str!("Error in ADPCM W64 file. Invalid bit width.") },
+	ErrorStruct {	error: SFE_W64_ADPCM_CHANNELS	, r#str: c_str!("Error in ADPCM W64 file. Invalid number of channels.") },
+	ErrorStruct {	error: SFE_W64_GSM610_FORMAT	, r#str: c_str!("Error in GSM610 W64 file. Invalid format chunk.") },
+
+	ErrorStruct {	error: SFE_MAT4_BAD_NAME		, r#str: c_str!("Error in MAT4 file. No variable name.") },
+	ErrorStruct {	error: SFE_MAT4_NO_SAMPLERATE	, r#str: c_str!("Error in MAT4 file. No sample rate.") },
+
+	ErrorStruct {	error: SFE_MAT5_BAD_ENDIAN		, r#str: c_str!("Error in MAT5 file. Not able to determine endian-ness.") },
+	ErrorStruct {	error: SFE_MAT5_NO_BLOCK		, r#str: c_str!("Error in MAT5 file. Bad block structure.") },
+	ErrorStruct {	error: SFE_MAT5_SAMPLE_RATE	    , r#str: c_str!("Error in MAT5 file. Not able to determine sample rate.") },
+
+	ErrorStruct {	error: SFE_PVF_NO_PVF1			, r#str: c_str!("Error in PVF file. No PVF1 marker.") },
+	ErrorStruct {	error: SFE_PVF_BAD_HEADER		, r#str: c_str!("Error in PVF file. Bad header.") },
+	ErrorStruct {	error: SFE_PVF_BAD_BITWIDTH	    , r#str: c_str!("Error in PVF file. Bad bit width.") },
+
+	ErrorStruct {	error: SFE_XI_BAD_HEADER		, r#str: c_str!("Error in XI file. Bad header.") },
+	ErrorStruct {	error: SFE_XI_EXCESS_SAMPLES	, r#str: c_str!("Error in XI file. Excess samples in file.") },
+	ErrorStruct {	error: SFE_XI_NO_PIPE			, r#str: c_str!("Error : not able to operate on XI files over a pipe.") },
+
+	ErrorStruct {	error: SFE_HTK_NO_PIPE			, r#str: c_str!("Error : not able to operate on HTK files over a pipe.") },
+
+	ErrorStruct {	error: SFE_SDS_NOT_SDS			, r#str: c_str!("Error : not an SDS file.") },
+	ErrorStruct {	error: SFE_SDS_BAD_BIT_WIDTH	, r#str: c_str!("Error : bad bit width for SDS file.") },
+
+	ErrorStruct {	error: SFE_SD2_FD_DISALLOWED	, r#str: c_str!("Error : cannot open SD2 file without a file name.") },
+	ErrorStruct {	error: SFE_SD2_BAD_DATA_OFFSET	, r#str: c_str!("Error : bad data offset.") },
+	ErrorStruct {	error: SFE_SD2_BAD_MAP_OFFSET	, r#str: c_str!("Error : bad map offset.") },
+	ErrorStruct {	error: SFE_SD2_BAD_DATA_LENGTH	, r#str: c_str!("Error : bad data length.") },
+	ErrorStruct {	error: SFE_SD2_BAD_MAP_LENGTH	, r#str: c_str!("Error : bad map length.") },
+	ErrorStruct {	error: SFE_SD2_BAD_RSRC		    , r#str: c_str!("Error : bad resource fork.") },
+	ErrorStruct {	error: SFE_SD2_BAD_SAMPLE_SIZE	, r#str: c_str!("Error : bad sample size.") },
+
+	ErrorStruct {	error: SFE_FLAC_BAD_HEADER		, r#str: c_str!("Error : bad flac header.") },
+	ErrorStruct {	error: SFE_FLAC_NEW_DECODER	    , r#str: c_str!("Error : problem while creating flac decoder.") },
+	ErrorStruct {	error: SFE_FLAC_INIT_DECODER	, r#str: c_str!("Error : problem with initialization of the flac decoder.") },
+	ErrorStruct {	error: SFE_FLAC_LOST_SYNC		, r#str: c_str!("Error : flac decoder lost sync.") },
+	ErrorStruct {	error: SFE_FLAC_BAD_SAMPLE_RATE , r#str: c_str!("Error : flac does not support this sample rate.") },
+	ErrorStruct {	error: SFE_FLAC_CHANNEL_COUNT_CHANGED, r#str: c_str!("Error : flac channel changed mid stream.") },
+	ErrorStruct {	error: SFE_FLAC_UNKOWN_ERROR	, r#str: c_str!("Error : unknown error in flac decoder.") },
+
+	ErrorStruct {	error: SFE_WVE_NOT_WVE			, r#str: c_str!("Error : not a WVE file.") },
+	ErrorStruct {	error: SFE_WVE_NO_PIPE			, r#str: c_str!("Error : not able to operate on WVE files over a pipe.") },
+
+	ErrorStruct {	error: SFE_DWVW_BAD_BITWIDTH	, r#str: c_str!("Error : Bad bit width for DWVW encoding. Must be 12, 16 or 24.") },
+	ErrorStruct {	error: SFE_G72X_NOT_MONO		, r#str: c_str!("Error : G72x encoding does not support more than 1 channel.") },
+	ErrorStruct {	error: SFE_NMS_ADPCM_NOT_MONO	, r#str: c_str!("Error : NMS ADPCM encoding does not support more than 1 channel.") },
+
+	ErrorStruct {	error: SFE_VORBIS_ENCODER_BUG	, r#str: c_str!("Error : Sample rate chosen is known to trigger a Vorbis encoder bug on this CPU.") },
+
+	ErrorStruct {	error: SFE_RF64_NOT_RF64		, r#str: c_str!("Error : Not an RF64 file.") },
+	ErrorStruct {	error: SFE_RF64_PEAK_B4_FMT	    , r#str: c_str!("Error in RF64 file. 'PEAK' chunk found before 'fmt ' chunk.") },
+	ErrorStruct {	error: SFE_RF64_NO_DATA		    , r#str: c_str!("Error in RF64 file. No 'data' chunk marker.") },
+
+	ErrorStruct {	error: SFE_ALAC_FAIL_TMPFILE	, r#str: c_str!("Error : Failed to open tmp file for ALAC encoding.") },
+
+	ErrorStruct {	error: SFE_BAD_CHUNK_PTR		, r#str: c_str!("Error : Bad SF_CHUNK_INFO pointer.") },
+	ErrorStruct {	error: SFE_UNKNOWN_CHUNK		, r#str: c_str!("Error : Unknown chunk marker.") },
+	ErrorStruct {	error: SFE_BAD_CHUNK_FORMAT	    , r#str: c_str!("Error : Reading/writing chunks from this file format is not supported.") },
+	ErrorStruct {	error: SFE_BAD_CHUNK_MARKER	    , r#str: c_str!("Error : Bad chunk marker.") },
+	ErrorStruct {	error: SFE_BAD_CHUNK_DATA_PTR	, r#str: c_str!("Error : Bad data pointer in SF_CHUNK_INFO struct.") },
+	ErrorStruct {	error: SFE_FILENAME_TOO_LONG	, r#str: c_str!("Error : Supplied filename too long.") },
+	ErrorStruct {	error: SFE_NEGATIVE_RW_LEN		, r#str: c_str!("Error : Length parameter passed to read/write is negative.") },
+
+	ErrorStruct {	error: SFE_OPUS_BAD_SAMPLERATE	, r#str: c_str!("Error : Opus only supports sample rates of 8000, 12000, 16000, 24000 and 48000.") },
+
+	ErrorStruct {	error: SFE_MAX_ERROR			, r#str: c_str!("Maximum error number.") },
+	ErrorStruct {	error: SFE_MAX_ERROR + 1		, r#str: c_str!("") }
+];
+
+macro_rules! VALIDATE_SNDFILE_AND_ASSIGN_PSF {
+    ($a:expr, $b:expr, $c:expr) => {
+        if $a.is_null() {
+            psf_set_sf_errno(SFE_BAD_SNDFILE_PTR);
+            return 0;
+        }
+        $b = $a as *mut SF_PRIVATE;
+        if (*$b).virtual_io == SF_FALSE && psf_file_valid($b) == 0 {
+            (*$b).error = SFE_BAD_FILE_PTR;
+            return 0;
+        }
+        if (*$b).Magick != SNDFILE_MAGICK {
+            (*$b).error = SFE_BAD_SNDFILE_PTR;
+            return 0;
+        }
+        if $c != SF_FALSE {
+            (*$b).error = 0;
+        }
+    };
+}
+
+#[no_mangle]
+pub unsafe fn sf_error_number(errnum: c_int) -> *const c_char {
+    let bad_errnum = c_str!("No error defined for this error number. This is a bug in libsndfile.");
+
+    if errnum == SFE_MAX_ERROR {
+        return SndfileErrors[0].r#str.as_ptr();
+    }
+
+    if errnum < 0 || errnum > SFE_MAX_ERROR {
+        /* This really shouldn't happen in release versions. */
+        // printf ("Not a valid error number (%d).\n", errnum) ;
+        return bad_errnum.as_ptr();
+    }
+
+    for errstr in SndfileErrors.iter() {
+        if errnum == errstr.error {
+            return errstr.r#str.as_ptr();
+        }
+    }
+
+    return bad_errnum.as_ptr();
+}
+
+#[no_mangle]
+pub unsafe fn sf_strerror(sndfile: *mut SNDFILE) -> *const c_char {
+    // SF_PRIVATE 	*psf = NULL ;
+    // int errnum ;
+
+    let mut errnum = SFE_NO_ERROR;
+    if sndfile.is_null() {
+        errnum = psf_get_sf_errno();
+        if errnum == SFE_SYSTEM && !psf_get_sf_syserr().is_null() {
+            return psf_get_sf_syserr();
+        }
+    } else {
+        let psf = &mut *(sndfile as *mut SF_PRIVATE);
+
+        if psf.Magick != SNDFILE_MAGICK {
+            return c_str!("sf_strerror : Bad magic number.").as_ptr();
+        }
+
+        errnum = psf.error;
+
+        if errnum == SFE_SYSTEM && psf.syserr[0] != 0 {
+            return psf.syserr.as_ptr() as *const c_char;
+        }
+    }
+
+    return sf_error_number(errnum);
+}
+
+#[no_mangle]
+pub unsafe fn sf_error(sndfile: *mut SNDFILE) -> c_int {
+    if sndfile.is_null() {
+        return psf_get_sf_errno();
+    }
+
+    let psf: *mut SF_PRIVATE;
+    VALIDATE_SNDFILE_AND_ASSIGN_PSF!(sndfile, psf, 0);
+    let psf = &mut *psf;
+
+    if psf.error != SFE_NO_ERROR {
+        return psf.error;
+    }
+
+    SFE_NO_ERROR
+}
+
+#[no_mangle]
+pub unsafe fn sf_perror(sndfile: *mut SNDFILE) -> c_int {
+    let errnum = if sndfile.is_null() {
+        psf_get_sf_errno()
+    } else {
+        let psf: *mut SF_PRIVATE;
+        VALIDATE_SNDFILE_AND_ASSIGN_PSF!(sndfile, psf, 0);
+        (*psf).error
+    };
+
+    let errstr = CStr::from_ptr(sf_error_number(errnum));
+    eprintln!("{}", errstr.to_string_lossy());
+
+    SFE_NO_ERROR
+}
+
+#[no_mangle]
+pub unsafe fn sf_error_str(sndfile: *mut SNDFILE, r#str: *mut c_char, maxlen: size_t) -> c_int {
+    if str.is_null() {
+        return SFE_INTERNAL;
+    }
+
+    let errnum = if sndfile.is_null() {
+        psf_get_sf_errno()
+    } else {
+        let psf: *mut SF_PRIVATE;
+        VALIDATE_SNDFILE_AND_ASSIGN_PSF!(sndfile, psf, 0);
+        (*psf).error
+    };
+
+    snprintf(
+        r#str,
+        maxlen,
+        c_str!("%s").as_ptr(),
+        sf_error_number(errnum),
+    );
+
+    return SFE_NO_ERROR;
+}
+
+#[no_mangle]
+pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
+    assert!(!info.is_null());
+    let info = &*info;
+
+    let subformat = SF_CODEC!(info.format);
+    let endian = SF_ENDIAN!(info.format);
+
+    // This is the place where each file format can check if the suppiled
+    // SF_INFO struct is valid.
+    // Return 0 on failure, 1 ons success.
+
+    if info.channels < 1 || info.channels > SF_MAX_CHANNELS {
+        return 0;
+    }
+
+    if info.samplerate < 0 {
+        return 0;
+    }
+
+    match SF_CONTAINER!(info.format) {
+        SF_FORMAT_WAV => {
+            /* WAV now allows both endian, RIFF or RIFX (little or big respectively) */
+            if subformat == SF_FORMAT_PCM_U8 || subformat == SF_FORMAT_PCM_16 {
+                return 1;
+            }
+            if subformat == SF_FORMAT_PCM_24 || subformat == SF_FORMAT_PCM_32 {
+                return 1;
+            }
+            if (subformat == SF_FORMAT_IMA_ADPCM || subformat == SF_FORMAT_MS_ADPCM)
+                && info.channels <= 2
+            {
+                return 1;
+            }
+            if subformat == SF_FORMAT_GSM610 && info.channels == 1 {
+                return 1;
+            }
+            if subformat == SF_FORMAT_G721_32 && info.channels == 1 {
+                return 1;
+            }
+            if subformat == SF_FORMAT_ULAW || subformat == SF_FORMAT_ALAW {
+                return 1;
+            }
+            if subformat == SF_FORMAT_FLOAT || subformat == SF_FORMAT_DOUBLE {
+                return 1;
+            }
+            if (subformat == SF_FORMAT_NMS_ADPCM_16
+                || subformat == SF_FORMAT_NMS_ADPCM_24
+                || subformat == SF_FORMAT_NMS_ADPCM_32)
+                && info.channels == 1
+            {
+                return 1;
+            }
+        }
+
+        SF_FORMAT_WAVEX => {
+            if endian == SF_ENDIAN_BIG || endian == SF_ENDIAN_CPU {
+                return 0;
+            }
+            if subformat == SF_FORMAT_PCM_U8 || subformat == SF_FORMAT_PCM_16 {
+                return 1;
+            }
+            if subformat == SF_FORMAT_PCM_24 || subformat == SF_FORMAT_PCM_32 {
+                return 1;
+            }
+            if subformat == SF_FORMAT_ULAW || subformat == SF_FORMAT_ALAW {
+                return 1;
+            }
+            if subformat == SF_FORMAT_FLOAT || subformat == SF_FORMAT_DOUBLE {
+                return 1;
+            }
+        }
+
+        SF_FORMAT_AIFF => {
+            /* AIFF does allow both endian-nesses for PCM data.*/
+            if subformat == SF_FORMAT_PCM_16
+                || subformat == SF_FORMAT_PCM_24
+                || subformat == SF_FORMAT_PCM_32
+            {
+                return 1;
+            }
+            /* For other encodings reject any endian-ness setting. */
+            if endian != 0 {
+                return 0;
+            }
+            if subformat == SF_FORMAT_PCM_U8 || subformat == SF_FORMAT_PCM_S8 {
+                return 1;
+            }
+            if subformat == SF_FORMAT_FLOAT || subformat == SF_FORMAT_DOUBLE {
+                return 1;
+            }
+            if subformat == SF_FORMAT_ULAW || subformat == SF_FORMAT_ALAW {
+                return 1;
+            }
+            if (subformat == SF_FORMAT_DWVW_12
+                || subformat == SF_FORMAT_DWVW_16
+                || subformat == SF_FORMAT_DWVW_24)
+                && info.channels == 1
+            {
+                return 1;
+            }
+            if subformat == SF_FORMAT_GSM610 && info.channels == 1 {
+                return 1;
+            }
+            if subformat == SF_FORMAT_IMA_ADPCM && (info.channels == 1 || info.channels == 2) {
+                return 1;
+            }
+        }
+
+        SF_FORMAT_AU => {
+            if subformat == SF_FORMAT_PCM_S8 || subformat == SF_FORMAT_PCM_16 {
+                return 1;
+            }
+            if subformat == SF_FORMAT_PCM_24 || subformat == SF_FORMAT_PCM_32 {
+                return 1;
+            }
+            if subformat == SF_FORMAT_ULAW || subformat == SF_FORMAT_ALAW {
+                return 1;
+            }
+            if subformat == SF_FORMAT_FLOAT || subformat == SF_FORMAT_DOUBLE {
+                return 1;
+            }
+            if subformat == SF_FORMAT_G721_32 && info.channels == 1 {
+                return 1;
+            }
+            if subformat == SF_FORMAT_G723_24 && info.channels == 1 {
+                return 1;
+            }
+            if subformat == SF_FORMAT_G723_40 && info.channels == 1 {
+                return 1;
+            }
+        }
+
+        SF_FORMAT_CAF => {
+            if subformat == SF_FORMAT_PCM_S8 || subformat == SF_FORMAT_PCM_16 {
+                return 1;
+            }
+            if subformat == SF_FORMAT_PCM_24 || subformat == SF_FORMAT_PCM_32 {
+                return 1;
+            }
+            if subformat == SF_FORMAT_ULAW || subformat == SF_FORMAT_ALAW {
+                return 1;
+            }
+            if subformat == SF_FORMAT_ALAC_16 || subformat == SF_FORMAT_ALAC_20 {
+                return 1;
+            }
+            if subformat == SF_FORMAT_ALAC_24 || subformat == SF_FORMAT_ALAC_32 {
+                return 1;
+            }
+            if subformat == SF_FORMAT_FLOAT || subformat == SF_FORMAT_DOUBLE {
+                return 1;
+            }
+        }
+
+        SF_FORMAT_RAW => {
+            if subformat == SF_FORMAT_PCM_U8
+                || subformat == SF_FORMAT_PCM_S8
+                || subformat == SF_FORMAT_PCM_16
+            {
+                return 1;
+            }
+            if subformat == SF_FORMAT_PCM_24 || subformat == SF_FORMAT_PCM_32 {
+                return 1;
+            }
+            if subformat == SF_FORMAT_FLOAT || subformat == SF_FORMAT_DOUBLE {
+                return 1;
+            }
+            if subformat == SF_FORMAT_ALAW || subformat == SF_FORMAT_ULAW {
+                return 1;
+            }
+            if (subformat == SF_FORMAT_DWVW_12
+                || subformat == SF_FORMAT_DWVW_16
+                || subformat == SF_FORMAT_DWVW_24)
+                && info.channels == 1
+            {
+                return 1;
+            }
+            if subformat == SF_FORMAT_GSM610 && info.channels == 1 {
+                return 1;
+            }
+            if subformat == SF_FORMAT_VOX_ADPCM && info.channels == 1 {
+                return 1;
+            }
+            if (subformat == SF_FORMAT_NMS_ADPCM_16
+                || subformat == SF_FORMAT_NMS_ADPCM_24
+                || subformat == SF_FORMAT_NMS_ADPCM_32)
+                && info.channels == 1
+            {
+                return 1;
+            }
+        }
+
+        SF_FORMAT_PAF => {
+            if subformat == SF_FORMAT_PCM_S8
+                || subformat == SF_FORMAT_PCM_16
+                || subformat == SF_FORMAT_PCM_24
+            {
+                return 1;
+            }
+        }
+
+        SF_FORMAT_SVX => {
+            // SVX only supports writing mono SVX files.
+            if info.channels > 1 {
+                return 0;
+            }
+            // Always big endian.
+            if endian == SF_ENDIAN_LITTLE || endian == SF_ENDIAN_CPU {
+                return 0;
+            }
+
+            if subformat == SF_FORMAT_PCM_S8 || subformat == SF_FORMAT_PCM_16 {
+                return 1;
+            }
+        }
+
+        SF_FORMAT_NIST => {
+            if subformat == SF_FORMAT_PCM_S8 || subformat == SF_FORMAT_PCM_16 {
+                return 1;
+            }
+            if subformat == SF_FORMAT_PCM_24 || subformat == SF_FORMAT_PCM_32 {
+                return 1;
+            }
+            if subformat == SF_FORMAT_ULAW || subformat == SF_FORMAT_ALAW {
+                return 1;
+            }
+        }
+
+        SF_FORMAT_IRCAM => {
+            if info.channels > 256 {
+                return 0;
+            }
+            if subformat == SF_FORMAT_PCM_16 || subformat == SF_FORMAT_PCM_32 {
+                return 1;
+            }
+            if subformat == SF_FORMAT_ULAW
+                || subformat == SF_FORMAT_ALAW
+                || subformat == SF_FORMAT_FLOAT
+            {
+                return 1;
+            }
+        }
+
+        SF_FORMAT_VOC => {
+            if info.channels > 2 {
+                return 0;
+            }
+            // VOC is strictly little endian.
+            if endian == SF_ENDIAN_BIG || endian == SF_ENDIAN_CPU {
+                return 0;
+            }
+            if subformat == SF_FORMAT_PCM_U8 || subformat == SF_FORMAT_PCM_16 {
+                return 1;
+            }
+            if subformat == SF_FORMAT_ULAW || subformat == SF_FORMAT_ALAW {
+                return 1;
+            }
+        }
+
+        SF_FORMAT_W64 => {
+            // W64 is strictly little endian.
+            if endian == SF_ENDIAN_BIG || endian == SF_ENDIAN_CPU {
+                return 0;
+            }
+            if subformat == SF_FORMAT_PCM_U8 || subformat == SF_FORMAT_PCM_16 {
+                return 1;
+            }
+            if subformat == SF_FORMAT_PCM_24 || subformat == SF_FORMAT_PCM_32 {
+                return 1;
+            }
+            if (subformat == SF_FORMAT_IMA_ADPCM || subformat == SF_FORMAT_MS_ADPCM)
+                && info.channels <= 2
+            {
+                return 1;
+            }
+            if subformat == SF_FORMAT_GSM610 && info.channels == 1 {
+                return 1;
+            }
+            if subformat == SF_FORMAT_ULAW || subformat == SF_FORMAT_ALAW {
+                return 1;
+            }
+            if subformat == SF_FORMAT_FLOAT || subformat == SF_FORMAT_DOUBLE {
+                return 1;
+            }
+        }
+
+        SF_FORMAT_MAT4 => {
+            if subformat == SF_FORMAT_PCM_16 || subformat == SF_FORMAT_PCM_32 {
+                return 1;
+            }
+            if subformat == SF_FORMAT_FLOAT || subformat == SF_FORMAT_DOUBLE {
+                return 1;
+            }
+        }
+
+        SF_FORMAT_MAT5 => {
+            if subformat == SF_FORMAT_PCM_U8
+                || subformat == SF_FORMAT_PCM_16
+                || subformat == SF_FORMAT_PCM_32
+            {
+                return 1;
+            }
+            if subformat == SF_FORMAT_FLOAT || subformat == SF_FORMAT_DOUBLE {
+                return 1;
+            }
+        }
+
+        SF_FORMAT_PVF => {
+            if subformat == SF_FORMAT_PCM_S8
+                || subformat == SF_FORMAT_PCM_16
+                || subformat == SF_FORMAT_PCM_32
+            {
+                return 1;
+            }
+        }
+
+        SF_FORMAT_XI => {
+            if info.channels != 1 {
+                return 0;
+            }
+            if subformat == SF_FORMAT_DPCM_8 || subformat == SF_FORMAT_DPCM_16 {
+                return 1;
+            }
+        }
+
+        SF_FORMAT_HTK => {
+            if info.channels != 1 {
+                return 0;
+            }
+            // HTK is strictly big endian.
+            if endian == SF_ENDIAN_LITTLE || endian == SF_ENDIAN_CPU {
+                return 0;
+            }
+            if subformat == SF_FORMAT_PCM_16 {
+                return 1;
+            }
+        }
+
+        SF_FORMAT_SDS => {
+            if info.channels != 1 {
+                return 0;
+            }
+            /* SDS is strictly big endian. */
+            if endian == SF_ENDIAN_LITTLE || endian == SF_ENDIAN_CPU {
+                return 0;
+            }
+            if subformat == SF_FORMAT_PCM_S8
+                || subformat == SF_FORMAT_PCM_16
+                || subformat == SF_FORMAT_PCM_24
+            {
+                return 1;
+            }
+        }
+
+        SF_FORMAT_AVR => {
+            if info.channels > 2 {
+                return 0;
+            }
+            // SDS is strictly big endian.
+            if endian == SF_ENDIAN_LITTLE || endian == SF_ENDIAN_CPU {
+                return 0;
+            }
+            if subformat == SF_FORMAT_PCM_U8
+                || subformat == SF_FORMAT_PCM_S8
+                || subformat == SF_FORMAT_PCM_16
+            {
+                return 1;
+            }
+        }
+
+        SF_FORMAT_FLAC => {
+            // FLAC can't do more than 8 channels.
+            if info.channels > 8 {
+                return 0;
+            }
+            if endian != SF_ENDIAN_FILE {
+                return 0;
+            }
+            if subformat == SF_FORMAT_PCM_S8
+                || subformat == SF_FORMAT_PCM_16
+                || subformat == SF_FORMAT_PCM_24
+            {
+                return 1;
+            }
+        }
+
+        SF_FORMAT_SD2 => {
+            // SD2 is strictly big endian.
+            if endian == SF_ENDIAN_LITTLE || endian == SF_ENDIAN_CPU {
+                return 0;
+            }
+            if subformat == SF_FORMAT_PCM_S8
+                || subformat == SF_FORMAT_PCM_16
+                || subformat == SF_FORMAT_PCM_24
+                || subformat == SF_FORMAT_PCM_32
+            {
+                return 1;
+            }
+        }
+
+        SF_FORMAT_WVE => {
+            if info.channels > 1 {
+                return 0;
+            }
+            // WVE is strictly big endian.
+            if endian == SF_ENDIAN_BIG || endian == SF_ENDIAN_CPU {
+                return 0;
+            }
+            if subformat == SF_FORMAT_ALAW {
+                return 1;
+            }
+        }
+
+        SF_FORMAT_OGG => {
+            if endian != SF_ENDIAN_FILE {
+                return 0;
+            }
+            if subformat == SF_FORMAT_VORBIS {
+                return 1;
+            }
+            if subformat == SF_FORMAT_OPUS {
+                return 1;
+            }
+        }
+
+        SF_FORMAT_MPC2K => {
+            if info.channels > 2 {
+                return 0;
+            }
+            // MPC2000 is strictly little endian.
+            if endian == SF_ENDIAN_BIG || endian == SF_ENDIAN_CPU {
+                return 0;
+            }
+            if subformat == SF_FORMAT_PCM_16 {
+                return 1;
+            }
+        }
+
+        SF_FORMAT_RF64 => {
+            if endian == SF_ENDIAN_BIG || endian == SF_ENDIAN_CPU {
+                return 0;
+            }
+            if subformat == SF_FORMAT_PCM_U8 || subformat == SF_FORMAT_PCM_16 {
+                return 1;
+            }
+            if subformat == SF_FORMAT_PCM_24 || subformat == SF_FORMAT_PCM_32 {
+                return 1;
+            }
+            if subformat == SF_FORMAT_ULAW || subformat == SF_FORMAT_ALAW {
+                return 1;
+            }
+            if subformat == SF_FORMAT_FLOAT || subformat == SF_FORMAT_DOUBLE {
+                return 1;
+            }
+        }
+        _ => {}
+    }
+
+    0
+}
+
 extern "C" {
+    fn psf_get_sf_errno() -> c_int;
+    fn psf_set_sf_errno(errnum: c_int);
+    fn psf_get_sf_syserr() -> *const c_char;
     fn psf_binheader_readf(psf: *mut SF_PRIVATE, format: *const c_char, ...) -> c_int;
     fn psf_binheader_writef(psf: *mut SF_PRIVATE, format: *const c_char, ...) -> c_int;
 
     fn pcm_init(psf: *mut SF_PRIVATE) -> c_int;
+
+    #[cfg(windows)]
+    fn fprintf(stream: *mut FILE, format: *const c_char, ...) -> c_int;
 }

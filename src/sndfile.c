@@ -296,7 +296,7 @@ static int	try_resource_fork (SF_PRIVATE * psf) ;
 
 int	sf_errno = 0 ;
 static char	sf_parselog [SF_BUFFER_LEN] = { 0 } ;
-static char	sf_syserr [SF_SYSERR_LEN] = { 0 } ;
+char	sf_syserr [SF_SYSERR_LEN] = { 0 } ;
 
 /*------------------------------------------------------------------------------
 */
@@ -450,6 +450,7 @@ sf_write_sync	(SNDFILE *sndfile)
 /*==============================================================================
 */
 
+#if 0
 const char*
 sf_error_number	(int errnum)
 {	static const char *bad_errnum =
@@ -471,7 +472,9 @@ sf_error_number	(int errnum)
 
 	return bad_errnum ;
 } /* sf_error_number */
+#endif
 
+#if 0
 const char*
 sf_strerror (SNDFILE *sndfile)
 {	SF_PRIVATE 	*psf = NULL ;
@@ -496,10 +499,12 @@ sf_strerror (SNDFILE *sndfile)
 
 	return sf_error_number (errnum) ;
 } /* sf_strerror */
+#endif
 
 /*------------------------------------------------------------------------------
 */
 
+#if 0
 int
 sf_error (SNDFILE *sndfile)
 {	SF_PRIVATE	*psf ;
@@ -514,10 +519,12 @@ sf_error (SNDFILE *sndfile)
 
 	return 0 ;
 } /* sf_error */
+#endif
 
 /*------------------------------------------------------------------------------
 */
 
+#if 0
 int
 sf_perror (SNDFILE *sndfile)
 {	SF_PRIVATE 	*psf ;
@@ -534,11 +541,13 @@ sf_perror (SNDFILE *sndfile)
 	fprintf (stderr, "%s\n", sf_error_number (errnum)) ;
 	return SFE_NO_ERROR ;
 } /* sf_perror */
+#endif
 
 
 /*------------------------------------------------------------------------------
 */
 
+#ifndef ENABLE_RUST
 int
 sf_error_str (SNDFILE *sndfile, char *str, size_t maxlen)
 {	SF_PRIVATE 	*psf ;
@@ -558,10 +567,12 @@ sf_error_str (SNDFILE *sndfile, char *str, size_t maxlen)
 
 	return SFE_NO_ERROR ;
 } /* sf_error_str */
+#endif
 
 /*==============================================================================
 */
 
+#if 0
 int
 sf_format_check	(const SF_INFO *info)
 {	int	subformat, endian ;
@@ -875,6 +886,7 @@ sf_format_check	(const SF_INFO *info)
 
 	return 0 ;
 } /* sf_format_check */
+#endif
 
 /*------------------------------------------------------------------------------
 */

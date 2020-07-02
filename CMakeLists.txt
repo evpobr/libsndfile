@@ -321,6 +321,11 @@ target_link_libraries (sndfile
 		$<$<AND:$<BOOL:${ENABLE_RUST}>,$<BOOL:${WIN32}>>:ws2_32>
 		$<$<AND:$<BOOL:${ENABLE_RUST}>,$<BOOL:${WIN32}>>:userenv>
 	)
+
+target_compile_definitions (sndfile
+	PRIVATE
+		$<$<BOOL:${ENABLE_RUST}>:ENABLE_RUST>
+	)
 set_target_properties (sndfile PROPERTIES
 	PUBLIC_HEADER "${sndfile_HDRS}"
 	)
