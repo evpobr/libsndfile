@@ -42,21 +42,29 @@ impl Default for SF_BOOL {
 
 impl From<c_int> for SF_BOOL {
     fn from(value: c_int) -> Self {
-        if value != SF_FALSE { SF_BOOL::TRUE } else { SF_BOOL::FALSE }
+        if value != SF_FALSE {
+            SF_BOOL::TRUE
+        } else {
+            SF_BOOL::FALSE
+        }
     }
 }
 
 impl From<bool> for SF_BOOL {
     fn from(value: bool) -> Self {
-        if value { SF_BOOL::TRUE } else { SF_BOOL::FALSE }
+        if value {
+            SF_BOOL::TRUE
+        } else {
+            SF_BOOL::FALSE
+        }
     }
 }
 
 #[repr(C)]
 pub enum SF_SEEK_MODE {
-    SET =  0,
-    CUR =  1,
-    END =  2,
+    SET = 0,
+    CUR = 1,
+    END = 2,
 }
 
 macro_rules! SF_CONTAINER {
@@ -939,6 +947,26 @@ pub const SFE_NEGATIVE_RW_LEN: c_int = 175;
 pub const SFE_OPUS_BAD_SAMPLERATE: c_int = 176;
 
 pub const SFE_MAX_ERROR: c_int = 177; /* This must be last in list. */
+
+pub(crate) unsafe fn psf_memset<T>(s: *mut T, c: c_int, len: sf_count_t) -> *mut T {
+    let mut ptr_index = 0;
+    let mut len = len;
+
+    while len > 0 {
+        let setcount = if len > 0x10000000 {
+            0x10000000
+        } else {
+            len as c_int
+        };
+
+        memset(s.add(ptr_index) as *mut c_void, c, setcount as size_t);
+
+        ptr_index += setcount as size_t;
+        len -= sf_count_t::from(setcount);
+    }
+
+    return s;
+}
 
 extern "C" {
     pub(crate) fn psf_log_printf(psf: *mut SF_PRIVATE, format: *const c_char, ...);

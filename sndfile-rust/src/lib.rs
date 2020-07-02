@@ -1593,6 +1593,111 @@ pub unsafe fn sf_set_string(sndfile: *mut SNDFILE, str_type: c_int, r#str: *cons
     return psf_set_string(psf, str_type, r#str);
 }
 
+#[no_mangle]
+pub unsafe fn sf_current_byterate(sndfile: *mut SNDFILE) -> c_int {
+    let psf = sndfile as *mut SF_PRIVATE;
+
+    if psf.is_null() {
+        return -1;
+    }
+    let psf = &mut *psf;
+    if psf.Magick != SNDFILE_MAGICK {
+        return -1;
+    }
+
+    // This should cover all PCM and floating point formats.
+    if psf.bytewidth != 0 {
+        return psf.sf.samplerate * psf.sf.channels * psf.bytewidth;
+    }
+
+    if let Some(psf_byterate) = psf.byterate {
+        return psf_byterate(psf);
+    }
+
+    match SF_CODEC!(psf.sf.format) {
+        SF_FORMAT_IMA_ADPCM | SF_FORMAT_MS_ADPCM | SF_FORMAT_VOX_ADPCM => {
+            (psf.sf.samplerate * psf.sf.channels) / 2
+        }
+        SF_FORMAT_GSM610 => (psf.sf.samplerate * psf.sf.channels * 13000) / 8000,
+        SF_FORMAT_NMS_ADPCM_16 => psf.sf.samplerate / 4 + 10,
+        SF_FORMAT_NMS_ADPCM_24 => psf.sf.samplerate * 3 / 8 + 10,
+        SF_FORMAT_NMS_ADPCM_32 => psf.sf.samplerate / 2 + 10,
+        // 32kbs G721 ADPCM encoding.
+        SF_FORMAT_G721_32 => (psf.sf.samplerate * psf.sf.channels) / 2,
+        // 24kbs G723 ADPCM encoding.
+        SF_FORMAT_G723_24 => (psf.sf.samplerate * psf.sf.channels * 3) / 8,
+        // 40kbs G723 ADPCM encoding.
+        SF_FORMAT_G723_40 => (psf.sf.samplerate * psf.sf.channels * 5) / 8,
+        _ => -1,
+    }
+}
+
+#[no_mangle]
+pub unsafe fn sf_read_raw(
+    sndfile: *mut SNDFILE,
+    ptr: *mut c_void,
+    bytes: sf_count_t,
+) -> sf_count_t {
+    // SF_PRIVATE 	*psf ;
+    // sf_count_t	count, extra ;
+    // int			bytewidth, blockwidth ;
+
+    if bytes == 0 {
+        return 0;
+    }
+
+    let psf: *mut SF_PRIVATE;
+    VALIDATE_SNDFILE_AND_ASSIGN_PSF!(sndfile, psf, 1);
+    let psf = &mut *psf;
+
+    let bytewidth = if psf.bytewidth > 0 { psf.bytewidth } else { 1 };
+    let blockwidth = if psf.blockwidth > 0 {
+        psf.blockwidth
+    } else {
+        1
+    };
+
+    if psf.file.mode == SFM_OPEN_MODE::WRITE {
+        psf.error = SFE_NOT_READMODE;
+        return 0;
+    }
+
+    if bytes < 0 || psf.read_current >= psf.sf.frames {
+        psf_memset(ptr, 0, bytes);
+        return 0;
+    }
+
+    if (bytes % ((psf.sf.channels as sf_count_t) * (bytewidth as sf_count_t))) != 0 {
+        psf.error = SFE_BAD_READ_ALIGN;
+        return 0;
+    }
+
+    if psf.last_op != SFM_READ {
+        if let Some(_psf_seek) = psf.seek {
+            if _psf_seek(psf, SFM_READ, psf.read_current) < 0 {
+                return 0;
+            }
+        } else {
+            return 0;
+        }
+    }
+
+    let mut count = psf_fread(ptr, 1, bytes, psf);
+
+    if psf.read_current + count / sf_count_t::from(blockwidth) <= psf.sf.frames {
+        psf.read_current += count / sf_count_t::from(blockwidth);
+    } else {
+        count = (psf.sf.frames - psf.read_current) * sf_count_t::from(blockwidth);
+        let extra = bytes - count;
+        psf_memset(ptr.offset(count as isize), 0, extra);
+        psf.read_current = psf.sf.frames;
+    }
+
+    psf.last_op = SFM_READ;
+
+    count
+}
+
 extern "C" {
     fn psf_get_sf_errno() -> c_int;
     fn psf_set_sf_errno(errnum: c_int);

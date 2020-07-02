@@ -1557,6 +1557,7 @@ sf_set_string (SNDFILE *sndfile, int str_type, const char* str)
 /*------------------------------------------------------------------------------
 */
 
+#if 0
 int
 sf_current_byterate (SNDFILE *sndfile)
 {	SF_PRIVATE 	*psf ;
@@ -1606,10 +1607,12 @@ sf_current_byterate (SNDFILE *sndfile)
 
 	return -1 ;
 } /* sf_current_byterate */
+#endif
 
 /*==============================================================================
 */
 
+#if 0
 sf_count_t
 sf_read_raw		(SNDFILE *sndfile, void *ptr, sf_count_t bytes)
 {	SF_PRIVATE 	*psf ;
@@ -1658,6 +1661,7 @@ sf_read_raw		(SNDFILE *sndfile, void *ptr, sf_count_t bytes)
 
 	return count ;
 } /* sf_read_raw */
+#endif
 
 /*------------------------------------------------------------------------------
 */
