@@ -3350,6 +3350,7 @@ sf_get_chunk_size (const SF_CHUNK_ITERATOR * iterator, SF_CHUNK_INFO * chunk_inf
 	return SFE_BAD_CHUNK_FORMAT ;
 } /* sf_get_chunk_size */
 
+#if 0
 int
 sf_get_chunk_data (const SF_CHUNK_ITERATOR * iterator, SF_CHUNK_INFO * chunk_info)
 {	SF_PRIVATE	*psf ;
@@ -3365,3 +3366,4 @@ sf_get_chunk_data (const SF_CHUNK_ITERATOR * iterator, SF_CHUNK_INFO * chunk_inf
 
 	return SFE_BAD_CHUNK_FORMAT ;
 } /* sf_get_chunk_data */
+#endif

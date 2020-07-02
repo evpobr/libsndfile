@@ -1698,6 +1698,31 @@ pub unsafe fn sf_read_raw(
     count
 }
 
+#[no_mangle]
+pub unsafe fn sf_get_chunk_data(
+    iterator: *const SF_CHUNK_ITERATOR,
+    chunk_info: *mut SF_CHUNK_INFO,
+) -> c_int {
+    let sndfile = if !iterator.is_null() {
+        (*iterator).sndfile
+    } else {
+        ptr::null_mut()
+    };
+    let psf: *mut SF_PRIVATE;
+    VALIDATE_SNDFILE_AND_ASSIGN_PSF!(sndfile, psf, 1);
+    let psf = &mut *psf;
+
+    if chunk_info.is_null() || (*chunk_info).data.is_null() {
+        return SFE_BAD_CHUNK_PTR;
+    }
+
+    if let Some(_get_chunk_data) = psf.get_chunk_data {
+        return _get_chunk_data(psf, iterator, chunk_info);
+    }
+
+    return SFE_BAD_CHUNK_FORMAT;
+}
+
 extern "C" {
     fn psf_get_sf_errno() -> c_int;
     fn psf_set_sf_errno(errnum: c_int);
