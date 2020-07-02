@@ -97,6 +97,7 @@ static SF_FORMAT_INFO const simple_formats [] =
 
 } ; /* simple_formats */
 
+#if 0
 int
 psf_get_format_simple_count	(void)
 {	return (sizeof (simple_formats) / sizeof (SF_FORMAT_INFO)) ;
@@ -114,6 +115,7 @@ psf_get_format_simple (SF_FORMAT_INFO *data)
 
 	return 0 ;
 } /* psf_get_format_simple */
+#endif
 
 /*============================================================================
 ** Major format info.

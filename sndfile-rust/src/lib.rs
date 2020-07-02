@@ -10,6 +10,7 @@ use libc::*;
 use byte_strings::c_str;
 
 mod audio_detect;
+mod command;
 #[macro_use]
 mod common;
 mod file_io;
