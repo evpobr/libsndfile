@@ -3,6 +3,7 @@ use common::*;
 
 use byte_strings::c_str;
 use std::ffi::CStr;
+use std::slice;
 
 #[derive(Debug, Copy, Clone)]
 pub struct FormatInfo<'a> {
@@ -503,45 +504,101 @@ unsafe fn psf_calc_signal_max(psf: *mut SF_PRIVATE, normalize: c_int) -> c_doubl
     assert!(!psf.is_null());
     let psf = &mut *psf;
 
-	// If the file is not seekable, there is nothing we can do.
-	if psf.sf.seekable == SF_FALSE {
-        psf.error = SFE_NOT_SEEKABLE ;
-		return	0.0 ;
-	}
+    // If the file is not seekable, there is nothing we can do.
+    if psf.sf.seekable == SF_FALSE {
+        psf.error = SFE_NOT_SEEKABLE;
+        return 0.0;
+    }
 
-	if psf.read_double.is_none() {
-        psf.error = SFE_UNIMPLEMENTED ;
-		return	0.0 ;
-	}
+    if psf.read_double.is_none() {
+        psf.error = SFE_UNIMPLEMENTED;
+        return 0.0;
+    }
 
-	let save_state = sf_command (psf, SFC_GET_NORM_DOUBLE, ptr::null_mut(), 0) ;
-	sf_command (psf, SFC_SET_NORM_DOUBLE, ptr::null_mut(), normalize) ;
+    let save_state = sf_command(psf, SFC_GET_NORM_DOUBLE, ptr::null_mut(), 0);
+    sf_command(psf, SFC_SET_NORM_DOUBLE, ptr::null_mut(), normalize);
 
-	// Brute force. Read the whole file and find the biggest sample.
-	// Get current position in file
-	let position = sf_seek (psf, 0, SEEK_CUR) ;
-	// Go to start of file.
-	sf_seek ( psf, 0, SEEK_SET) ;
+    // Brute force. Read the whole file and find the biggest sample.
+    // Get current position in file
+    let position = sf_seek(psf, 0, SEEK_CUR);
+    // Go to start of file.
+    sf_seek(psf, 0, SEEK_SET);
 
-	let mut data = [0f64; SF_BUFFER_LEN / mem::size_of::<f64>() ] ;
-	// Make sure len is an integer multiple of the channel count.
-	let len = data.len() as c_int - (data.len() as c_int % psf.sf.channels) ;
+    let mut data = [0f64; SF_BUFFER_LEN / mem::size_of::<f64>()];
+    // Make sure len is an integer multiple of the channel count.
+    let len = data.len() as c_int - (data.len() as c_int % psf.sf.channels);
 
     let mut max_val = 0.0;
     loop {
-        let readcount = sf_read_double (psf, data.as_mut_ptr(), len as sf_count_t) ;
+        let readcount = sf_read_double(psf, data.as_mut_ptr(), len as sf_count_t);
         if readcount <= 0 {
             break;
         }
         for k in 0..readcount {
             let temp = data[k as usize].abs();
-			max_val = if temp > max_val { temp } else { max_val};
+            max_val = if temp > max_val { temp } else { max_val };
         }
-    };
+    }
 
-	/* Return to SNDFILE to original state. */
-	sf_seek (psf, position, SEEK_SET) ;
-	sf_command (psf, SFC_SET_NORM_DOUBLE, ptr::null_mut(), save_state) ;
+    /* Return to SNDFILE to original state. */
+    sf_seek(psf, position, SEEK_SET);
+    sf_command(psf, SFC_SET_NORM_DOUBLE, ptr::null_mut(), save_state);
 
-	return	max_val ;
+    return max_val;
+}
+
+#[no_mangle]
+unsafe fn psf_calc_max_all_channels(
+    psf: *mut SF_PRIVATE,
+    peaks: *mut c_double,
+    normalize: c_int,
+) -> c_int {
+    assert!(!psf.is_null());
+    let psf = &mut *psf;
+
+    // If the file is not seekable, there is nothing we can do.
+    if psf.sf.seekable == SF_FALSE {
+        psf.error = SFE_NOT_SEEKABLE;
+        return psf.error;
+    }
+
+    if psf.read_double.is_none() {
+        psf.error = SFE_UNIMPLEMENTED;
+        return psf.error;
+    }
+
+    let save_state = sf_command(psf, SFC_GET_NORM_DOUBLE, ptr::null_mut(), 0);
+    sf_command(psf, SFC_SET_NORM_DOUBLE, ptr::null_mut(), normalize);
+
+    assert!(psf.sf.channels >= 0);
+    let peaks = slice::from_raw_parts_mut(peaks, psf.sf.channels as usize);
+    for c in peaks.iter_mut() {
+        *c = 0.0;
+    }
+
+    // Brute force. Read the whole file and find the biggest sample for each channel. */
+    let position = sf_seek(psf, 0, SEEK_CUR); // Get current position in file
+    sf_seek(psf, 0, SEEK_SET); // Go to start of file.
+
+    let mut data = [0f64; SF_BUFFER_LEN / mem::size_of::<f64>()];
+    let len = data.len() as c_int - (data.len() as c_int % psf.sf.channels);
+
+    let mut chan: c_int = 0;
+    let mut readcount = len;
+    while readcount > 0 {
+        readcount = sf_read_double(psf, data.as_mut_ptr(), len as sf_count_t) as c_int;
+        for k in 0..readcount as usize {
+            let temp = data[k].abs();
+            let peak = peaks[chan as usize];
+            peaks[chan as usize] = if temp > peak { temp } else { peak };
+            chan = (chan + 1) % psf.sf.channels;
+        }
+    }
+
+    // Return to original position.
+    sf_seek(psf, position, SEEK_SET);
+
+    sf_command(psf, SFC_SET_NORM_DOUBLE, ptr::null_mut(), save_state);
+
+    return 0;
 }
