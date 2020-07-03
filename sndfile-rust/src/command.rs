@@ -1,4 +1,5 @@
 use crate::*;
+use common::*;
 
 use byte_strings::c_str;
 use std::ffi::CStr;
@@ -495,4 +496,52 @@ unsafe fn psf_get_format_info(data: *mut SF_FORMAT_INFO) -> c_int {
     *data = SF_FORMAT_INFO::default();
 
     return SFE_BAD_COMMAND_PARAM;
+}
+
+#[no_mangle]
+unsafe fn psf_calc_signal_max(psf: *mut SF_PRIVATE, normalize: c_int) -> c_double {
+    assert!(!psf.is_null());
+    let psf = &mut *psf;
+
+	// If the file is not seekable, there is nothing we can do.
+	if psf.sf.seekable == SF_FALSE {
+        psf.error = SFE_NOT_SEEKABLE ;
+		return	0.0 ;
+	}
+
+	if psf.read_double.is_none() {
+        psf.error = SFE_UNIMPLEMENTED ;
+		return	0.0 ;
+	}
+
+	let save_state = sf_command (psf, SFC_GET_NORM_DOUBLE, ptr::null_mut(), 0) ;
+	sf_command (psf, SFC_SET_NORM_DOUBLE, ptr::null_mut(), normalize) ;
+
+	// Brute force. Read the whole file and find the biggest sample.
+	// Get current position in file
+	let position = sf_seek (psf, 0, SEEK_CUR) ;
+	// Go to start of file.
+	sf_seek ( psf, 0, SEEK_SET) ;
+
+	let mut data = [0f64; SF_BUFFER_LEN / mem::size_of::<f64>() ] ;
+	// Make sure len is an integer multiple of the channel count.
+	let len = data.len() as c_int - (data.len() as c_int % psf.sf.channels) ;
+
+    let mut max_val = 0.0;
+    loop {
+        let readcount = sf_read_double (psf, data.as_mut_ptr(), len as sf_count_t) ;
+        if readcount <= 0 {
+            break;
+        }
+        for k in 0..readcount {
+            let temp = data[k as usize].abs();
+			max_val = if temp > max_val { temp } else { max_val};
+        }
+    };
+
+	/* Return to SNDFILE to original state. */
+	sf_seek (psf, position, SEEK_SET) ;
+	sf_command (psf, SFC_SET_NORM_DOUBLE, ptr::null_mut(), save_state) ;
+
+	return	max_val ;
 }

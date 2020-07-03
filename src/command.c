@@ -285,6 +285,7 @@ psf_get_format_info (SF_FORMAT_INFO *data)
 /*==============================================================================
 */
 
+#if 0
 double
 psf_calc_signal_max (SF_PRIVATE *psf, int normalize)
 {	BUF_UNION	ubuf ;
@@ -330,6 +331,7 @@ psf_calc_signal_max (SF_PRIVATE *psf, int normalize)
 
 	return	max_val ;
 } /* psf_calc_signal_max */
+#endif
 
 int
 psf_calc_max_all_channels (SF_PRIVATE *psf, double *peaks, int normalize)

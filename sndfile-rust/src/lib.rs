@@ -357,7 +357,7 @@ pub const SF_CHANNEL_MAP_MAX: c_int = 27;
 
 // A SNDFILE* pointer can be passed around much like stdio.h's FILE* pointer.
 
-pub type SNDFILE = c_void;
+pub type SNDFILE = SF_PRIVATE;
 
 /* The following typedef is system specific and is defined when libsndfile is
  * compiled. sf_count_t will be a 64 bit value when the underlying OS allows
@@ -1745,4 +1745,13 @@ extern "C" {
 
     #[cfg(windows)]
     fn fprintf(stream: *mut FILE, format: *const c_char, ...) -> c_int;
+
+    fn sf_command(
+        sndfile: *mut SNDFILE,
+        command: c_int,
+        data: *mut c_void,
+        datasize: c_int,
+    ) -> c_int;
+    fn sf_seek(sndfile: *mut SNDFILE, offset: sf_count_t, whence: c_int) -> sf_count_t;
+    fn sf_read_double(sndfile: *mut SNDFILE, ptr: *mut c_double, len: sf_count_t) -> sf_count_t;
 }
