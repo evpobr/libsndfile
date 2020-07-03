@@ -1,7 +1,7 @@
 use crate::*;
-use common::*;
 
 use byte_strings::c_str;
+
 use std::ffi::CStr;
 use std::slice;
 
@@ -601,4 +601,51 @@ unsafe fn psf_calc_max_all_channels(
     sf_command(psf, SFC_SET_NORM_DOUBLE, ptr::null_mut(), save_state);
 
     return 0;
+}
+
+#[no_mangle]
+unsafe fn psf_get_signal_max(psf: *mut SF_PRIVATE, peak: *mut c_double) -> c_int {
+    assert!(!psf.is_null());
+    let psf = &mut *psf;
+
+    if psf.peak_info.is_null() {
+        return SF_FALSE;
+    }
+
+    assert!(!peak.is_null());
+    let peak = &mut *peak;
+
+    *peak = (*psf.peak_info).peaks[0].value;
+    let peaks = (*psf.peak_info).peaks.as_mut_ptr();
+    let peaks = slice::from_raw_parts_mut(peaks, psf.sf.channels as usize);
+
+    for k in 1..psf.sf.channels {
+        if peaks[k as usize].value > *peak {
+            *peak = peaks[k as usize].value;
+        }
+    }
+
+    SF_TRUE
+}
+
+#[no_mangle]
+unsafe fn psf_get_max_all_channels(psf: *mut SF_PRIVATE, peaks: *mut c_double) -> c_int {
+    assert!(!psf.is_null());
+    let psf = &mut *psf;
+
+    if psf.peak_info.is_null() {
+        return SF_FALSE;
+    }
+
+    assert!(psf.sf.channels >= 0);
+    let peaks = slice::from_raw_parts_mut(peaks, psf.sf.channels as usize);
+    let peak_info_peaks = slice::from_raw_parts_mut(
+        (*psf.peak_info).peaks.as_mut_ptr(),
+        psf.sf.channels as usize,
+    );
+    for k in 0..psf.sf.channels as usize {
+        peaks[k] = peak_info_peaks[k].value;
+    }
+
+    return SF_TRUE;
 }

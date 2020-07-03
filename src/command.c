@@ -97,7 +97,6 @@ static SF_FORMAT_INFO const simple_formats [] =
 
 } ; /* simple_formats */
 
-#if 0
 int
 psf_get_format_simple_count	(void)
 {	return (sizeof (simple_formats) / sizeof (SF_FORMAT_INFO)) ;
@@ -115,7 +114,6 @@ psf_get_format_simple (SF_FORMAT_INFO *data)
 
 	return 0 ;
 } /* psf_get_format_simple */
-#endif
 
 /*============================================================================
 ** Major format info.
@@ -155,7 +153,6 @@ static SF_FORMAT_INFO const major_formats [] =
 
 } ; /* major_formats */
 
-#if 0
 int
 psf_get_format_major_count	(void)
 {	return (sizeof (major_formats) / sizeof (SF_FORMAT_INFO)) ;
@@ -173,7 +170,6 @@ psf_get_format_major (SF_FORMAT_INFO *data)
 
 	return 0 ;
 } /* psf_get_format_major */
-#endif
 
 /*============================================================================
 ** Subtype format info.
@@ -225,7 +221,6 @@ static SF_FORMAT_INFO subtype_formats [] =
 	{	SF_FORMAT_ALAC_32,		"32 bit ALAC",			NULL	},
 } ; /* subtype_formats */
 
-#if 0
 int
 psf_get_format_subtype_count	(void)
 {	return (sizeof (subtype_formats) / sizeof (SF_FORMAT_INFO)) ;
@@ -245,12 +240,10 @@ psf_get_format_subtype (SF_FORMAT_INFO *data)
 
 	return 0 ;
 } /* psf_get_format_subtype */
-#endif
 
 /*==============================================================================
 */
 
-#if 0
 int
 psf_get_format_info (SF_FORMAT_INFO *data)
 {	int k, format ;
@@ -280,12 +273,10 @@ psf_get_format_info (SF_FORMAT_INFO *data)
 
 	return SFE_BAD_COMMAND_PARAM ;
 } /* psf_get_format_info */
-#endif
 
 /*==============================================================================
 */
 
-#if 0
 double
 psf_calc_signal_max (SF_PRIVATE *psf, int normalize)
 {	BUF_UNION	ubuf ;
@@ -331,9 +322,7 @@ psf_calc_signal_max (SF_PRIVATE *psf, int normalize)
 
 	return	max_val ;
 } /* psf_calc_signal_max */
-#endif
 
-#if 0
 int
 psf_calc_max_all_channels (SF_PRIVATE *psf, double *peaks, int normalize)
 {	BUF_UNION	ubuf ;
@@ -379,7 +368,6 @@ psf_calc_max_all_channels (SF_PRIVATE *psf, double *peaks, int normalize)
 
 	return	0 ;
 } /* psf_calc_max_all_channels */
-#endif
 
 int
 psf_get_signal_max (SF_PRIVATE *psf, double *peak)

@@ -54,17 +54,7 @@ main (int argc, char *argv [])
 {	int		do_all = 0 ;
 	int		test_count = 0 ;
 
-	if (argc != 2)
-	{	printf ("Usage : %s <test>\n", argv [0]) ;
-		printf ("    Where <test> is one of the following:\n") ;
-		printf ("           aiff - test AIFF file PEAK chunk\n") ;
-		printf ("           caf  - test CAF file PEAK chunk\n") ;
-		printf ("           wav  - test WAV file peak chunk\n") ;
-		printf ("           all  - perform all tests\n") ;
-		exit (1) ;
-		} ;
-
-	do_all = ! strcmp (argv [1], "all") ;
+	do_all = 1 ;
 
 	if (do_all || ! strcmp (argv [1], "wav"))
 	{	test_float_peak ("peak_float.wav", SF_FORMAT_WAV | SF_FORMAT_FLOAT) ;

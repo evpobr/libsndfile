@@ -194,7 +194,7 @@ add_library (sndfile
 	src/common.h
 	src/common.c
 	$<$<NOT:$<AND:$<BOOL:${ENABLE_RUST}>,$<BOOL:${WIN32}>>>:src/file_io.c>
-	src/command.c
+	$<$<NOT:$<BOOL:${ENABLE_RUST}>>:src/command.c>
 	src/pcm.c
 	src/ulaw.c
 	src/alaw.c

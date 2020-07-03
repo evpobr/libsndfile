@@ -675,7 +675,7 @@ impl Default for SF_PRIVATE {
             add_clipping: 0,
             sf: SF_INFO::default(),
             have_written: 0,
-            peak_info: ptr::null_mut(),
+            peak_info: ptr::null_mut::<PEAK_INFO>(),
             cues: ptr::null_mut(),
             loop_info: ptr::null_mut(),
             instrument: ptr::null_mut(),
