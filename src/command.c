@@ -155,6 +155,7 @@ static SF_FORMAT_INFO const major_formats [] =
 
 } ; /* major_formats */
 
+#if 0
 int
 psf_get_format_major_count	(void)
 {	return (sizeof (major_formats) / sizeof (SF_FORMAT_INFO)) ;
@@ -172,6 +173,7 @@ psf_get_format_major (SF_FORMAT_INFO *data)
 
 	return 0 ;
 } /* psf_get_format_major */
+#endif
 
 /*============================================================================
 ** Subtype format info.
