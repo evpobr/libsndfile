@@ -399,7 +399,7 @@ pub struct sf_private_tag {
 
     pub unique_id: c_uint,
 
-    pub error: c_int,
+    pub error: SFE,
 
     pub endian: c_int, /* File endianness : SF_ENDIAN_LITTLE or SF_ENDIAN_BIG. */
     pub data_endswap: c_int, /* Need to endswap data? */
@@ -545,7 +545,7 @@ pub struct sf_private_tag {
         ) -> sf_count_t,
     >,
     pub write_header:
-        Option<unsafe extern "C" fn(psf: *mut sf_private_tag, calc_length: c_int) -> c_int>,
+        Option<unsafe extern "C" fn(psf: *mut sf_private_tag, calc_length: c_int) -> SFE>,
     pub command: Option<
         unsafe extern "C" fn(
             psf: &mut sf_private_tag,
@@ -599,7 +599,7 @@ pub struct sf_private_tag {
             psf: *mut sf_private_tag,
             iterator: *const SF_CHUNK_ITERATOR,
             chunk_info: *mut SF_CHUNK_INFO,
-        ) -> c_int,
+        ) -> SFE,
     >,
 }
 
@@ -664,7 +664,7 @@ impl Default for SF_PRIVATE {
             strings: SF_PRIVATE_STRINGS::default(),
             Magick: 0,
             unique_id: 0,
-            error: 0,
+            error: SFE::NO_ERROR,
             endian: 0,
             data_endswap: 0,
             float_int_mult: 0,
@@ -944,6 +944,223 @@ pub const SFE_NEGATIVE_RW_LEN: c_int = 175;
 pub const SFE_OPUS_BAD_SAMPLERATE: c_int = 176;
 
 pub const SFE_MAX_ERROR: c_int = 177; /* This must be last in list. */
+
+#[repr(C)]
+#[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Copy, Clone)]
+pub enum SFE {
+    NO_ERROR = SF_ERR_NO_ERROR as isize,
+    BAD_OPEN_FORMAT = SF_ERR_UNRECOGNISED_FORMAT as isize,
+    SYSTEM = SF_ERR_SYSTEM as isize,
+    MALFORMED_FILE = SF_ERR_MALFORMED_FILE as isize,
+    UNSUPPORTED_ENCODING = SF_ERR_UNSUPPORTED_ENCODING as isize,
+    
+    ZERO_MAJOR_FORMAT = 5,
+    ZERO_MINOR_FORMAT = 6,
+    BAD_FILE = 7,
+    BAD_FILE_READ = 8,
+    OPEN_FAILED = 9,
+    BAD_SNDFILE_PTR = 10,
+    BAD_SF_INFO_PTR = 11,
+    BAD_SF_INCOMPLETE = 12,
+    BAD_FILE_PTR = 13,
+    BAD_INT_PTR = 14,
+    BAD_STAT_SIZE = 15,
+    NO_TEMP_DIR = 16,
+    MALLOC_FAILED = 17,
+    UNIMPLEMENTED = 18,
+    BAD_READ_ALIGN = 19,
+    BAD_WRITE_ALIGN = 20,
+    NOT_READMODE = 21,
+    NOT_WRITEMODE = 22,
+    BAD_MODE_RW = 23,
+    BAD_SF_INFO = 24,
+    BAD_OFFSET = 25,
+    NO_EMBED_SUPPORT = 26,
+    NO_EMBEDDED_RDWR = 27,
+    NO_PIPE_WRITE = 28,
+    
+    INTERNAL = 29,
+    BAD_COMMAND_PARAM = 30,
+    BAD_ENDIAN = 31,
+    CHANNEL_COUNT_ZERO = 32,
+    CHANNEL_COUNT = 33,
+    CHANNEL_COUNT_BAD = 34,
+    
+    BAD_VIRTUAL_IO = 35,
+    
+    INTERLEAVE_MODE = 36,
+    INTERLEAVE_SEEK = 37,
+    INTERLEAVE_READ = 38,
+    
+    BAD_SEEK = 39,
+    NOT_SEEKABLE = 40,
+    AMBIGUOUS_SEEK = 41,
+    WRONG_SEEK = 42,
+    SEEK_FAILED = 43,
+    
+    BAD_OPEN_MODE = 44,
+    OPEN_PIPE_RDWR = 45,
+    RDWR_POSITION = 46,
+    RDWR_BAD_HEADER = 47,
+    CMD_HAS_DATA = 48,
+    BAD_BROADCAST_INFO_SIZE = 49,
+    BAD_BROADCAST_INFO_TOO_BIG = 50,
+    BAD_CART_INFO_SIZE = 51,
+    BAD_CART_INFO_TOO_BIG = 52,
+    
+    STR_NO_SUPPORT = 53,
+    STR_NOT_WRITE = 54,
+    STR_MAX_DATA = 55,
+    STR_MAX_COUNT = 56,
+    STR_BAD_TYPE = 57,
+    STR_NO_ADD_END = 58,
+    STR_BAD_STRING = 59,
+    STR_WEIRD = 60,
+    
+    WAV_NO_RIFF = 61,
+    WAV_NO_WAVE = 62,
+    WAV_NO_FMT = 63,
+    WAV_BAD_FMT = 64,
+    WAV_FMT_SHORT = 65,
+    WAV_BAD_FACT = 66,
+    WAV_BAD_PEAK = 67,
+    WAV_PEAK_B4_FMT = 68,
+    WAV_BAD_FORMAT = 69,
+    WAV_BAD_BLOCKALIGN = 70,
+    WAV_NO_DATA = 71,
+    WAV_BAD_LIST = 72,
+    WAV_ADPCM_NOT4BIT = 73,
+    WAV_ADPCM_CHANNELS = 74,
+    WAV_ADPCM_SAMPLES = 75,
+    WAV_GSM610_FORMAT = 76,
+    WAV_UNKNOWN_CHUNK = 77,
+    WAV_WVPK_DATA = 78,
+    WAV_NMS_FORMAT = 79,
+    
+    AIFF_NO_FORM = 80,
+    AIFF_AIFF_NO_FORM = 81,
+    AIFF_COMM_NO_FORM = 82,
+    AIFF_SSND_NO_COMM = 83,
+    AIFF_UNKNOWN_CHUNK = 84,
+    AIFF_COMM_CHUNK_SIZE = 85,
+    AIFF_BAD_COMM_CHUNK = 86,
+    AIFF_PEAK_B4_COMM = 87,
+    AIFF_BAD_PEAK = 88,
+    AIFF_NO_SSND = 89,
+    AIFF_NO_DATA = 90,
+    AIFF_RW_SSND_NOT_LAST = 91,
+    
+    AU_UNKNOWN_FORMAT = 92,
+    AU_NO_DOTSND = 93,
+    AU_EMBED_BAD_LEN = 94,
+    
+    RAW_READ_BAD_SPEC = 95,
+    RAW_BAD_BITWIDTH = 96,
+    RAW_BAD_FORMAT = 97,
+    
+    PAF_NO_MARKER = 98,
+    PAF_VERSION = 99,
+    PAF_UNKNOWN_FORMAT = 100,
+    PAF_SHORT_HEADER = 101,
+    PAF_BAD_CHANNELS = 102,
+    
+    SVX_NO_FORM = 103,
+    SVX_NO_BODY = 104,
+    SVX_NO_DATA = 105,
+    SVX_BAD_COMP = 106,
+    SVX_BAD_NAME_LENGTH = 107,
+    
+    NIST_BAD_HEADER = 108,
+    NIST_CRLF_CONVERISON = 109,
+    NIST_BAD_ENCODING = 110,
+    
+    VOC_NO_CREATIVE = 111,
+    VOC_BAD_FORMAT = 112,
+    VOC_BAD_VERSION = 113,
+    VOC_BAD_MARKER = 114,
+    VOC_BAD_SECTIONS = 115,
+    VOC_MULTI_SAMPLERATE = 116,
+    VOC_MULTI_SECTION = 117,
+    VOC_MULTI_PARAM = 118,
+    VOC_SECTION_COUNT = 119,
+    VOC_NO_PIPE = 120,
+    
+    IRCAM_NO_MARKER = 121,
+    IRCAM_BAD_CHANNELS = 122,
+    IRCAM_UNKNOWN_FORMAT = 123,
+    
+    W64_64_BIT = 124,
+    W64_NO_RIFF = 125,
+    W64_NO_WAVE = 126,
+    W64_NO_DATA = 127,
+    W64_ADPCM_NOT4BIT = 128,
+    W64_ADPCM_CHANNELS = 129,
+    W64_GSM610_FORMAT = 130,
+    
+    MAT4_BAD_NAME = 131,
+    MAT4_NO_SAMPLERATE = 132,
+    
+    MAT5_BAD_ENDIAN = 133,
+    MAT5_NO_BLOCK = 134,
+    MAT5_SAMPLE_RATE = 135,
+    
+    PVF_NO_PVF1 = 136,
+    PVF_BAD_HEADER = 137,
+    PVF_BAD_BITWIDTH = 138,
+    
+    DWVW_BAD_BITWIDTH = 139,
+    G72X_NOT_MONO = 140,
+    NMS_ADPCM_NOT_MONO = 141,
+    
+    XI_BAD_HEADER = 142,
+    XI_EXCESS_SAMPLES = 143,
+    XI_NO_PIPE = 144,
+    
+    HTK_NO_PIPE = 145,
+    
+    SDS_NOT_SDS = 146,
+    SDS_BAD_BIT_WIDTH = 147,
+    
+    SD2_FD_DISALLOWED = 148,
+    SD2_BAD_DATA_OFFSET = 149,
+    SD2_BAD_MAP_OFFSET = 150,
+    SD2_BAD_DATA_LENGTH = 151,
+    SD2_BAD_MAP_LENGTH = 152,
+    SD2_BAD_RSRC = 153,
+    SD2_BAD_SAMPLE_SIZE = 154,
+    
+    FLAC_BAD_HEADER = 155,
+    FLAC_NEW_DECODER = 156,
+    FLAC_INIT_DECODER = 157,
+    FLAC_LOST_SYNC = 158,
+    FLAC_BAD_SAMPLE_RATE = 159,
+    FLAC_CHANNEL_COUNT_CHANGED = 160,
+    FLAC_UNKOWN_ERROR = 161,
+    
+    WVE_NOT_WVE = 162,
+    WVE_NO_PIPE = 163,
+    
+    VORBIS_ENCODER_BUG = 164,
+    
+    RF64_NOT_RF64 = 165,
+    RF64_PEAK_B4_FMT = 166,
+    RF64_NO_DATA = 167,
+    
+    BAD_CHUNK_PTR = 168,
+    UNKNOWN_CHUNK = 169,
+    BAD_CHUNK_FORMAT = 170,
+    BAD_CHUNK_MARKER = 171,
+    BAD_CHUNK_DATA_PTR = 172,
+    ALAC_FAIL_TMPFILE = 173,
+    FILENAME_TOO_LONG = 174,
+    NEGATIVE_RW_LEN = 175,
+    
+    OPUS_BAD_SAMPLERATE = 176,
+    MAX_ERROR = 177,
+
+    HTK_BAD_FILE_LEN = 1666,
+    HTK_NOT_WAVEFORM = 1667,
+}
 
 pub(crate) unsafe fn psf_memset<T>(s: *mut T, c: c_int, len: sf_count_t) -> *mut T {
     let mut ptr_index = 0;

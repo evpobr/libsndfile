@@ -76,8 +76,8 @@ pub mod windows {
         let lpMsgBuf: LPSTR = ptr::null_mut();
 
         /* Only log an error if no error has been set yet. */
-        if psf.error == 0 {
-            psf.error = SFE_SYSTEM;
+        if psf.error == SFE::NO_ERROR {
+            psf.error = SFE::SYSTEM;
 
             FormatMessageA(
                 FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
@@ -173,11 +173,11 @@ pub mod windows {
     }
 
     #[no_mangle]
-    pub(crate) unsafe fn psf_fopen(psf: *mut SF_PRIVATE) -> c_int {
+    pub(crate) unsafe fn psf_fopen(psf: *mut SF_PRIVATE) -> SFE {
         assert!(!psf.is_null());
         let psf = &mut *psf;
 
-        psf.error = 0;
+        psf.error = SFE::NO_ERROR;
         psf.file.handle = psf_open_handle(&mut psf.file);
 
         if psf.file.handle.is_null() {
@@ -212,12 +212,12 @@ pub mod windows {
     }
 
     #[no_mangle]
-    pub(crate) unsafe fn psf_open_rsrc(psf: *mut SF_PRIVATE) -> c_int {
+    pub(crate) unsafe fn psf_open_rsrc(psf: *mut SF_PRIVATE) -> SFE {
         assert!(!psf.is_null());
         let psf = &mut *psf;
 
         if !psf.rsrc.handle.is_null() {
-            return 0;
+            return SFE::NO_ERROR;
         }
 
         /* Test for MacOSX style resource fork on HPFS or HPFS+ filesystems. */
@@ -227,11 +227,11 @@ pub mod windows {
             c_str!("%s/rsrc").as_ptr(),
             psf.file.path.c.as_ptr(),
         );
-        psf.error = SFE_NO_ERROR;
+        psf.error = SFE::NO_ERROR;
         psf.rsrc.handle = psf_open_handle(&mut psf.rsrc);
         if !psf.rsrc.handle.is_null() {
             psf.rsrclength = psf_get_filelen_handle(psf.rsrc.handle);
-            return SFE_NO_ERROR;
+            return SFE::NO_ERROR;
         };
 
         /*
@@ -245,11 +245,11 @@ pub mod windows {
             psf.file.dir.c,
             psf.file.name.c.as_ptr(),
         );
-        psf.error = SFE_NO_ERROR;
+        psf.error = SFE::NO_ERROR;
         psf.rsrc.handle = psf_open_handle(&mut psf.rsrc);
         if !psf.rsrc.handle.is_null() {
             psf.rsrclength = psf_get_filelen_handle(psf.rsrc.handle);
-            return SFE_NO_ERROR;
+            return SFE::NO_ERROR;
         };
 
         /*
@@ -263,11 +263,11 @@ pub mod windows {
             psf.file.dir.c.as_ptr(),
             psf.file.name.c.as_ptr(),
         );
-        psf.error = SFE_NO_ERROR;
+        psf.error = SFE::NO_ERROR;
         psf.rsrc.handle = psf_open_handle(&mut psf.rsrc);
         if !psf.rsrc.handle.is_null() {
             psf.rsrclength = psf_get_filelen_handle(psf.rsrc.handle);
-            return SFE_NO_ERROR;
+            return SFE::NO_ERROR;
         };
 
         /* No resource file found. */
@@ -289,7 +289,7 @@ pub mod windows {
             if let Some(vio_get_filelen) = psf.vio.get_filelen {
                 return vio_get_filelen(psf.vio_user_data);
             } else {
-                psf.error = SFE_BAD_VIRTUAL_IO;
+                psf.error = SFE::BAD_VIRTUAL_IO;
                 return -1;
             }
         }
@@ -302,7 +302,7 @@ pub mod windows {
         };
 
         if filelen == -SFE_BAD_STAT_SIZE as sf_count_t {
-            psf.error = SFE_BAD_STAT_SIZE;
+            psf.error = SFE::BAD_STAT_SIZE;
             return -1;
         };
 
@@ -403,7 +403,7 @@ pub mod windows {
             if let Some(vio_seek) = psf.vio.seek {
                 return vio_seek(offset, whence, psf.vio_user_data);
             } else {
-                psf.error = SFE_BAD_VIRTUAL_IO;
+                psf.error = SFE::BAD_VIRTUAL_IO;
                 return -1;
             }
         }
@@ -580,7 +580,7 @@ pub mod windows {
             if let Some(vio_tell) = psf.vio.tell {
                 return vio_tell(psf.vio_user_data);
             } else {
-                psf.error = SFE_BAD_VIRTUAL_IO;
+                psf.error = SFE::BAD_VIRTUAL_IO;
                 return -1;
             }
         }

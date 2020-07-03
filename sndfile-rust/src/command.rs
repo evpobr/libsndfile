@@ -506,12 +506,12 @@ unsafe fn psf_calc_signal_max(psf: *mut SF_PRIVATE, normalize: c_int) -> c_doubl
 
     // If the file is not seekable, there is nothing we can do.
     if psf.sf.seekable == SF_FALSE {
-        psf.error = SFE_NOT_SEEKABLE;
+        psf.error = SFE::NOT_SEEKABLE;
         return 0.0;
     }
 
     if psf.read_double.is_none() {
-        psf.error = SFE_UNIMPLEMENTED;
+        psf.error = SFE::UNIMPLEMENTED;
         return 0.0;
     }
 
@@ -552,18 +552,18 @@ unsafe fn psf_calc_max_all_channels(
     psf: *mut SF_PRIVATE,
     peaks: *mut c_double,
     normalize: c_int,
-) -> c_int {
+) -> SFE {
     assert!(!psf.is_null());
     let psf = &mut *psf;
 
     // If the file is not seekable, there is nothing we can do.
     if psf.sf.seekable == SF_FALSE {
-        psf.error = SFE_NOT_SEEKABLE;
+        psf.error = SFE::NOT_SEEKABLE;
         return psf.error;
     }
 
     if psf.read_double.is_none() {
-        psf.error = SFE_UNIMPLEMENTED;
+        psf.error = SFE::UNIMPLEMENTED;
         return psf.error;
     }
 
@@ -600,7 +600,7 @@ unsafe fn psf_calc_max_all_channels(
 
     sf_command(psf, SFC_SET_NORM_DOUBLE, ptr::null_mut(), save_state);
 
-    return 0;
+    return SFE::NO_ERROR;
 }
 
 #[no_mangle]

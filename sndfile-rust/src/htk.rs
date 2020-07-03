@@ -1,6 +1,5 @@
-use crate::common::{psf_log_printf, SF_PRIVATE};
+use crate::common::{psf_log_printf, SF_PRIVATE, SFE};
 use crate::*;
-use common::{SFE_BAD_OPEN_FORMAT, SFE_HTK_NO_PIPE};
 
 use byte_strings::c_str;
 
@@ -8,21 +7,21 @@ const SFE_HTK_BAD_FILE_LEN: c_int = 1666;
 const SFE_HTK_NOT_WAVEFORM: c_int = 1667;
 
 #[no_mangle]
-unsafe fn htk_open(psf: *mut SF_PRIVATE) -> c_int {
+unsafe fn htk_open(psf: *mut SF_PRIVATE) -> SFE {
     debug_assert!(!psf.is_null());
 
     let psf = &mut *psf;
-    let mut error = 0;
+    let mut error = SFE::NO_ERROR;
 
     if psf.is_pipe != 0 {
-        return SFE_HTK_NO_PIPE;
+        return SFE::HTK_NO_PIPE;
     }
 
     if psf.file.mode == SFM_OPEN_MODE::READ
         || (psf.file.mode == SFM_OPEN_MODE::RDWR && psf.filelength > 0)
     {
         error = htk_read_header(psf);
-        if error != 0 {
+        if error != SFE::NO_ERROR {
             return error;
         }
     }
@@ -31,12 +30,12 @@ unsafe fn htk_open(psf: *mut SF_PRIVATE) -> c_int {
 
     if psf.file.mode == SFM_OPEN_MODE::WRITE || psf.file.mode == SFM_OPEN_MODE::RDWR {
         if (SF_CONTAINER(psf.sf.format)) != SF_FORMAT_HTK {
-            return SFE_BAD_OPEN_FORMAT;
+            return SFE::BAD_OPEN_FORMAT;
         }
 
         psf.endian = SF_ENDIAN_BIG;
 
-        if htk_write_header(psf, SF_FALSE) != 0 {
+        if htk_write_header(psf, SF_FALSE) != SFE::NO_ERROR {
             return psf.error;
         }
 
@@ -72,7 +71,7 @@ unsafe extern "C" fn htk_close(psf: *mut SF_PRIVATE) -> c_int {
 }
 
 #[no_mangle]
-unsafe extern "C" fn htk_write_header(psf: *mut SF_PRIVATE, calc_length: c_int) -> c_int {
+unsafe extern "C" fn htk_write_header(psf: *mut SF_PRIVATE, calc_length: c_int) -> SFE {
     debug_assert!(!psf.is_null());
 
     let psf = &mut *psf;
@@ -107,7 +106,7 @@ unsafe extern "C" fn htk_write_header(psf: *mut SF_PRIVATE, calc_length: c_int) 
     /* Header construction complete so write it out. */
     psf_fwrite(psf.header.ptr as *const c_void, psf.header.indx, 1, psf);
 
-    if psf.error != 0 {
+    if psf.error != SFE::NO_ERROR {
         return psf.error;
     }
 
@@ -121,7 +120,7 @@ unsafe extern "C" fn htk_write_header(psf: *mut SF_PRIVATE, calc_length: c_int) 
 }
 
 #[no_mangle]
-unsafe fn htk_read_header(psf: *mut SF_PRIVATE) -> c_int {
+unsafe fn htk_read_header(psf: *mut SF_PRIVATE) -> SFE {
     // int		sample_count, sample_period, marker ;
 
     debug_assert!(!psf.is_null());
@@ -141,11 +140,11 @@ unsafe fn htk_read_header(psf: *mut SF_PRIVATE) -> c_int {
     );
 
     if (2 * sample_count + 12) as sf_count_t != psf.filelength {
-        return SFE_HTK_BAD_FILE_LEN;
+        return SFE::HTK_BAD_FILE_LEN;
     }
 
     if marker != 0x20000 {
-        return SFE_HTK_NOT_WAVEFORM;
+        return SFE::HTK_NOT_WAVEFORM;
     }
 
     psf.sf.channels = 1;
@@ -186,5 +185,5 @@ unsafe fn htk_read_header(psf: *mut SF_PRIVATE) -> c_int {
         psf.sf.frames = (psf.filelength - psf.dataoffset) / psf.blockwidth as sf_count_t;
     }
 
-    0
+    SFE::NO_ERROR
 }

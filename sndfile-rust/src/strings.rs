@@ -9,12 +9,12 @@ use crate::*;
 use byte_strings::c_str;
 
 #[no_mangle]
-unsafe fn psf_store_string(psf: *mut SF_PRIVATE, str_type: c_int, str: *const c_char) -> c_int {
+unsafe fn psf_store_string(psf: *mut SF_PRIVATE, str_type: c_int, str: *const c_char) -> SFE {
     assert!(!psf.is_null());
     let psf = &mut *psf;
 
     if str.is_null() {
-        return SFE_STR_BAD_STRING;
+        return SFE::STR_BAD_STRING;
     }
     let mut str = CStr::from_ptr(str).to_string_lossy();
 
@@ -23,14 +23,14 @@ unsafe fn psf_store_string(psf: *mut SF_PRIVATE, str_type: c_int, str: *const c_
     /* A few extra checks for write mode. */
     if psf.file.mode == SFM_OPEN_MODE::WRITE || psf.file.mode == SFM_OPEN_MODE::RDWR {
         if psf.strings.flags & SF_STR_ALLOW_START == 0 {
-            return SFE_STR_NO_SUPPORT;
+            return SFE::STR_NO_SUPPORT;
         }
         if psf.have_written != 0 && psf.strings.flags & SF_STR_ALLOW_END == 0 {
-            return SFE_STR_NO_SUPPORT;
+            return SFE::STR_NO_SUPPORT;
         }
         /* Only allow zero length strings for software. */
         if str_type != SF_STR_SOFTWARE && str_len == 0 {
-            return SFE_STR_BAD_STRING;
+            return SFE::STR_BAD_STRING;
         }
     }
 
@@ -48,7 +48,7 @@ unsafe fn psf_store_string(psf: *mut SF_PRIVATE, str_type: c_int, str: *const c_
 
         k += 1;
         if k >= SF_MAX_STRINGS {
-            return SFE_STR_MAX_COUNT;
+            return SFE::STR_MAX_COUNT;
         }
     }
 
@@ -56,7 +56,7 @@ unsafe fn psf_store_string(psf: *mut SF_PRIVATE, str_type: c_int, str: *const c_
     let mut str_flags = SF_STR_LOCATE_START;
     if psf.file.mode == SFM_OPEN_MODE::RDWR || psf.have_written != SF_FALSE {
         if psf.strings.flags & SF_STR_ALLOW_END == 0 {
-            return SFE_STR_NO_ADD_END;
+            return SFE::STR_NO_ADD_END;
         }
         str_flags = SF_STR_LOCATE_END;
     }
@@ -66,7 +66,7 @@ unsafe fn psf_store_string(psf: *mut SF_PRIVATE, str_type: c_int, str: *const c_
             psf,
             c_str!("SFE_STR_WEIRD : k == 0 && psf->strings.storage_used != 0\n").as_ptr(),
         );
-        return SFE_STR_WEIRD;
+        return SFE::STR_WEIRD;
     }
 
     if k != 0 && psf.strings.storage_used == 0 {
@@ -74,7 +74,7 @@ unsafe fn psf_store_string(psf: *mut SF_PRIVATE, str_type: c_int, str: *const c_
             psf,
             c_str!("SFE_STR_WEIRD : k != 0 && psf->strings.storage_used == 0\n").as_ptr(),
         );
-        return SFE_STR_WEIRD;
+        return SFE::STR_WEIRD;
     }
 
     /* Special case for the first string. */
@@ -113,7 +113,7 @@ unsafe fn psf_store_string(psf: *mut SF_PRIVATE, str_type: c_int, str: *const c_
                 psf,
                 c_str!("psf_store_string : SFE_STR_BAD_TYPE\n").as_ptr(),
             );
-            return SFE_STR_BAD_TYPE;
+            return SFE::STR_BAD_TYPE;
         }
     };
 
@@ -129,7 +129,7 @@ unsafe fn psf_store_string(psf: *mut SF_PRIVATE, str_type: c_int, str: *const c_
         psf.strings.storage = realloc(temp as *mut c_void, newlen) as *mut c_char;
         if psf.strings.storage.is_null() {
             psf.strings.storage = temp;
-            return SFE_MALLOC_FAILED;
+            return SFE::MALLOC_FAILED;
         }
 
         psf.strings.storage_len = newlen;
@@ -152,16 +152,16 @@ unsafe fn psf_store_string(psf: *mut SF_PRIVATE, str_type: c_int, str: *const c_
 
     psf.strings.flags |= str_flags;
 
-    0
+    SFE::NO_ERROR
 }
 
 #[no_mangle]
-pub(crate) unsafe fn psf_set_string(psf: *mut SF_PRIVATE, str_type: c_int, str: *const c_char) -> c_int {
+pub(crate) unsafe fn psf_set_string(psf: *mut SF_PRIVATE, str_type: c_int, str: *const c_char) -> SFE {
     assert!(!psf.is_null());
     let psf = &mut *psf;
 
     if psf.file.mode == SFM_OPEN_MODE::READ {
-        return SFE_STR_NOT_WRITE;
+        return SFE::STR_NOT_WRITE;
     }
 
     psf_store_string(psf, str_type, str)
