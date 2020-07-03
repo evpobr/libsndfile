@@ -288,3 +288,184 @@ unsafe fn psf_get_format_major(data: *mut SF_FORMAT_INFO) -> c_int {
 
     return 0;
 }
+
+#[cfg(not(feature = "external-xiph-libs"))]
+const SUBTYPE_FORMATS_COUNT: usize = 28;
+#[cfg(feature = "external-xiph-libs")]
+const SUBTYPE_FORMATS_COUNT: usize = 30;
+
+static SUBTYPE_FORMATS: [FormatInfo; SUBTYPE_FORMATS_COUNT] = [
+    FormatInfo {
+        format: SF_FORMAT_PCM_S8,
+        name: c_str!("Signed 8 bit PCM"),
+        extension: c_str!(""),
+    },
+    FormatInfo {
+        format: SF_FORMAT_PCM_16,
+        name: c_str!("Signed 16 bit PCM"),
+        extension: c_str!(""),
+    },
+    FormatInfo {
+        format: SF_FORMAT_PCM_24,
+        name: c_str!("Signed 24 bit PCM"),
+        extension: c_str!(""),
+    },
+    FormatInfo {
+        format: SF_FORMAT_PCM_32,
+        name: c_str!("Signed 32 bit PCM"),
+        extension: c_str!(""),
+    },
+    FormatInfo {
+        format: SF_FORMAT_PCM_U8,
+        name: c_str!("Unsigned 8 bit PCM"),
+        extension: c_str!(""),
+    },
+    FormatInfo {
+        format: SF_FORMAT_FLOAT,
+        name: c_str!("32 bit float"),
+        extension: c_str!(""),
+    },
+    FormatInfo {
+        format: SF_FORMAT_DOUBLE,
+        name: c_str!("64 bit float"),
+        extension: c_str!(""),
+    },
+    FormatInfo {
+        format: SF_FORMAT_ULAW,
+        name: c_str!("U-Law"),
+        extension: c_str!(""),
+    },
+    FormatInfo {
+        format: SF_FORMAT_ALAW,
+        name: c_str!("A-Law"),
+        extension: c_str!(""),
+    },
+    FormatInfo {
+        format: SF_FORMAT_IMA_ADPCM,
+        name: c_str!("IMA ADPCM"),
+        extension: c_str!(""),
+    },
+    FormatInfo {
+        format: SF_FORMAT_MS_ADPCM,
+        name: c_str!("Microsoft ADPCM"),
+        extension: c_str!(""),
+    },
+    FormatInfo {
+        format: SF_FORMAT_GSM610,
+        name: c_str!("GSM 6.10"),
+        extension: c_str!(""),
+    },
+    FormatInfo {
+        format: SF_FORMAT_G721_32,
+        name: c_str!("32kbs G721 ADPCM"),
+        extension: c_str!(""),
+    },
+    FormatInfo {
+        format: SF_FORMAT_G723_24,
+        name: c_str!("24kbs G723 ADPCM"),
+        extension: c_str!(""),
+    },
+    FormatInfo {
+        format: SF_FORMAT_G723_40,
+        name: c_str!("40kbs G723 ADPCM"),
+        extension: c_str!(""),
+    },
+    FormatInfo {
+        format: SF_FORMAT_DWVW_12,
+        name: c_str!("12 bit DWVW"),
+        extension: c_str!(""),
+    },
+    FormatInfo {
+        format: SF_FORMAT_DWVW_16,
+        name: c_str!("16 bit DWVW"),
+        extension: c_str!(""),
+    },
+    FormatInfo {
+        format: SF_FORMAT_DWVW_24,
+        name: c_str!("24 bit DWVW"),
+        extension: c_str!(""),
+    },
+    FormatInfo {
+        format: SF_FORMAT_VOX_ADPCM,
+        name: c_str!("VOX ADPCM"),
+        extension: c_str!("vox"),
+    },
+    FormatInfo {
+        format: SF_FORMAT_NMS_ADPCM_16,
+        name: c_str!("16kbs NMS ADPCM"),
+        extension: c_str!(""),
+    },
+    FormatInfo {
+        format: SF_FORMAT_NMS_ADPCM_24,
+        name: c_str!("24kbs NMS ADPCM"),
+        extension: c_str!(""),
+    },
+    FormatInfo {
+        format: SF_FORMAT_NMS_ADPCM_32,
+        name: c_str!("32kbs NMS ADPCM"),
+        extension: c_str!(""),
+    },
+    FormatInfo {
+        format: SF_FORMAT_DPCM_16,
+        name: c_str!("16 bit DPCM"),
+        extension: c_str!(""),
+    },
+    FormatInfo {
+        format: SF_FORMAT_DPCM_8,
+        name: c_str!("8 bit DPCM"),
+        extension: c_str!(""),
+    },
+    #[cfg(feature = "external-xiph-libs")]
+    FormatInfo {
+        format: SF_FORMAT_VORBIS,
+        name: c_str!("Vorbis"),
+        extension: c_str!(""),
+    },
+    #[cfg(feature = "external-xiph-libs")]
+    FormatInfo {
+        format: SF_FORMAT_OPUS,
+        name: c_str!("Opus"),
+        extension: c_str!(""),
+    },
+    FormatInfo {
+        format: SF_FORMAT_ALAC_16,
+        name: c_str!("16 bit ALAC"),
+        extension: c_str!(""),
+    },
+    FormatInfo {
+        format: SF_FORMAT_ALAC_20,
+        name: c_str!("20 bit ALAC"),
+        extension: c_str!(""),
+    },
+    FormatInfo {
+        format: SF_FORMAT_ALAC_24,
+        name: c_str!("24 bit ALAC"),
+        extension: c_str!(""),
+    },
+    FormatInfo {
+        format: SF_FORMAT_ALAC_32,
+        name: c_str!("32 bit ALAC"),
+        extension: c_str!(""),
+    },
+];
+
+#[no_mangle]
+unsafe fn psf_get_format_subtype_count() -> c_int {
+    return SUBTYPE_FORMATS.len() as c_int;
+}
+
+#[no_mangle]
+unsafe fn psf_get_format_subtype(data: *mut SF_FORMAT_INFO) -> c_int {
+    assert!(!data.is_null());
+    let data = &mut *data;
+
+    if data.format < 0 || data.format as usize >= SUBTYPE_FORMATS.len() {
+        data.format = 0;
+        return SFE_BAD_COMMAND_PARAM;
+    }
+
+    let indx = data.format as usize;
+    *data = SUBTYPE_FORMATS[indx].into();
+
+    return 0;
+}

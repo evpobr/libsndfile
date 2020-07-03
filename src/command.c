@@ -225,6 +225,7 @@ static SF_FORMAT_INFO subtype_formats [] =
 	{	SF_FORMAT_ALAC_32,		"32 bit ALAC",			NULL	},
 } ; /* subtype_formats */
 
+#if 0
 int
 psf_get_format_subtype_count	(void)
 {	return (sizeof (subtype_formats) / sizeof (SF_FORMAT_INFO)) ;
@@ -244,6 +245,7 @@ psf_get_format_subtype (SF_FORMAT_INFO *data)
 
 	return 0 ;
 } /* psf_get_format_subtype */
+#endif
 
 /*==============================================================================
 */
