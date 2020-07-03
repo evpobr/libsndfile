@@ -67,20 +67,17 @@ pub enum SF_SEEK_MODE {
     END = 2,
 }
 
-macro_rules! SF_CONTAINER {
-    ($x:expr) => {
-        $x & SF_FORMAT_TYPEMASK
-    };
+#[inline]
+pub(crate) fn SF_CONTAINER(x: c_int) -> c_int {
+    x & SF_FORMAT_TYPEMASK
 }
-macro_rules! SF_CODEC {
-    ($x:expr) => {
-        $x & SF_FORMAT_SUBMASK
-    };
+#[inline]
+pub(crate) fn SF_CODEC(x: c_int) -> c_int {
+    x & SF_FORMAT_SUBMASK
 }
-macro_rules! SF_ENDIAN {
-    ($x:expr) => {
-        $x & SF_FORMAT_ENDMASK
-    };
+#[inline]
+pub(crate) fn SF_ENDIAN(x: c_int) -> c_int {
+    x & SF_FORMAT_ENDMASK
 }
 
 macro_rules! BHW4 {

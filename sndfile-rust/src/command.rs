@@ -3,9 +3,6 @@ use crate::*;
 use byte_strings::c_str;
 use std::ffi::CStr;
 
-static AIFF_FORMAT_NAME: &CStr = c_str!("AIFF (Apple/SGI 16 bit PCM)");
-static AIFF_FORMAT_EXTENSION: &CStr = c_str!("AIFF (Apple/SGI 16 bit PCM)");
-
 #[derive(Debug, Copy, Clone)]
 pub struct FormatInfo<'a> {
     pub format: c_int,
@@ -468,4 +465,34 @@ unsafe fn psf_get_format_subtype(data: *mut SF_FORMAT_INFO) -> c_int {
     *data = SUBTYPE_FORMATS[indx].into();
 
     return 0;
+}
+
+#[no_mangle]
+unsafe fn psf_get_format_info(data: *mut SF_FORMAT_INFO) -> c_int {
+    assert!(!data.is_null());
+    let data = &mut *data;
+
+    if SF_CONTAINER(data.format) != 0 {
+        let format = SF_CONTAINER(data.format);
+
+        for k in 0..MAJOR_FORMATS.len() {
+            if format == MAJOR_FORMATS[k].format {
+                *data = MAJOR_FORMATS[k].into();
+                return 0;
+            }
+        }
+    } else if SF_CODEC(data.format) != 0 {
+        let format = SF_CODEC(data.format);
+
+        for k in 0..SUBTYPE_FORMATS.len() {
+            if format == SUBTYPE_FORMATS[k].format {
+                *data = SUBTYPE_FORMATS[k].into();
+                return 0;
+            }
+        }
+    }
+
+    *data = SF_FORMAT_INFO::default();
+
+    return SFE_BAD_COMMAND_PARAM;
 }

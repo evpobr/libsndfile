@@ -250,6 +250,7 @@ psf_get_format_subtype (SF_FORMAT_INFO *data)
 /*==============================================================================
 */
 
+#if 0
 int
 psf_get_format_info (SF_FORMAT_INFO *data)
 {	int k, format ;
@@ -279,6 +280,7 @@ psf_get_format_info (SF_FORMAT_INFO *data)
 
 	return SFE_BAD_COMMAND_PARAM ;
 } /* psf_get_format_info */
+#endif
 
 /*==============================================================================
 */

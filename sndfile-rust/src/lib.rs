@@ -399,6 +399,16 @@ pub struct SF_FORMAT_INFO {
     pub extension: *const c_char,
 }
 
+impl Default for SF_FORMAT_INFO {
+    fn default() -> Self {
+        SF_FORMAT_INFO {
+            format: 0,
+            name: ptr::null_mut(),
+            extension: ptr::null_mut(),
+        }
+    }
+}
+
 /*
  * Enums and typedefs for adding dither on read and write.
  * See the html documentation for sf_command(), SFC_SET_DITHER_ON_WRITE
@@ -1109,8 +1119,8 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
     assert!(!info.is_null());
     let info = &*info;
 
-    let subformat = SF_CODEC!(info.format);
-    let endian = SF_ENDIAN!(info.format);
+    let subformat = SF_CODEC(info.format);
+    let endian = SF_ENDIAN(info.format);
 
     // This is the place where each file format can check if the suppiled
     // SF_INFO struct is valid.
@@ -1124,7 +1134,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
         return 0;
     }
 
-    match SF_CONTAINER!(info.format) {
+    match SF_CONTAINER(info.format) {
         SF_FORMAT_WAV => {
             /* WAV now allows both endian, RIFF or RIFX (little or big respectively) */
             if subformat == SF_FORMAT_PCM_U8 || subformat == SF_FORMAT_PCM_16 {
@@ -1615,7 +1625,7 @@ pub unsafe fn sf_current_byterate(sndfile: *mut SNDFILE) -> c_int {
         return psf_byterate(psf);
     }
 
-    match SF_CODEC!(psf.sf.format) {
+    match SF_CODEC(psf.sf.format) {
         SF_FORMAT_IMA_ADPCM | SF_FORMAT_MS_ADPCM | SF_FORMAT_VOX_ADPCM => {
             (psf.sf.samplerate * psf.sf.channels) / 2
         }
