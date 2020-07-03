@@ -2,6 +2,7 @@
 
 use std::cmp;
 use std::mem;
+use std::convert;
 use std::{ffi::CStr, ptr};
 
 use common::*;
@@ -19,6 +20,13 @@ mod id3;
 mod strings;
 
 use strings::*;
+use convert::TryFrom;
+
+#[derive(Debug)]
+pub enum SndFileError {
+    BadEndian,
+    Unknown(c_int),
+}
 
 /// Microsoft WAV format (little endian default).
 pub const SF_FORMAT_WAV: c_int = 0x010000;
@@ -140,6 +148,29 @@ pub const SF_ENDIAN_LITTLE: c_int = 0x10000000;
 pub const SF_ENDIAN_BIG: c_int = 0x20000000;
 /// Force CPU endian-ness.
 pub const SF_ENDIAN_CPU: c_int = 0x30000000;
+
+#[repr(C)]
+#[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Copy, Clone)]
+pub enum SF_ENDIAN {
+    FILE = 0x00000000,
+    LITTLE = 0x10000000,
+    BIG = 0x20000000,
+    CPU = 0x30000000,
+}
+
+impl TryFrom<c_int> for SF_ENDIAN {
+    type Error = SndFileError;
+    fn try_from(value: c_int) -> Result<Self, Self::Error> {
+        match value & SF_FORMAT_ENDMASK {
+            SF_ENDIAN_FILE => Ok(SF_ENDIAN::FILE),
+            SF_ENDIAN_LITTLE => Ok(SF_ENDIAN::LITTLE),
+            SF_ENDIAN_BIG => Ok (SF_ENDIAN::BIG),
+            SF_ENDIAN_CPU => Ok (SF_ENDIAN::CPU),
+            _ => Err(SndFileError::BadEndian),
+        }
+    }
+}
+
 pub const SF_FORMAT_SUBMASK: c_int = 0x0000FFFF;
 pub const SF_FORMAT_TYPEMASK: c_int = 0x0FFF0000;
 pub const SF_FORMAT_ENDMASK: c_int = 0x30000000;
@@ -1120,7 +1151,10 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
     let info = &*info;
 
     let subformat = SF_CODEC(info.format);
-    let endian = SF_ENDIAN(info.format);
+    let endian = match SF_ENDIAN::try_from(info.format) {
+        Ok(endian) => endian,
+        _ => return 0,
+    };
 
     // This is the place where each file format can check if the suppiled
     // SF_INFO struct is valid.
@@ -1170,7 +1204,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
         }
 
         SF_FORMAT_WAVEX => {
-            if endian == SF_ENDIAN_BIG || endian == SF_ENDIAN_CPU {
+            if endian == SF_ENDIAN::BIG || endian == SF_ENDIAN::CPU {
                 return 0;
             }
             if subformat == SF_FORMAT_PCM_U8 || subformat == SF_FORMAT_PCM_16 {
@@ -1196,7 +1230,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
                 return 1;
             }
             /* For other encodings reject any endian-ness setting. */
-            if endian != 0 {
+            if endian != SF_ENDIAN::FILE {
                 return 0;
             }
             if subformat == SF_FORMAT_PCM_U8 || subformat == SF_FORMAT_PCM_S8 {
@@ -1321,7 +1355,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
                 return 0;
             }
             // Always big endian.
-            if endian == SF_ENDIAN_LITTLE || endian == SF_ENDIAN_CPU {
+            if endian == SF_ENDIAN::LITTLE || endian == SF_ENDIAN::CPU {
                 return 0;
             }
 
@@ -1362,7 +1396,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
                 return 0;
             }
             // VOC is strictly little endian.
-            if endian == SF_ENDIAN_BIG || endian == SF_ENDIAN_CPU {
+            if endian == SF_ENDIAN::BIG || endian == SF_ENDIAN::CPU {
                 return 0;
             }
             if subformat == SF_FORMAT_PCM_U8 || subformat == SF_FORMAT_PCM_16 {
@@ -1375,7 +1409,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
 
         SF_FORMAT_W64 => {
             // W64 is strictly little endian.
-            if endian == SF_ENDIAN_BIG || endian == SF_ENDIAN_CPU {
+            if endian == SF_ENDIAN::BIG || endian == SF_ENDIAN::CPU {
                 return 0;
             }
             if subformat == SF_FORMAT_PCM_U8 || subformat == SF_FORMAT_PCM_16 {
@@ -1444,7 +1478,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
                 return 0;
             }
             // HTK is strictly big endian.
-            if endian == SF_ENDIAN_LITTLE || endian == SF_ENDIAN_CPU {
+            if endian == SF_ENDIAN::LITTLE || endian == SF_ENDIAN::CPU {
                 return 0;
             }
             if subformat == SF_FORMAT_PCM_16 {
@@ -1457,7 +1491,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
                 return 0;
             }
             /* SDS is strictly big endian. */
-            if endian == SF_ENDIAN_LITTLE || endian == SF_ENDIAN_CPU {
+            if endian == SF_ENDIAN::LITTLE || endian == SF_ENDIAN::CPU {
                 return 0;
             }
             if subformat == SF_FORMAT_PCM_S8
@@ -1473,7 +1507,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
                 return 0;
             }
             // SDS is strictly big endian.
-            if endian == SF_ENDIAN_LITTLE || endian == SF_ENDIAN_CPU {
+            if endian == SF_ENDIAN::LITTLE || endian == SF_ENDIAN::CPU {
                 return 0;
             }
             if subformat == SF_FORMAT_PCM_U8
@@ -1489,7 +1523,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             if info.channels > 8 {
                 return 0;
             }
-            if endian != SF_ENDIAN_FILE {
+            if endian != SF_ENDIAN::FILE {
                 return 0;
             }
             if subformat == SF_FORMAT_PCM_S8
@@ -1502,7 +1536,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
 
         SF_FORMAT_SD2 => {
             // SD2 is strictly big endian.
-            if endian == SF_ENDIAN_LITTLE || endian == SF_ENDIAN_CPU {
+            if endian == SF_ENDIAN::LITTLE || endian == SF_ENDIAN::CPU {
                 return 0;
             }
             if subformat == SF_FORMAT_PCM_S8
@@ -1519,7 +1553,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
                 return 0;
             }
             // WVE is strictly big endian.
-            if endian == SF_ENDIAN_BIG || endian == SF_ENDIAN_CPU {
+            if endian == SF_ENDIAN::BIG || endian == SF_ENDIAN::CPU {
                 return 0;
             }
             if subformat == SF_FORMAT_ALAW {
@@ -1528,7 +1562,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
         }
 
         SF_FORMAT_OGG => {
-            if endian != SF_ENDIAN_FILE {
+            if endian != SF_ENDIAN::FILE {
                 return 0;
             }
             if subformat == SF_FORMAT_VORBIS {
@@ -1544,7 +1578,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
                 return 0;
             }
             // MPC2000 is strictly little endian.
-            if endian == SF_ENDIAN_BIG || endian == SF_ENDIAN_CPU {
+            if endian == SF_ENDIAN::BIG || endian == SF_ENDIAN::CPU {
                 return 0;
             }
             if subformat == SF_FORMAT_PCM_16 {
@@ -1553,7 +1587,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
         }
 
         SF_FORMAT_RF64 => {
-            if endian == SF_ENDIAN_BIG || endian == SF_ENDIAN_CPU {
+            if endian == SF_ENDIAN::BIG || endian == SF_ENDIAN::CPU {
                 return 0;
             }
             if subformat == SF_FORMAT_PCM_U8 || subformat == SF_FORMAT_PCM_16 {

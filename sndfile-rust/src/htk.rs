@@ -33,7 +33,7 @@ unsafe fn htk_open(psf: *mut SF_PRIVATE) -> SFE {
             return SFE::BAD_OPEN_FORMAT;
         }
 
-        psf.endian = SF_ENDIAN_BIG;
+        psf.endian = SF_ENDIAN::BIG;
 
         if htk_write_header(psf, SF_FALSE) != SFE::NO_ERROR {
             return psf.error;
@@ -175,7 +175,7 @@ unsafe fn htk_read_header(psf: *mut SF_PRIVATE) -> SFE {
 
     /* HTK always has a 12 byte header. */
     psf.dataoffset = 12;
-    psf.endian = SF_ENDIAN_BIG;
+    psf.endian = SF_ENDIAN::BIG;
 
     psf.datalength = psf.filelength - psf.dataoffset;
 

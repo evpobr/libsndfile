@@ -75,10 +75,6 @@ pub(crate) fn SF_CONTAINER(x: c_int) -> c_int {
 pub(crate) fn SF_CODEC(x: c_int) -> c_int {
     x & SF_FORMAT_SUBMASK
 }
-#[inline]
-pub(crate) fn SF_ENDIAN(x: c_int) -> c_int {
-    x & SF_FORMAT_ENDMASK
-}
 
 macro_rules! BHW4 {
     ($x:expr) => {
@@ -387,7 +383,7 @@ pub struct sf_private_tag {
 
     pub header: SF_PRIVATE_HEADER,
 
-    pub rwf_endian: c_int, /* Header endian-ness flag. */
+    pub rwf_endian: SF_ENDIAN, /* Header endian-ness flag. */
 
     /* Storage and housekeeping data for adding/reading strings from
     	** sound files.
@@ -401,7 +397,7 @@ pub struct sf_private_tag {
 
     pub error: SFE,
 
-    pub endian: c_int, /* File endianness : SF_ENDIAN_LITTLE or SF_ENDIAN_BIG. */
+    pub endian: SF_ENDIAN, /* File endianness : SF_ENDIAN_LITTLE or SF_ENDIAN_BIG. */
     pub data_endswap: c_int, /* Need to endswap data? */
 
     /*
@@ -660,12 +656,12 @@ impl Default for SF_PRIVATE {
             syserr: [0; SF_SYSERR_LEN],
             parselog: SF_PRIVATE_PARSELOG::default(),
             header: SF_PRIVATE_HEADER::default(),
-            rwf_endian: 0,
+            rwf_endian: SF_ENDIAN::FILE,
             strings: SF_PRIVATE_STRINGS::default(),
             Magick: 0,
             unique_id: 0,
             error: SFE::NO_ERROR,
-            endian: 0,
+            endian: SF_ENDIAN::FILE,
             data_endswap: 0,
             float_int_mult: 0,
             float_max: 0.0,
