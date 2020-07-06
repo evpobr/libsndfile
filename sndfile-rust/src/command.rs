@@ -483,11 +483,11 @@ unsafe fn psf_get_format_info(data: *mut SF_FORMAT_INFO) -> c_int {
                 return 0;
             }
         }
-    } else if SF_CODEC(data.format) != 0 {
+    } else if SF_CODEC(data.format) != SF_MINOR_FORMAT::UNKNOWN {
         let format = SF_CODEC(data.format);
 
         for k in 0..SUBTYPE_FORMATS.len() {
-            if format == SUBTYPE_FORMATS[k].format {
+            if format == SF_CODEC(SUBTYPE_FORMATS[k].format) {
                 *data = SUBTYPE_FORMATS[k].into();
                 return 0;
             }

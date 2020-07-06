@@ -75,8 +75,11 @@ pub(crate) fn SF_CONTAINER(x: c_int) -> SF_MAJOR_FORMAT {
     }
 }
 #[inline]
-pub(crate) fn SF_CODEC(x: c_int) -> c_int {
-    x & SF_FORMAT_SUBMASK
+pub(crate) fn SF_CODEC(x: c_int) -> SF_MINOR_FORMAT {
+    match SF_MINOR_FORMAT::try_from(x) {
+        Ok(minor_format) => minor_format,
+        Err(_) => SF_MINOR_FORMAT::UNKNOWN,
+    }
 }
 
 macro_rules! BHW4 {

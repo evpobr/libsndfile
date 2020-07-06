@@ -47,7 +47,7 @@ unsafe fn htk_open(psf: *mut SF_PRIVATE) -> SFE {
     psf.blockwidth = psf.bytewidth * psf.sf.channels;
 
     match subformat {
-        SF_FORMAT_PCM_16 => {
+        SF_MINOR_FORMAT::PCM_16 => {
             /* 16-bit linear PCM. */
             error = pcm_init(psf);
         }

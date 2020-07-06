@@ -264,6 +264,116 @@ impl TryFrom<c_int> for SF_MAJOR_FORMAT {
     }
 }
 
+#[repr(C)]
+#[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Copy, Clone)]
+pub enum SF_MINOR_FORMAT {
+    /// Unknown.
+    UNKNOWN = 0x0000,
+    /// Signed 8 bit data
+    PCM_S8 = 0x0001,
+    /// Signed 16 bit data
+    PCM_16 = 0x0002,
+    /// Signed 24 bit data
+    PCM_24 = 0x0003,
+    /// Signed 32 bit data
+    PCM_32 = 0x0004,
+    /// Unsigned 8 bit data (WAV and RAW only)
+    PCM_U8 = 0x0005,
+    /// 32 bit float data
+    FLOAT = 0x0006,
+    /// 64 bit float data
+    DOUBLE = 0x0007,
+    /// U-Law encoded.
+    ULAW = 0x0010,
+    /// A-Law encoded.
+    ALAW = 0x0011,
+    /// IMA ADPCM.
+    IMA_ADPCM = 0x0012,
+    /// Microsoft ADPCM.
+    MS_ADPCM = 0x0013,
+    /// GSM 6.10 encoding.
+    GSM610 = 0x0020,
+    /// OKI / Dialogix ADPCM
+    VOX_ADPCM = 0x0021,
+    /// 16kbs NMS G721-variant encoding.
+    NMS_ADPCM_16 = 0x0022,
+    /// 24kbs NMS G721-variant encoding.
+    NMS_ADPCM_24 = 0x0023,
+    /// 32kbs NMS G721-variant encoding.
+    NMS_ADPCM_32 = 0x0024,
+    /// 32kbs G721 ADPCM encoding.
+    G721_32 = 0x0030,
+    /// 24kbs G723 ADPCM encoding.
+    G723_24 = 0x0031,
+    /// 40kbs G723 ADPCM encoding.
+    G723_40 = 0x0032,
+    /// 12 bit Delta Width Variable Word encoding.
+    DWVW_12 = 0x0040,
+    /// 16 bit Delta Width Variable Word encoding.
+    DWVW_16 = 0x0041,
+    /// 24 bit Delta Width Variable Word encoding.
+    DWVW_24 = 0x0042,
+    /// N bit Delta Width Variable Word encoding.
+    DWVW_N = 0x0043,
+    /// 8 bit differential PCM (XI only)
+    DPCM_8 = 0x0050,
+    /// 16 bit differential PCM (XI only)
+    DPCM_16 = 0x0051,
+    /// Xiph Vorbis encoding.
+    VORBIS = 0x0060,
+    /// Xiph/Skype Opus encoding.
+    OPUS = 0x0064,
+    /// Apple Lossless Audio Codec (16 bit).
+    ALAC_16 = 0x0070,
+    /// Apple Lossless Audio Codec (20 bit).
+    ALAC_20 = 0x0071,
+    /// Apple Lossless Audio Codec (24 bit).
+    ALAC_24 = 0x0072,
+    /// Apple Lossless Audio Codec (32 bit).
+    ALAC_32 = 0x0073,
+}
+
+impl TryFrom<c_int> for SF_MINOR_FORMAT {
+    type Error = SndFileError;
+    fn try_from(value: c_int) -> Result<Self, Self::Error> {
+        let value = value & SF_FORMAT_SUBMASK;
+        match value {
+            SF_FORMAT_PCM_S8 => Ok(SF_MINOR_FORMAT::PCM_S8),
+            SF_FORMAT_PCM_16 => Ok(SF_MINOR_FORMAT::PCM_16),
+            SF_FORMAT_PCM_24 => Ok(SF_MINOR_FORMAT::PCM_24),
+            SF_FORMAT_PCM_32 => Ok(SF_MINOR_FORMAT::PCM_32),
+            SF_FORMAT_PCM_U8 => Ok(SF_MINOR_FORMAT::PCM_U8),
+            SF_FORMAT_FLOAT => Ok(SF_MINOR_FORMAT::FLOAT),
+            SF_FORMAT_DOUBLE => Ok(SF_MINOR_FORMAT::DOUBLE),
+            SF_FORMAT_ULAW => Ok(SF_MINOR_FORMAT::ULAW),
+            SF_FORMAT_ALAW => Ok(SF_MINOR_FORMAT::ALAW),
+            SF_FORMAT_IMA_ADPCM => Ok(SF_MINOR_FORMAT::IMA_ADPCM),
+            SF_FORMAT_MS_ADPCM => Ok(SF_MINOR_FORMAT::MS_ADPCM),
+            SF_FORMAT_GSM610 => Ok(SF_MINOR_FORMAT::GSM610),
+            SF_FORMAT_VOX_ADPCM => Ok(SF_MINOR_FORMAT::VOX_ADPCM),
+            SF_FORMAT_NMS_ADPCM_16 => Ok(SF_MINOR_FORMAT::NMS_ADPCM_16),
+            SF_FORMAT_NMS_ADPCM_24 => Ok(SF_MINOR_FORMAT::NMS_ADPCM_24),
+            SF_FORMAT_NMS_ADPCM_32 => Ok(SF_MINOR_FORMAT::NMS_ADPCM_32),
+            SF_FORMAT_G721_32 => Ok(SF_MINOR_FORMAT::G721_32),
+            SF_FORMAT_G723_24 => Ok(SF_MINOR_FORMAT::G723_24),
+            SF_FORMAT_G723_40 => Ok(SF_MINOR_FORMAT::G723_40),
+            SF_FORMAT_DWVW_12 => Ok(SF_MINOR_FORMAT::DWVW_12),
+            SF_FORMAT_DWVW_16 => Ok(SF_MINOR_FORMAT::DWVW_16),
+            SF_FORMAT_DWVW_24 => Ok(SF_MINOR_FORMAT::DWVW_24),
+            SF_FORMAT_DWVW_N => Ok(SF_MINOR_FORMAT::DWVW_N),
+            SF_FORMAT_DPCM_8 => Ok(SF_MINOR_FORMAT::DPCM_8),
+            SF_FORMAT_DPCM_16 => Ok(SF_MINOR_FORMAT::DPCM_16),
+            SF_FORMAT_VORBIS => Ok(SF_MINOR_FORMAT::VORBIS),
+            SF_FORMAT_OPUS => Ok(SF_MINOR_FORMAT::OPUS),
+            SF_FORMAT_ALAC_16 => Ok(SF_MINOR_FORMAT::ALAC_16),
+            SF_FORMAT_ALAC_20 => Ok(SF_MINOR_FORMAT::ALAC_20),
+            SF_FORMAT_ALAC_24 => Ok(SF_MINOR_FORMAT::ALAC_24),
+            SF_FORMAT_ALAC_32 => Ok(SF_MINOR_FORMAT::ALAC_32),
+            _ => Err(SndFileError::BadOpenFormat),
+        }
+    }
+}
+
 pub const SF_FORMAT_SUBMASK: c_int = 0x0000FFFF;
 pub const SF_FORMAT_TYPEMASK: c_int = 0x0FFF0000;
 pub const SF_FORMAT_ENDMASK: c_int = 0x30000000;
@@ -1264,32 +1374,32 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
     match SF_CONTAINER(info.format) {
         SF_MAJOR_FORMAT::WAV => {
             /* WAV now allows both endian, RIFF or RIFX (little or big respectively) */
-            if subformat == SF_FORMAT_PCM_U8 || subformat == SF_FORMAT_PCM_16 {
+            if subformat == SF_MINOR_FORMAT::PCM_U8 || subformat == SF_MINOR_FORMAT::PCM_16 {
                 return 1;
             }
-            if subformat == SF_FORMAT_PCM_24 || subformat == SF_FORMAT_PCM_32 {
+            if subformat == SF_MINOR_FORMAT::PCM_24 || subformat == SF_MINOR_FORMAT::PCM_32 {
                 return 1;
             }
-            if (subformat == SF_FORMAT_IMA_ADPCM || subformat == SF_FORMAT_MS_ADPCM)
+            if (subformat == SF_MINOR_FORMAT::IMA_ADPCM || subformat == SF_MINOR_FORMAT::MS_ADPCM)
                 && info.channels <= 2
             {
                 return 1;
             }
-            if subformat == SF_FORMAT_GSM610 && info.channels == 1 {
+            if subformat == SF_MINOR_FORMAT::GSM610 && info.channels == 1 {
                 return 1;
             }
-            if subformat == SF_FORMAT_G721_32 && info.channels == 1 {
+            if subformat == SF_MINOR_FORMAT::G721_32 && info.channels == 1 {
                 return 1;
             }
-            if subformat == SF_FORMAT_ULAW || subformat == SF_FORMAT_ALAW {
+            if subformat == SF_MINOR_FORMAT::ULAW || subformat == SF_MINOR_FORMAT::ALAW {
                 return 1;
             }
-            if subformat == SF_FORMAT_FLOAT || subformat == SF_FORMAT_DOUBLE {
+            if subformat == SF_MINOR_FORMAT::FLOAT || subformat == SF_MINOR_FORMAT::DOUBLE {
                 return 1;
             }
-            if (subformat == SF_FORMAT_NMS_ADPCM_16
-                || subformat == SF_FORMAT_NMS_ADPCM_24
-                || subformat == SF_FORMAT_NMS_ADPCM_32)
+            if (subformat == SF_MINOR_FORMAT::NMS_ADPCM_16
+                || subformat == SF_MINOR_FORMAT::NMS_ADPCM_24
+                || subformat == SF_MINOR_FORMAT::NMS_ADPCM_32)
                 && info.channels == 1
             {
                 return 1;
@@ -1300,25 +1410,25 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             if endian == SF_ENDIAN::BIG || endian == SF_ENDIAN::CPU {
                 return 0;
             }
-            if subformat == SF_FORMAT_PCM_U8 || subformat == SF_FORMAT_PCM_16 {
+            if subformat == SF_MINOR_FORMAT::PCM_U8 || subformat == SF_MINOR_FORMAT::PCM_16 {
                 return 1;
             }
-            if subformat == SF_FORMAT_PCM_24 || subformat == SF_FORMAT_PCM_32 {
+            if subformat == SF_MINOR_FORMAT::PCM_24 || subformat == SF_MINOR_FORMAT::PCM_32 {
                 return 1;
             }
-            if subformat == SF_FORMAT_ULAW || subformat == SF_FORMAT_ALAW {
+            if subformat == SF_MINOR_FORMAT::ULAW || subformat == SF_MINOR_FORMAT::ALAW {
                 return 1;
             }
-            if subformat == SF_FORMAT_FLOAT || subformat == SF_FORMAT_DOUBLE {
+            if subformat == SF_MINOR_FORMAT::FLOAT || subformat == SF_MINOR_FORMAT::DOUBLE {
                 return 1;
             }
         }
 
         SF_MAJOR_FORMAT::AIFF => {
             /* AIFF does allow both endian-nesses for PCM data.*/
-            if subformat == SF_FORMAT_PCM_16
-                || subformat == SF_FORMAT_PCM_24
-                || subformat == SF_FORMAT_PCM_32
+            if subformat == SF_MINOR_FORMAT::PCM_16
+                || subformat == SF_MINOR_FORMAT::PCM_24
+                || subformat == SF_MINOR_FORMAT::PCM_32
             {
                 return 1;
             }
@@ -1326,107 +1436,107 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             if endian != SF_ENDIAN::FILE {
                 return 0;
             }
-            if subformat == SF_FORMAT_PCM_U8 || subformat == SF_FORMAT_PCM_S8 {
+            if subformat == SF_MINOR_FORMAT::PCM_U8 || subformat == SF_MINOR_FORMAT::PCM_S8 {
                 return 1;
             }
-            if subformat == SF_FORMAT_FLOAT || subformat == SF_FORMAT_DOUBLE {
+            if subformat == SF_MINOR_FORMAT::FLOAT || subformat == SF_MINOR_FORMAT::DOUBLE {
                 return 1;
             }
-            if subformat == SF_FORMAT_ULAW || subformat == SF_FORMAT_ALAW {
+            if subformat == SF_MINOR_FORMAT::ULAW || subformat == SF_MINOR_FORMAT::ALAW {
                 return 1;
             }
-            if (subformat == SF_FORMAT_DWVW_12
-                || subformat == SF_FORMAT_DWVW_16
-                || subformat == SF_FORMAT_DWVW_24)
+            if (subformat == SF_MINOR_FORMAT::DWVW_12
+                || subformat == SF_MINOR_FORMAT::DWVW_16
+                || subformat == SF_MINOR_FORMAT::DWVW_24)
                 && info.channels == 1
             {
                 return 1;
             }
-            if subformat == SF_FORMAT_GSM610 && info.channels == 1 {
+            if subformat == SF_MINOR_FORMAT::GSM610 && info.channels == 1 {
                 return 1;
             }
-            if subformat == SF_FORMAT_IMA_ADPCM && (info.channels == 1 || info.channels == 2) {
+            if subformat == SF_MINOR_FORMAT::IMA_ADPCM && (info.channels == 1 || info.channels == 2) {
                 return 1;
             }
         }
 
         SF_MAJOR_FORMAT::AU => {
-            if subformat == SF_FORMAT_PCM_S8 || subformat == SF_FORMAT_PCM_16 {
+            if subformat == SF_MINOR_FORMAT::PCM_S8 || subformat == SF_MINOR_FORMAT::PCM_16 {
                 return 1;
             }
-            if subformat == SF_FORMAT_PCM_24 || subformat == SF_FORMAT_PCM_32 {
+            if subformat == SF_MINOR_FORMAT::PCM_24 || subformat == SF_MINOR_FORMAT::PCM_32 {
                 return 1;
             }
-            if subformat == SF_FORMAT_ULAW || subformat == SF_FORMAT_ALAW {
+            if subformat == SF_MINOR_FORMAT::ULAW || subformat == SF_MINOR_FORMAT::ALAW {
                 return 1;
             }
-            if subformat == SF_FORMAT_FLOAT || subformat == SF_FORMAT_DOUBLE {
+            if subformat == SF_MINOR_FORMAT::FLOAT || subformat == SF_MINOR_FORMAT::DOUBLE {
                 return 1;
             }
-            if subformat == SF_FORMAT_G721_32 && info.channels == 1 {
+            if subformat == SF_MINOR_FORMAT::G721_32 && info.channels == 1 {
                 return 1;
             }
-            if subformat == SF_FORMAT_G723_24 && info.channels == 1 {
+            if subformat == SF_MINOR_FORMAT::G723_24 && info.channels == 1 {
                 return 1;
             }
-            if subformat == SF_FORMAT_G723_40 && info.channels == 1 {
+            if subformat == SF_MINOR_FORMAT::G723_40 && info.channels == 1 {
                 return 1;
             }
         }
 
         SF_MAJOR_FORMAT::CAF => {
-            if subformat == SF_FORMAT_PCM_S8 || subformat == SF_FORMAT_PCM_16 {
+            if subformat == SF_MINOR_FORMAT::PCM_S8 || subformat == SF_MINOR_FORMAT::PCM_16 {
                 return 1;
             }
-            if subformat == SF_FORMAT_PCM_24 || subformat == SF_FORMAT_PCM_32 {
+            if subformat == SF_MINOR_FORMAT::PCM_24 || subformat == SF_MINOR_FORMAT::PCM_32 {
                 return 1;
             }
-            if subformat == SF_FORMAT_ULAW || subformat == SF_FORMAT_ALAW {
+            if subformat == SF_MINOR_FORMAT::ULAW || subformat == SF_MINOR_FORMAT::ALAW {
                 return 1;
             }
-            if subformat == SF_FORMAT_ALAC_16 || subformat == SF_FORMAT_ALAC_20 {
+            if subformat == SF_MINOR_FORMAT::ALAC_16 || subformat == SF_MINOR_FORMAT::ALAC_20 {
                 return 1;
             }
-            if subformat == SF_FORMAT_ALAC_24 || subformat == SF_FORMAT_ALAC_32 {
+            if subformat == SF_MINOR_FORMAT::ALAC_24 || subformat == SF_MINOR_FORMAT::ALAC_32 {
                 return 1;
             }
-            if subformat == SF_FORMAT_FLOAT || subformat == SF_FORMAT_DOUBLE {
+            if subformat == SF_MINOR_FORMAT::FLOAT || subformat == SF_MINOR_FORMAT::DOUBLE {
                 return 1;
             }
         }
 
         SF_MAJOR_FORMAT::RAW => {
-            if subformat == SF_FORMAT_PCM_U8
-                || subformat == SF_FORMAT_PCM_S8
-                || subformat == SF_FORMAT_PCM_16
+            if subformat == SF_MINOR_FORMAT::PCM_U8
+                || subformat == SF_MINOR_FORMAT::PCM_S8
+                || subformat == SF_MINOR_FORMAT::PCM_16
             {
                 return 1;
             }
-            if subformat == SF_FORMAT_PCM_24 || subformat == SF_FORMAT_PCM_32 {
+            if subformat == SF_MINOR_FORMAT::PCM_24 || subformat == SF_MINOR_FORMAT::PCM_32 {
                 return 1;
             }
-            if subformat == SF_FORMAT_FLOAT || subformat == SF_FORMAT_DOUBLE {
+            if subformat == SF_MINOR_FORMAT::FLOAT || subformat == SF_MINOR_FORMAT::DOUBLE {
                 return 1;
             }
-            if subformat == SF_FORMAT_ALAW || subformat == SF_FORMAT_ULAW {
+            if subformat == SF_MINOR_FORMAT::ALAW || subformat == SF_MINOR_FORMAT::ULAW {
                 return 1;
             }
-            if (subformat == SF_FORMAT_DWVW_12
-                || subformat == SF_FORMAT_DWVW_16
-                || subformat == SF_FORMAT_DWVW_24)
+            if (subformat == SF_MINOR_FORMAT::DWVW_12
+                || subformat == SF_MINOR_FORMAT::DWVW_16
+                || subformat == SF_MINOR_FORMAT::DWVW_24)
                 && info.channels == 1
             {
                 return 1;
             }
-            if subformat == SF_FORMAT_GSM610 && info.channels == 1 {
+            if subformat == SF_MINOR_FORMAT::GSM610 && info.channels == 1 {
                 return 1;
             }
-            if subformat == SF_FORMAT_VOX_ADPCM && info.channels == 1 {
+            if subformat == SF_MINOR_FORMAT::VOX_ADPCM && info.channels == 1 {
                 return 1;
             }
-            if (subformat == SF_FORMAT_NMS_ADPCM_16
-                || subformat == SF_FORMAT_NMS_ADPCM_24
-                || subformat == SF_FORMAT_NMS_ADPCM_32)
+            if (subformat == SF_MINOR_FORMAT::NMS_ADPCM_16
+                || subformat == SF_MINOR_FORMAT::NMS_ADPCM_24
+                || subformat == SF_MINOR_FORMAT::NMS_ADPCM_32)
                 && info.channels == 1
             {
                 return 1;
@@ -1434,9 +1544,9 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
         }
 
         SF_MAJOR_FORMAT::PAF => {
-            if subformat == SF_FORMAT_PCM_S8
-                || subformat == SF_FORMAT_PCM_16
-                || subformat == SF_FORMAT_PCM_24
+            if subformat == SF_MINOR_FORMAT::PCM_S8
+                || subformat == SF_MINOR_FORMAT::PCM_16
+                || subformat == SF_MINOR_FORMAT::PCM_24
             {
                 return 1;
             }
@@ -1452,19 +1562,19 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
                 return 0;
             }
 
-            if subformat == SF_FORMAT_PCM_S8 || subformat == SF_FORMAT_PCM_16 {
+            if subformat == SF_MINOR_FORMAT::PCM_S8 || subformat == SF_MINOR_FORMAT::PCM_16 {
                 return 1;
             }
         }
 
         SF_MAJOR_FORMAT::NIST => {
-            if subformat == SF_FORMAT_PCM_S8 || subformat == SF_FORMAT_PCM_16 {
+            if subformat == SF_MINOR_FORMAT::PCM_S8 || subformat == SF_MINOR_FORMAT::PCM_16 {
                 return 1;
             }
-            if subformat == SF_FORMAT_PCM_24 || subformat == SF_FORMAT_PCM_32 {
+            if subformat == SF_MINOR_FORMAT::PCM_24 || subformat == SF_MINOR_FORMAT::PCM_32 {
                 return 1;
             }
-            if subformat == SF_FORMAT_ULAW || subformat == SF_FORMAT_ALAW {
+            if subformat == SF_MINOR_FORMAT::ULAW || subformat == SF_MINOR_FORMAT::ALAW {
                 return 1;
             }
         }
@@ -1473,12 +1583,12 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             if info.channels > 256 {
                 return 0;
             }
-            if subformat == SF_FORMAT_PCM_16 || subformat == SF_FORMAT_PCM_32 {
+            if subformat == SF_MINOR_FORMAT::PCM_16 || subformat == SF_MINOR_FORMAT::PCM_32 {
                 return 1;
             }
-            if subformat == SF_FORMAT_ULAW
-                || subformat == SF_FORMAT_ALAW
-                || subformat == SF_FORMAT_FLOAT
+            if subformat == SF_MINOR_FORMAT::ULAW
+                || subformat == SF_MINOR_FORMAT::ALAW
+                || subformat == SF_MINOR_FORMAT::FLOAT
             {
                 return 1;
             }
@@ -1492,10 +1602,10 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             if endian == SF_ENDIAN::BIG || endian == SF_ENDIAN::CPU {
                 return 0;
             }
-            if subformat == SF_FORMAT_PCM_U8 || subformat == SF_FORMAT_PCM_16 {
+            if subformat == SF_MINOR_FORMAT::PCM_U8 || subformat == SF_MINOR_FORMAT::PCM_16 {
                 return 1;
             }
-            if subformat == SF_FORMAT_ULAW || subformat == SF_FORMAT_ALAW {
+            if subformat == SF_MINOR_FORMAT::ULAW || subformat == SF_MINOR_FORMAT::ALAW {
                 return 1;
             }
         }
@@ -1505,53 +1615,53 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             if endian == SF_ENDIAN::BIG || endian == SF_ENDIAN::CPU {
                 return 0;
             }
-            if subformat == SF_FORMAT_PCM_U8 || subformat == SF_FORMAT_PCM_16 {
+            if subformat == SF_MINOR_FORMAT::PCM_U8 || subformat == SF_MINOR_FORMAT::PCM_16 {
                 return 1;
             }
-            if subformat == SF_FORMAT_PCM_24 || subformat == SF_FORMAT_PCM_32 {
+            if subformat == SF_MINOR_FORMAT::PCM_24 || subformat == SF_MINOR_FORMAT::PCM_32 {
                 return 1;
             }
-            if (subformat == SF_FORMAT_IMA_ADPCM || subformat == SF_FORMAT_MS_ADPCM)
+            if (subformat == SF_MINOR_FORMAT::IMA_ADPCM || subformat == SF_MINOR_FORMAT::MS_ADPCM)
                 && info.channels <= 2
             {
                 return 1;
             }
-            if subformat == SF_FORMAT_GSM610 && info.channels == 1 {
+            if subformat == SF_MINOR_FORMAT::GSM610 && info.channels == 1 {
                 return 1;
             }
-            if subformat == SF_FORMAT_ULAW || subformat == SF_FORMAT_ALAW {
+            if subformat == SF_MINOR_FORMAT::ULAW || subformat == SF_MINOR_FORMAT::ALAW {
                 return 1;
             }
-            if subformat == SF_FORMAT_FLOAT || subformat == SF_FORMAT_DOUBLE {
+            if subformat == SF_MINOR_FORMAT::FLOAT || subformat == SF_MINOR_FORMAT::DOUBLE {
                 return 1;
             }
         }
 
         SF_MAJOR_FORMAT::MAT4 => {
-            if subformat == SF_FORMAT_PCM_16 || subformat == SF_FORMAT_PCM_32 {
+            if subformat == SF_MINOR_FORMAT::PCM_16 || subformat == SF_MINOR_FORMAT::PCM_32 {
                 return 1;
             }
-            if subformat == SF_FORMAT_FLOAT || subformat == SF_FORMAT_DOUBLE {
+            if subformat == SF_MINOR_FORMAT::FLOAT || subformat == SF_MINOR_FORMAT::DOUBLE {
                 return 1;
             }
         }
 
         SF_MAJOR_FORMAT::MAT5 => {
-            if subformat == SF_FORMAT_PCM_U8
-                || subformat == SF_FORMAT_PCM_16
-                || subformat == SF_FORMAT_PCM_32
+            if subformat == SF_MINOR_FORMAT::PCM_U8
+                || subformat == SF_MINOR_FORMAT::PCM_16
+                || subformat == SF_MINOR_FORMAT::PCM_32
             {
                 return 1;
             }
-            if subformat == SF_FORMAT_FLOAT || subformat == SF_FORMAT_DOUBLE {
+            if subformat == SF_MINOR_FORMAT::FLOAT || subformat == SF_MINOR_FORMAT::DOUBLE {
                 return 1;
             }
         }
 
         SF_MAJOR_FORMAT::PVF => {
-            if subformat == SF_FORMAT_PCM_S8
-                || subformat == SF_FORMAT_PCM_16
-                || subformat == SF_FORMAT_PCM_32
+            if subformat == SF_MINOR_FORMAT::PCM_S8
+                || subformat == SF_MINOR_FORMAT::PCM_16
+                || subformat == SF_MINOR_FORMAT::PCM_32
             {
                 return 1;
             }
@@ -1561,7 +1671,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             if info.channels != 1 {
                 return 0;
             }
-            if subformat == SF_FORMAT_DPCM_8 || subformat == SF_FORMAT_DPCM_16 {
+            if subformat == SF_MINOR_FORMAT::DPCM_8 || subformat == SF_MINOR_FORMAT::DPCM_16 {
                 return 1;
             }
         }
@@ -1574,7 +1684,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             if endian == SF_ENDIAN::LITTLE || endian == SF_ENDIAN::CPU {
                 return 0;
             }
-            if subformat == SF_FORMAT_PCM_16 {
+            if subformat == SF_MINOR_FORMAT::PCM_16 {
                 return 1;
             }
         }
@@ -1587,9 +1697,9 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             if endian == SF_ENDIAN::LITTLE || endian == SF_ENDIAN::CPU {
                 return 0;
             }
-            if subformat == SF_FORMAT_PCM_S8
-                || subformat == SF_FORMAT_PCM_16
-                || subformat == SF_FORMAT_PCM_24
+            if subformat == SF_MINOR_FORMAT::PCM_S8
+                || subformat == SF_MINOR_FORMAT::PCM_16
+                || subformat == SF_MINOR_FORMAT::PCM_24
             {
                 return 1;
             }
@@ -1603,9 +1713,9 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             if endian == SF_ENDIAN::LITTLE || endian == SF_ENDIAN::CPU {
                 return 0;
             }
-            if subformat == SF_FORMAT_PCM_U8
-                || subformat == SF_FORMAT_PCM_S8
-                || subformat == SF_FORMAT_PCM_16
+            if subformat == SF_MINOR_FORMAT::PCM_U8
+                || subformat == SF_MINOR_FORMAT::PCM_S8
+                || subformat == SF_MINOR_FORMAT::PCM_16
             {
                 return 1;
             }
@@ -1619,9 +1729,9 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             if endian != SF_ENDIAN::FILE {
                 return 0;
             }
-            if subformat == SF_FORMAT_PCM_S8
-                || subformat == SF_FORMAT_PCM_16
-                || subformat == SF_FORMAT_PCM_24
+            if subformat == SF_MINOR_FORMAT::PCM_S8
+                || subformat == SF_MINOR_FORMAT::PCM_16
+                || subformat == SF_MINOR_FORMAT::PCM_24
             {
                 return 1;
             }
@@ -1632,10 +1742,10 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             if endian == SF_ENDIAN::LITTLE || endian == SF_ENDIAN::CPU {
                 return 0;
             }
-            if subformat == SF_FORMAT_PCM_S8
-                || subformat == SF_FORMAT_PCM_16
-                || subformat == SF_FORMAT_PCM_24
-                || subformat == SF_FORMAT_PCM_32
+            if subformat == SF_MINOR_FORMAT::PCM_S8
+                || subformat == SF_MINOR_FORMAT::PCM_16
+                || subformat == SF_MINOR_FORMAT::PCM_24
+                || subformat == SF_MINOR_FORMAT::PCM_32
             {
                 return 1;
             }
@@ -1649,7 +1759,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             if endian == SF_ENDIAN::BIG || endian == SF_ENDIAN::CPU {
                 return 0;
             }
-            if subformat == SF_FORMAT_ALAW {
+            if subformat == SF_MINOR_FORMAT::ALAW {
                 return 1;
             }
         }
@@ -1658,10 +1768,10 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             if endian != SF_ENDIAN::FILE {
                 return 0;
             }
-            if subformat == SF_FORMAT_VORBIS {
+            if subformat == SF_MINOR_FORMAT::VORBIS {
                 return 1;
             }
-            if subformat == SF_FORMAT_OPUS {
+            if subformat == SF_MINOR_FORMAT::OPUS {
                 return 1;
             }
         }
@@ -1674,7 +1784,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             if endian == SF_ENDIAN::BIG || endian == SF_ENDIAN::CPU {
                 return 0;
             }
-            if subformat == SF_FORMAT_PCM_16 {
+            if subformat == SF_MINOR_FORMAT::PCM_16 {
                 return 1;
             }
         }
@@ -1683,16 +1793,16 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             if endian == SF_ENDIAN::BIG || endian == SF_ENDIAN::CPU {
                 return 0;
             }
-            if subformat == SF_FORMAT_PCM_U8 || subformat == SF_FORMAT_PCM_16 {
+            if subformat == SF_MINOR_FORMAT::PCM_U8 || subformat == SF_MINOR_FORMAT::PCM_16 {
                 return 1;
             }
-            if subformat == SF_FORMAT_PCM_24 || subformat == SF_FORMAT_PCM_32 {
+            if subformat == SF_MINOR_FORMAT::PCM_24 || subformat == SF_MINOR_FORMAT::PCM_32 {
                 return 1;
             }
-            if subformat == SF_FORMAT_ULAW || subformat == SF_FORMAT_ALAW {
+            if subformat == SF_MINOR_FORMAT::ULAW || subformat == SF_MINOR_FORMAT::ALAW {
                 return 1;
             }
-            if subformat == SF_FORMAT_FLOAT || subformat == SF_FORMAT_DOUBLE {
+            if subformat == SF_MINOR_FORMAT::FLOAT || subformat == SF_MINOR_FORMAT::DOUBLE {
                 return 1;
             }
         }
@@ -1753,19 +1863,19 @@ pub unsafe fn sf_current_byterate(sndfile: *mut SNDFILE) -> c_int {
     }
 
     match SF_CODEC(psf.sf.format) {
-        SF_FORMAT_IMA_ADPCM | SF_FORMAT_MS_ADPCM | SF_FORMAT_VOX_ADPCM => {
+        SF_MINOR_FORMAT::IMA_ADPCM | SF_MINOR_FORMAT::MS_ADPCM | SF_MINOR_FORMAT::VOX_ADPCM => {
             (psf.sf.samplerate * psf.sf.channels) / 2
         }
-        SF_FORMAT_GSM610 => (psf.sf.samplerate * psf.sf.channels * 13000) / 8000,
-        SF_FORMAT_NMS_ADPCM_16 => psf.sf.samplerate / 4 + 10,
-        SF_FORMAT_NMS_ADPCM_24 => psf.sf.samplerate * 3 / 8 + 10,
-        SF_FORMAT_NMS_ADPCM_32 => psf.sf.samplerate / 2 + 10,
+        SF_MINOR_FORMAT::GSM610 => (psf.sf.samplerate * psf.sf.channels * 13000) / 8000,
+        SF_MINOR_FORMAT::NMS_ADPCM_16 => psf.sf.samplerate / 4 + 10,
+        SF_MINOR_FORMAT::NMS_ADPCM_24 => psf.sf.samplerate * 3 / 8 + 10,
+        SF_MINOR_FORMAT::NMS_ADPCM_32 => psf.sf.samplerate / 2 + 10,
         // 32kbs G721 ADPCM encoding.
-        SF_FORMAT_G721_32 => (psf.sf.samplerate * psf.sf.channels) / 2,
+        SF_MINOR_FORMAT::G721_32 => (psf.sf.samplerate * psf.sf.channels) / 2,
         // 24kbs G723 ADPCM encoding.
-        SF_FORMAT_G723_24 => (psf.sf.samplerate * psf.sf.channels * 3) / 8,
+        SF_MINOR_FORMAT::G723_24 => (psf.sf.samplerate * psf.sf.channels * 3) / 8,
         // 40kbs G723 ADPCM encoding.
-        SF_FORMAT_G723_40 => (psf.sf.samplerate * psf.sf.channels * 5) / 8,
+        SF_MINOR_FORMAT::G723_40 => (psf.sf.samplerate * psf.sf.channels * 5) / 8,
         _ => -1,
     }
 }
