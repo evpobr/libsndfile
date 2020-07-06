@@ -992,11 +992,15 @@ psf_strlcat (char *dest, size_t n, const char *src)
 	dest [n - 1] = 0 ;
 } /* psf_strlcat */
 
+void
+psf_strlcpy (char *dest, size_t n, const char *src) ;
+#if 0
 static inline void
 psf_strlcpy (char *dest, size_t n, const char *src)
 {	strncpy (dest, src, n - 1) ;
 	dest [n - 1] = 0 ;
 } /* psf_strlcpy */
+#endif
 
 /*------------------------------------------------------------------------------------
 ** Other helper functions.

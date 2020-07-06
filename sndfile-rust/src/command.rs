@@ -649,3 +649,9 @@ unsafe fn psf_get_max_all_channels(psf: *mut SF_PRIVATE, peaks: *mut c_double) -
 
     return SF_TRUE;
 }
+
+#[no_mangle]
+unsafe fn psf_strlcpy(dest: *mut c_char, n: size_t, src: *const c_char) {
+    strncpy (dest, src, n - 1) ;
+	*dest.add(n - 1) = 0 ;
+}
