@@ -474,11 +474,11 @@ unsafe fn psf_get_format_info(data: *mut SF_FORMAT_INFO) -> c_int {
     assert!(!data.is_null());
     let data = &mut *data;
 
-    if SF_CONTAINER(data.format) != 0 {
+    if SF_CONTAINER(data.format) != SF_MAJOR_FORMAT::UNKNOWN {
         let format = SF_CONTAINER(data.format);
 
         for k in 0..MAJOR_FORMATS.len() {
-            if format == MAJOR_FORMATS[k].format {
+            if format == SF_CONTAINER(MAJOR_FORMATS[k].format) {
                 *data = MAJOR_FORMATS[k].into();
                 return 0;
             }

@@ -68,8 +68,11 @@ pub enum SF_SEEK_MODE {
 }
 
 #[inline]
-pub(crate) fn SF_CONTAINER(x: c_int) -> c_int {
-    x & SF_FORMAT_TYPEMASK
+pub(crate) fn SF_CONTAINER(x: c_int) -> SF_MAJOR_FORMAT {
+    match SF_MAJOR_FORMAT::try_from(x) {
+        Ok(major_format) => major_format,
+        Err(_) => SF_MAJOR_FORMAT::UNKNOWN,
+    }
 }
 #[inline]
 pub(crate) fn SF_CODEC(x: c_int) -> c_int {

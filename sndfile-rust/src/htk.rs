@@ -29,7 +29,7 @@ unsafe fn htk_open(psf: *mut SF_PRIVATE) -> SFE {
     let subformat = SF_CODEC(psf.sf.format);
 
     if psf.file.mode == SFM_OPEN_MODE::WRITE || psf.file.mode == SFM_OPEN_MODE::RDWR {
-        if (SF_CONTAINER(psf.sf.format)) != SF_FORMAT_HTK {
+        if (SF_CONTAINER(psf.sf.format)) != SF_MAJOR_FORMAT::HTK {
             return SFE::BAD_OPEN_FORMAT;
         }
 

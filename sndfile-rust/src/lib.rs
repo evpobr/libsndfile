@@ -1,8 +1,8 @@
 #![allow(non_camel_case_types, unused_macros, non_snake_case, dead_code)]
 
 use std::cmp;
-use std::mem;
 use std::convert;
+use std::mem;
 use std::{ffi::CStr, ptr};
 
 use common::*;
@@ -19,11 +19,12 @@ mod htk;
 mod id3;
 mod strings;
 
-use strings::*;
 use convert::TryFrom;
+use strings::*;
 
 #[derive(Debug)]
 pub enum SndFileError {
+    BadOpenFormat,
     BadEndian,
     Unknown(c_int),
 }
@@ -164,9 +165,101 @@ impl TryFrom<c_int> for SF_ENDIAN {
         match value & SF_FORMAT_ENDMASK {
             SF_ENDIAN_FILE => Ok(SF_ENDIAN::FILE),
             SF_ENDIAN_LITTLE => Ok(SF_ENDIAN::LITTLE),
-            SF_ENDIAN_BIG => Ok (SF_ENDIAN::BIG),
-            SF_ENDIAN_CPU => Ok (SF_ENDIAN::CPU),
+            SF_ENDIAN_BIG => Ok(SF_ENDIAN::BIG),
+            SF_ENDIAN_CPU => Ok(SF_ENDIAN::CPU),
             _ => Err(SndFileError::BadEndian),
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Copy, Clone)]
+pub enum SF_MAJOR_FORMAT {
+    /// Unknown major format
+    UNKNOWN = 0x000000,
+    /// Microsoft WAV format (little endian default).
+    WAV = 0x010000,
+    /// Apple/SGI AIFF format (big endian).
+    AIFF = 0x020000,
+    /// Sun/NeXT AU format (big endian).
+    AU = 0x030000,
+    /// RAW PCM data.
+    RAW = 0x040000,
+    /// Ensoniq PARIS file format.
+    PAF = 0x050000,
+    /// Amiga IFF / SVX8 / SV16 format.
+    SVX = 0x060000,
+    /// Sphere NIST format.
+    NIST = 0x070000,
+    /// VOC files.
+    VOC = 0x080000,
+    /// Berkeley/IRCAM/CARL
+    IRCAM = 0x0A0000,
+    /// Sonic Foundry's 64 bit RIFF/WAV
+    W64 = 0x0B0000,
+    /// Matlab (tm) V4.2 / GNU Octave 2.0
+    MAT4 = 0x0C0000,
+    /// Matlab (tm) V5.0 / GNU Octave 2.1
+    MAT5 = 0x0D0000,
+    /// Portable Voice Format
+    PVF = 0x0E0000,
+    /// Fasttracker 2 Extended Instrument
+    XI = 0x0F0000,
+    /// HMM Tool Kit format
+    HTK = 0x100000,
+    /// Midi Sample Dump Standard
+    SDS = 0x110000,
+    /// Audio Visual Research
+    AVR = 0x120000,
+    /// MS WAVE with WAVEFORMATEX
+    WAVEX = 0x130000,
+    /// Sound Designer 2
+    SD2 = 0x160000,
+    /// FLAC lossless file format
+    FLAC = 0x170000,
+    /// Core Audio File format
+    CAF = 0x180000,
+    /// Psion WVE format
+    WVE = 0x190000,
+    /// Xiph OGG container
+    OGG = 0x200000,
+    /// Akai MPC 2000 sampler
+    MPC2K = 0x210000,
+    /// RF64 WAV file
+    RF64 = 0x220000,
+}
+
+impl TryFrom<c_int> for SF_MAJOR_FORMAT {
+    type Error = SndFileError;
+    fn try_from(value: c_int) -> Result<Self, Self::Error> {
+        let value = value & SF_FORMAT_TYPEMASK;
+        match value {
+            SF_FORMAT_WAV => Ok(SF_MAJOR_FORMAT::WAV),
+            SF_FORMAT_AIFF => Ok(SF_MAJOR_FORMAT::AIFF),
+            SF_FORMAT_AU => Ok(SF_MAJOR_FORMAT::AU),
+            SF_FORMAT_RAW => Ok(SF_MAJOR_FORMAT::RAW),
+            SF_FORMAT_PAF => Ok(SF_MAJOR_FORMAT::PAF),
+            SF_FORMAT_SVX => Ok(SF_MAJOR_FORMAT::SVX),
+            SF_FORMAT_NIST => Ok(SF_MAJOR_FORMAT::NIST),
+            SF_FORMAT_VOC => Ok(SF_MAJOR_FORMAT::VOC),
+            SF_FORMAT_IRCAM => Ok(SF_MAJOR_FORMAT::IRCAM),
+            SF_FORMAT_W64 => Ok(SF_MAJOR_FORMAT::W64),
+            SF_FORMAT_MAT4 => Ok(SF_MAJOR_FORMAT::MAT4),
+            SF_FORMAT_MAT5 => Ok(SF_MAJOR_FORMAT::MAT5),
+            SF_FORMAT_PVF => Ok(SF_MAJOR_FORMAT::PVF),
+            SF_FORMAT_XI => Ok(SF_MAJOR_FORMAT::XI),
+            SF_FORMAT_HTK => Ok(SF_MAJOR_FORMAT::HTK),
+            SF_FORMAT_SDS => Ok(SF_MAJOR_FORMAT::SDS),
+            SF_FORMAT_AVR => Ok(SF_MAJOR_FORMAT::AVR),
+            SF_FORMAT_WAVEX => Ok(SF_MAJOR_FORMAT::WAVEX),
+            SF_FORMAT_SD2 => Ok(SF_MAJOR_FORMAT::SD2),
+            SF_FORMAT_FLAC => Ok(SF_MAJOR_FORMAT::FLAC),
+            SF_FORMAT_CAF => Ok(SF_MAJOR_FORMAT::CAF),
+            SF_FORMAT_WVE => Ok(SF_MAJOR_FORMAT::WVE),
+            SF_FORMAT_OGG => Ok(SF_MAJOR_FORMAT::OGG),
+            SF_FORMAT_MPC2K => Ok(SF_MAJOR_FORMAT::MPC2K),
+            SF_FORMAT_RF64 => Ok(SF_MAJOR_FORMAT::RF64),
+            _ => Err(SndFileError::BadOpenFormat),
         }
     }
 }
@@ -1169,7 +1262,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
     }
 
     match SF_CONTAINER(info.format) {
-        SF_FORMAT_WAV => {
+        SF_MAJOR_FORMAT::WAV => {
             /* WAV now allows both endian, RIFF or RIFX (little or big respectively) */
             if subformat == SF_FORMAT_PCM_U8 || subformat == SF_FORMAT_PCM_16 {
                 return 1;
@@ -1203,7 +1296,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             }
         }
 
-        SF_FORMAT_WAVEX => {
+        SF_MAJOR_FORMAT::WAVEX => {
             if endian == SF_ENDIAN::BIG || endian == SF_ENDIAN::CPU {
                 return 0;
             }
@@ -1221,7 +1314,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             }
         }
 
-        SF_FORMAT_AIFF => {
+        SF_MAJOR_FORMAT::AIFF => {
             /* AIFF does allow both endian-nesses for PCM data.*/
             if subformat == SF_FORMAT_PCM_16
                 || subformat == SF_FORMAT_PCM_24
@@ -1257,7 +1350,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             }
         }
 
-        SF_FORMAT_AU => {
+        SF_MAJOR_FORMAT::AU => {
             if subformat == SF_FORMAT_PCM_S8 || subformat == SF_FORMAT_PCM_16 {
                 return 1;
             }
@@ -1281,7 +1374,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             }
         }
 
-        SF_FORMAT_CAF => {
+        SF_MAJOR_FORMAT::CAF => {
             if subformat == SF_FORMAT_PCM_S8 || subformat == SF_FORMAT_PCM_16 {
                 return 1;
             }
@@ -1302,7 +1395,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             }
         }
 
-        SF_FORMAT_RAW => {
+        SF_MAJOR_FORMAT::RAW => {
             if subformat == SF_FORMAT_PCM_U8
                 || subformat == SF_FORMAT_PCM_S8
                 || subformat == SF_FORMAT_PCM_16
@@ -1340,7 +1433,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             }
         }
 
-        SF_FORMAT_PAF => {
+        SF_MAJOR_FORMAT::PAF => {
             if subformat == SF_FORMAT_PCM_S8
                 || subformat == SF_FORMAT_PCM_16
                 || subformat == SF_FORMAT_PCM_24
@@ -1349,7 +1442,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             }
         }
 
-        SF_FORMAT_SVX => {
+        SF_MAJOR_FORMAT::SVX => {
             // SVX only supports writing mono SVX files.
             if info.channels > 1 {
                 return 0;
@@ -1364,7 +1457,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             }
         }
 
-        SF_FORMAT_NIST => {
+        SF_MAJOR_FORMAT::NIST => {
             if subformat == SF_FORMAT_PCM_S8 || subformat == SF_FORMAT_PCM_16 {
                 return 1;
             }
@@ -1376,7 +1469,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             }
         }
 
-        SF_FORMAT_IRCAM => {
+        SF_MAJOR_FORMAT::IRCAM => {
             if info.channels > 256 {
                 return 0;
             }
@@ -1391,7 +1484,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             }
         }
 
-        SF_FORMAT_VOC => {
+        SF_MAJOR_FORMAT::VOC => {
             if info.channels > 2 {
                 return 0;
             }
@@ -1407,7 +1500,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             }
         }
 
-        SF_FORMAT_W64 => {
+        SF_MAJOR_FORMAT::W64 => {
             // W64 is strictly little endian.
             if endian == SF_ENDIAN::BIG || endian == SF_ENDIAN::CPU {
                 return 0;
@@ -1434,7 +1527,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             }
         }
 
-        SF_FORMAT_MAT4 => {
+        SF_MAJOR_FORMAT::MAT4 => {
             if subformat == SF_FORMAT_PCM_16 || subformat == SF_FORMAT_PCM_32 {
                 return 1;
             }
@@ -1443,7 +1536,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             }
         }
 
-        SF_FORMAT_MAT5 => {
+        SF_MAJOR_FORMAT::MAT5 => {
             if subformat == SF_FORMAT_PCM_U8
                 || subformat == SF_FORMAT_PCM_16
                 || subformat == SF_FORMAT_PCM_32
@@ -1455,7 +1548,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             }
         }
 
-        SF_FORMAT_PVF => {
+        SF_MAJOR_FORMAT::PVF => {
             if subformat == SF_FORMAT_PCM_S8
                 || subformat == SF_FORMAT_PCM_16
                 || subformat == SF_FORMAT_PCM_32
@@ -1464,7 +1557,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             }
         }
 
-        SF_FORMAT_XI => {
+        SF_MAJOR_FORMAT::XI => {
             if info.channels != 1 {
                 return 0;
             }
@@ -1473,7 +1566,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             }
         }
 
-        SF_FORMAT_HTK => {
+        SF_MAJOR_FORMAT::HTK => {
             if info.channels != 1 {
                 return 0;
             }
@@ -1486,7 +1579,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             }
         }
 
-        SF_FORMAT_SDS => {
+        SF_MAJOR_FORMAT::SDS => {
             if info.channels != 1 {
                 return 0;
             }
@@ -1502,7 +1595,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             }
         }
 
-        SF_FORMAT_AVR => {
+        SF_MAJOR_FORMAT::AVR => {
             if info.channels > 2 {
                 return 0;
             }
@@ -1518,7 +1611,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             }
         }
 
-        SF_FORMAT_FLAC => {
+        SF_MAJOR_FORMAT::FLAC => {
             // FLAC can't do more than 8 channels.
             if info.channels > 8 {
                 return 0;
@@ -1534,7 +1627,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             }
         }
 
-        SF_FORMAT_SD2 => {
+        SF_MAJOR_FORMAT::SD2 => {
             // SD2 is strictly big endian.
             if endian == SF_ENDIAN::LITTLE || endian == SF_ENDIAN::CPU {
                 return 0;
@@ -1548,7 +1641,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             }
         }
 
-        SF_FORMAT_WVE => {
+        SF_MAJOR_FORMAT::WVE => {
             if info.channels > 1 {
                 return 0;
             }
@@ -1561,7 +1654,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             }
         }
 
-        SF_FORMAT_OGG => {
+        SF_MAJOR_FORMAT::OGG => {
             if endian != SF_ENDIAN::FILE {
                 return 0;
             }
@@ -1573,7 +1666,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             }
         }
 
-        SF_FORMAT_MPC2K => {
+        SF_MAJOR_FORMAT::MPC2K => {
             if info.channels > 2 {
                 return 0;
             }
@@ -1586,7 +1679,7 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             }
         }
 
-        SF_FORMAT_RF64 => {
+        SF_MAJOR_FORMAT::RF64 => {
             if endian == SF_ENDIAN::BIG || endian == SF_ENDIAN::CPU {
                 return 0;
             }
