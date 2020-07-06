@@ -288,7 +288,7 @@ static void	save_header_info (SF_PRIVATE *psf) ;
 static int	copy_filename (SF_PRIVATE *psf, const char *path) ;
 static int	psf_close (SF_PRIVATE *psf) ;
 
-static int	try_resource_fork (SF_PRIVATE * psf) ;
+int	try_resource_fork (SF_PRIVATE * psf) ;
 
 /*------------------------------------------------------------------------------
 ** Private (static) variables.
@@ -2606,6 +2606,7 @@ sf_writef_double	(SNDFILE *sndfile, const double *ptr, sf_count_t frames)
 ** Private functions.
 */
 
+#if 0
 static int
 try_resource_fork (SF_PRIVATE * psf)
 {	int old_error = psf->error ;
@@ -2622,6 +2623,7 @@ try_resource_fork (SF_PRIVATE * psf)
 
 	return SF_FORMAT_SD2 ;
 } /* try_resource_fork */
+#endif
 
 static int
 format_from_extension (SF_PRIVATE *psf)

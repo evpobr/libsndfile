@@ -1959,6 +1959,26 @@ pub unsafe fn sf_read_raw(
 }
 
 #[no_mangle]
+unsafe fn try_resource_fork(psf: *mut SF_PRIVATE) -> SF_MAJOR_FORMAT {
+    assert!(!psf.is_null());
+    let psf = &mut *psf;
+
+    let old_error = psf.error ;
+
+	// Set READ mode now, to see if resource fork exists.
+	psf.rsrc.mode = SFM_OPEN_MODE::READ ;
+	if psf_open_rsrc(psf) != SFE::NO_ERROR {
+        psf.error = old_error ;
+		return SF_MAJOR_FORMAT::UNKNOWN;
+	};
+
+	/* More checking here. */
+	psf_log_printf (psf, c_str!("Resource fork : %s\n").as_ptr(), psf.rsrc.path.c.as_ptr()) ;
+
+	return SF_MAJOR_FORMAT::SD2 ;
+}
+
+#[no_mangle]
 pub unsafe fn sf_get_chunk_data(
     iterator: *const SF_CHUNK_ITERATOR,
     chunk_info: *mut SF_CHUNK_INFO,
