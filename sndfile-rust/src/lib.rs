@@ -19,6 +19,7 @@ mod htk;
 mod id3;
 mod strings;
 
+use command::psf_strlcpy;
 use convert::TryFrom;
 use strings::*;
 
@@ -1455,7 +1456,8 @@ pub unsafe fn sf_format_check(info: *const SF_INFO) -> c_int {
             if subformat == SF_MINOR_FORMAT::GSM610 && info.channels == 1 {
                 return 1;
             }
-            if subformat == SF_MINOR_FORMAT::IMA_ADPCM && (info.channels == 1 || info.channels == 2) {
+            if subformat == SF_MINOR_FORMAT::IMA_ADPCM && (info.channels == 1 || info.channels == 2)
+            {
                 return 1;
             }
         }
@@ -1963,19 +1965,84 @@ unsafe fn try_resource_fork(psf: *mut SF_PRIVATE) -> SF_MAJOR_FORMAT {
     assert!(!psf.is_null());
     let psf = &mut *psf;
 
-    let old_error = psf.error ;
+    let old_error = psf.error;
 
-	// Set READ mode now, to see if resource fork exists.
-	psf.rsrc.mode = SFM_OPEN_MODE::READ ;
-	if psf_open_rsrc(psf) != SFE::NO_ERROR {
-        psf.error = old_error ;
-		return SF_MAJOR_FORMAT::UNKNOWN;
-	};
+    // Set READ mode now, to see if resource fork exists.
+    psf.rsrc.mode = SFM_OPEN_MODE::READ;
+    if psf_open_rsrc(psf) != SFE::NO_ERROR {
+        psf.error = old_error;
+        return SF_MAJOR_FORMAT::UNKNOWN;
+    };
 
-	/* More checking here. */
-	psf_log_printf (psf, c_str!("Resource fork : %s\n").as_ptr(), psf.rsrc.path.c.as_ptr()) ;
+    /* More checking here. */
+    psf_log_printf(
+        psf,
+        c_str!("Resource fork : %s\n").as_ptr(),
+        psf.rsrc.path.c.as_ptr(),
+    );
 
-	return SF_MAJOR_FORMAT::SD2 ;
+    return SF_MAJOR_FORMAT::SD2;
+}
+
+#[no_mangle]
+unsafe fn format_from_extension(psf: *mut SF_PRIVATE) -> c_int {
+    assert!(!psf.is_null());
+    let psf = &mut *psf;
+
+    let mut cptr = strrchr(psf.file.name.c.as_ptr(), b'.' as c_int);
+    if cptr.is_null() {
+        return 0;
+    }
+
+    cptr = cptr.add(1);
+    let mut buffer: [c_char; 16] = [0; 16];
+    if strlen(cptr) > buffer.len() - 1 {
+        return 0;
+    }
+
+    psf_strlcpy(buffer.as_mut_ptr(), buffer.len(), cptr);
+    buffer[buffer.len() - 1] = 0;
+
+    // Convert everything in the buffer to lower case.
+    cptr = buffer.as_mut_ptr();
+    while *cptr != 0 {
+        *cptr = tolower(*cptr as c_int) as c_char;
+        cptr = cptr.add(1);
+    }
+
+    cptr = buffer.as_mut_ptr();
+
+    let mut format = 0;
+    if strcmp(cptr, c_str!("au").as_ptr()) == 0 {
+        psf.sf.channels = 1;
+        psf.sf.samplerate = 8000;
+        format = SF_FORMAT_RAW | SF_FORMAT_ULAW;
+    } else if strcmp(cptr, c_str!("snd").as_ptr()) == 0 {
+        psf.sf.channels = 1;
+        psf.sf.samplerate = 8000;
+        format = SF_FORMAT_RAW | SF_FORMAT_ULAW;
+    } else if strcmp(cptr, c_str!("vox").as_ptr()) == 0
+        || strcmp(cptr, c_str!("vox8").as_ptr()) == 0
+    {
+        psf.sf.channels = 1;
+        psf.sf.samplerate = 8000;
+        format = SF_FORMAT_RAW | SF_FORMAT_VOX_ADPCM;
+    } else if strcmp(cptr, c_str!("vox6").as_ptr()) == 0 {
+        psf.sf.channels = 1;
+        psf.sf.samplerate = 6000;
+        format = SF_FORMAT_RAW | SF_FORMAT_VOX_ADPCM;
+    } else if strcmp(cptr, c_str!("gsm").as_ptr()) == 0 {
+        psf.sf.channels = 1;
+        psf.sf.samplerate = 8000;
+        format = SF_FORMAT_RAW | SF_FORMAT_GSM610;
+    }
+
+    // For RAW files, make sure the dataoffset if set correctly.
+    if (SF_CONTAINER(format)) == SF_MAJOR_FORMAT::RAW {
+        psf.dataoffset = 0;
+    }
+
+    return format;
 }
 
 #[no_mangle]

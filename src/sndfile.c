@@ -280,7 +280,7 @@ ErrorStruct SndfileErrors [] =
 /*------------------------------------------------------------------------------
 */
 
-static int 	format_from_extension (SF_PRIVATE *psf) ;
+int 	format_from_extension (SF_PRIVATE *psf) ;
 static int	guess_file_type (SF_PRIVATE *psf) ;
 static int	validate_sfinfo (SF_INFO *sfinfo) ;
 static int	validate_psf (SF_PRIVATE *psf) ;
@@ -2625,6 +2625,7 @@ try_resource_fork (SF_PRIVATE * psf)
 } /* try_resource_fork */
 #endif
 
+#if 0
 static int
 format_from_extension (SF_PRIVATE *psf)
 {	char *cptr ;
@@ -2683,6 +2684,7 @@ format_from_extension (SF_PRIVATE *psf)
 
 	return format ;
 } /* format_from_extension */
+#endif
 
 static int
 guess_file_type (SF_PRIVATE *psf)
