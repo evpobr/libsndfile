@@ -458,7 +458,7 @@ pub struct sf_private_tag {
     pub dither: *mut c_void,
     pub interleave: *mut c_void,
 
-    pub last_op: c_int, /* Last operation; either SFM_READ or SFM_WRITE */
+    pub last_op: SFM_OPEN_MODE, /* Last operation; either SFM_READ or SFM_WRITE */
     pub read_current: sf_count_t,
     pub write_current: sf_count_t,
 
@@ -694,7 +694,7 @@ impl Default for SF_PRIVATE {
             bytewidth: 0,
             dither: ptr::null_mut(),
             interleave: ptr::null_mut(),
-            last_op: 0,
+            last_op: SFM_OPEN_MODE::READ,
             read_current: 0,
             write_current: 0,
             container_data: ptr::null_mut(),

@@ -281,10 +281,10 @@ ErrorStruct SndfileErrors [] =
 */
 
 int 	format_from_extension (SF_PRIVATE *psf) ;
-static int	guess_file_type (SF_PRIVATE *psf) ;
-static int	validate_sfinfo (SF_INFO *sfinfo) ;
-static int	validate_psf (SF_PRIVATE *psf) ;
-static void	save_header_info (SF_PRIVATE *psf) ;
+int		guess_file_type (SF_PRIVATE *psf) ;
+int		validate_sfinfo (SF_INFO *sfinfo) ;
+int		validate_psf (SF_PRIVATE *psf) ;
+void	save_header_info (SF_PRIVATE *psf) ;
 int	copy_filename (SF_PRIVATE *psf, const char *path) ;
 static int	psf_close (SF_PRIVATE *psf) ;
 
@@ -295,7 +295,7 @@ int	try_resource_fork (SF_PRIVATE * psf) ;
 */
 
 int	sf_errno = 0 ;
-static char	sf_parselog [SF_BUFFER_LEN] = { 0 } ;
+char	sf_parselog [SF_BUFFER_LEN] = { 0 } ;
 char	sf_syserr [SF_SYSERR_LEN] = { 0 } ;
 
 /*------------------------------------------------------------------------------
@@ -2688,7 +2688,7 @@ format_from_extension (SF_PRIVATE *psf)
 } /* format_from_extension */
 #endif
 
-static int
+int
 guess_file_type (SF_PRIVATE *psf)
 {	uint32_t buffer [3], format ;
 
@@ -2814,7 +2814,7 @@ guess_file_type (SF_PRIVATE *psf)
 } /* guess_file_type */
 
 
-static int
+int
 validate_sfinfo (SF_INFO *sfinfo)
 {	if (sfinfo->samplerate < 1)
 		return 0 ;
@@ -2831,7 +2831,7 @@ validate_sfinfo (SF_INFO *sfinfo)
 	return 1 ;
 } /* validate_sfinfo */
 
-static int
+int
 validate_psf (SF_PRIVATE *psf)
 {
 	if (psf->datalength < 0)
@@ -2850,7 +2850,7 @@ validate_psf (SF_PRIVATE *psf)
 	return 1 ;
 } /* validate_psf */
 
-static void
+void
 save_header_info (SF_PRIVATE *psf)
 {	snprintf (sf_parselog, sizeof (sf_parselog), "%s", psf->parselog.buf) ;
 } /* save_header_info */

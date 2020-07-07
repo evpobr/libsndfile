@@ -1724,6 +1724,7 @@ psf_open_tmpfile (char * fname, size_t fnamelen)
 
 extern int sf_errno ;
 extern char sf_syserr [SF_SYSERR_LEN] ;
+extern char	sf_parselog [SF_BUFFER_LEN] ;
 
 int psf_get_sf_errno (void)
 {	return sf_errno;
@@ -1736,4 +1737,8 @@ void psf_set_sf_errno (int errnum)
 
 const char *psf_get_sf_syserr (void)
 {	return sf_syserr;
+} ;
+
+const char *psf_get_sf_parselog (void)
+{	return sf_parselog;
 } ;

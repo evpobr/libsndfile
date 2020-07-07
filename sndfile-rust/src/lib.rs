@@ -23,6 +23,7 @@ use command::psf_strlcpy;
 use convert::TryFrom;
 use strings::*;
 
+use htk::htk_open;
 use std::path::Path;
 #[cfg(windows)]
 use widestring::WideCStr;
@@ -31,6 +32,8 @@ use winapi::um::{
     stringapiset::MultiByteToWideChar,
     winnls::{CP_ACP, MB_PRECOMPOSED},
 };
+
+pub const SF_COUNT_MAX: sf_count_t = 0x7FFFFFFFFFFFFFFF;
 
 #[derive(Debug)]
 pub enum SndFileError {
@@ -237,6 +240,24 @@ pub enum SF_MAJOR_FORMAT {
     MPC2K = 0x210000,
     /// RF64 WAV file
     RF64 = 0x220000,
+
+    /* Following are detected but not supported. */
+    /// Propellorheads Rex/Rcy
+    REX = 0x40A0000,
+    /// Propellorheads Rex2
+    REX2 = 0x40D0000,
+    /// Kurzweil sampler file
+    KRZ = 0x40E0000,
+    /// Windows Media Audio.
+    WMA = 0x4100000,
+    /// Shorten.
+    SHN = 0x4110000,
+
+    /* Formats supported read only. */
+    /// Yamaha TX16 sampler file
+    TXW = 0x4030000,
+    /// DiamondWare Digirized
+    DWD = 0x4040000,
 }
 
 impl TryFrom<c_int> for SF_MAJOR_FORMAT {
@@ -526,7 +547,7 @@ pub const SFM_WRITE: c_int = 0x20;
 pub const SFM_RDWR: c_int = 0x30;
 
 #[repr(C)]
-#[derive(Debug, Ord, PartialOrd, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq)]
 pub enum SFM_OPEN_MODE {
     READ = 0x10,
     WRITE = 0x20,
@@ -616,7 +637,7 @@ pub type sf_count_t = i64;
 /// On write, the `SF_INFO` structure is filled in by the user and passed into
 /// `sf_open()`.
 #[repr(C)]
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
 pub struct SF_INFO {
     /// Used to be called samples.  Changed to avoid confusion. */
     pub frames: sf_count_t,
@@ -995,6 +1016,303 @@ unsafe fn psf_close(psf: *mut SF_PRIVATE) -> c_int {
     free(psf as *mut SF_PRIVATE as *mut c_void);
 
     error
+}
+
+unsafe fn psf_open_file_error_exit(psf: &mut SF_PRIVATE, error: SFE) {
+    let mut error = error;
+    psf_set_sf_errno(error);
+
+    if error == SFE::SYSTEM {
+        snprintf(
+            psf_get_sf_syserr(),
+            SF_SYSERR_LEN,
+            c_str!("%s").as_ptr(),
+            psf.syserr,
+        );
+    }
+    snprintf(
+        psf_get_sf_parselog(),
+        SF_BUFFER_LEN,
+        c_str!("%s").as_ptr(),
+        psf.parselog.buf.as_ptr(),
+    );
+
+    match error {
+        SFE::SYSTEM | SFE::UNSUPPORTED_ENCODING | SFE::UNIMPLEMENTED => {}
+        SFE::RAW_BAD_FORMAT => {}
+        _ => {
+            if psf.file.mode == SFM_OPEN_MODE::READ {
+                psf_log_printf(
+                    psf,
+                    c_str!("Parse error : %s\n").as_ptr(),
+                    sf_error_number(error),
+                );
+                error = SFE::MALFORMED_FILE;
+            };
+        }
+    }
+
+    psf_close(psf);
+}
+
+unsafe fn psf_open_file(psf: *mut SF_PRIVATE, sfinfo: *mut SF_INFO) -> *mut SNDFILE {
+    let mut error = SFE::NO_ERROR;
+    psf_set_sf_errno(error);
+    *psf_get_sf_parselog().offset(0) = 0;
+
+    assert!(!psf.is_null());
+    let psf = &mut *psf;
+
+    if psf.error != SFE::NO_ERROR {
+        error = psf.error;
+        psf_open_file_error_exit(psf, error);
+        return ptr::null_mut();
+    }
+
+    if sfinfo.is_null() {
+        error = SFE::BAD_SF_INFO_PTR;
+        psf_open_file_error_exit(psf, error);
+        return ptr::null_mut();
+    }
+    let sfinfo = &mut *sfinfo;
+
+    if psf.file.mode == SFM_OPEN_MODE::READ {
+        if (SF_CONTAINER(sfinfo.format)) == SF_MAJOR_FORMAT::RAW {
+            if sf_format_check(sfinfo) == 0 {
+                error = SFE::RAW_BAD_FORMAT;
+                psf_open_file_error_exit(psf, error);
+                return ptr::null_mut();
+            }
+        } else {
+            *sfinfo = SF_INFO::default();
+        }
+    }
+
+    psf.sf = sfinfo.clone();
+
+    psf.Magick = SNDFILE_MAGICK;
+    psf.norm_float = SF_TRUE;
+    psf.norm_double = SF_TRUE;
+    psf.dataoffset = -1;
+    psf.datalength = -1;
+    psf.read_current = -1;
+    psf.write_current = -1;
+    psf.auto_header = SF_FALSE;
+    psf.rwf_endian = SF_ENDIAN::LITTLE;
+    psf.seek = Some(psf_default_seek);
+    psf.float_int_mult = 0;
+    psf.float_max = -1.0;
+
+    /* An attempt at a per SF_PRIVATE unique id. */
+    psf.unique_id = psf_rand_int32() as u32;
+
+    psf.sf.sections = 1;
+
+    psf.is_pipe = psf_is_pipe(psf);
+
+    if psf.is_pipe != SF_FALSE {
+        psf.sf.seekable = SF_FALSE;
+        psf.filelength = SF_COUNT_MAX;
+    } else {
+        psf.sf.seekable = SF_TRUE;
+
+        // File is open, so get the length.
+        psf.filelength = psf_get_filelen(psf);
+    }
+
+    if psf.fileoffset > 0 {
+        match psf.file.mode {
+            SFM_OPEN_MODE::READ => {
+                if psf.filelength < 44 {
+                    psf_log_printf(
+                        psf,
+                        c_str!("Short filelength: %D (fileoffset: %D)\n").as_ptr(),
+                        psf.filelength,
+                        psf.fileoffset,
+                    );
+                    error = SFE::BAD_OFFSET;
+                    psf_open_file_error_exit(psf, error);
+                    return ptr::null_mut();
+                }
+            }
+
+            SFM_OPEN_MODE::WRITE => {
+                psf.fileoffset = 0;
+                psf_fseek(psf, 0, SF_SEEK_MODE::END);
+                psf.fileoffset = psf_ftell(psf);
+            }
+
+            SFM_OPEN_MODE::RDWR => {
+                error = SFE::NO_EMBEDDED_RDWR;
+                psf_open_file_error_exit(psf, error);
+            }
+        }
+
+        psf_log_printf(
+            psf,
+            c_str!("Embedded file offset : %D\n").as_ptr(),
+            psf.fileoffset,
+        );
+    }
+
+    if psf.filelength == SF_COUNT_MAX {
+        psf_log_printf(psf, c_str!("Length : unknown\n").as_ptr());
+    } else {
+        psf_log_printf(psf, c_str!("Length : %D\n").as_ptr(), psf.filelength);
+    }
+
+    if psf.file.mode == SFM_OPEN_MODE::WRITE
+        || (psf.file.mode == SFM_OPEN_MODE::RDWR && psf.filelength == 0)
+    {
+        // If the file is being opened for write or RDWR and the file is currently
+        // empty, then the SF_INFO struct must contain valid data.
+        if SF_CONTAINER(psf.sf.format) == SF_MAJOR_FORMAT::UNKNOWN {
+            error = SFE::ZERO_MAJOR_FORMAT;
+            psf_open_file_error_exit(psf, error);
+            return ptr::null_mut();
+        }
+        if SF_CODEC(psf.sf.format) == SF_MINOR_FORMAT::UNKNOWN {
+            error = SFE::ZERO_MINOR_FORMAT;
+            psf_open_file_error_exit(psf, error);
+            return ptr::null_mut();
+        }
+
+        if sf_format_check(&psf.sf) == 0 {
+            error = SFE::BAD_OPEN_FORMAT;
+            psf_open_file_error_exit(psf, error);
+            return ptr::null_mut();
+        };
+    } else if SF_CONTAINER(psf.sf.format) != SF_MAJOR_FORMAT::RAW {
+        // If type RAW has not been specified then need to figure out file type.
+        psf.sf.format = guess_file_type(psf);
+
+        if psf.sf.format == 0 {
+            psf.sf.format = format_from_extension(psf);
+        }
+    }
+
+    /* Prevent unnecessary seeks */
+    psf.last_op = psf.file.mode;
+
+    /* Set bytewidth if known. */
+    match SF_CODEC(psf.sf.format) {
+        SF_MINOR_FORMAT::PCM_S8
+        | SF_MINOR_FORMAT::PCM_U8
+        | SF_MINOR_FORMAT::ULAW
+        | SF_MINOR_FORMAT::ALAW
+        | SF_MINOR_FORMAT::DPCM_8 => psf.bytewidth = 1,
+
+        SF_MINOR_FORMAT::PCM_16 | SF_MINOR_FORMAT::DPCM_16 => psf.bytewidth = 2,
+
+        SF_MINOR_FORMAT::PCM_24 => psf.bytewidth = 3,
+
+        SF_MINOR_FORMAT::PCM_32 | SF_MINOR_FORMAT::FLOAT => psf.bytewidth = 4,
+
+        SF_MINOR_FORMAT::DOUBLE => psf.bytewidth = 8,
+        _ => {}
+    }
+
+    // Call the initialisation function for the relevant file type.
+    error = match SF_CONTAINER(psf.sf.format) {
+        SF_MAJOR_FORMAT::WAV | SF_MAJOR_FORMAT::WAVEX => wav_open(psf),
+        SF_MAJOR_FORMAT::AIFF => aiff_open(psf),
+        SF_MAJOR_FORMAT::AU => au_open(psf),
+        SF_MAJOR_FORMAT::RAW => raw_open(psf),
+        SF_MAJOR_FORMAT::W64 => w64_open(psf),
+        SF_MAJOR_FORMAT::RF64 => rf64_open(psf),
+        SF_MAJOR_FORMAT::PAF => paf_open(psf),
+        SF_MAJOR_FORMAT::SVX => svx_open(psf),
+        SF_MAJOR_FORMAT::NIST => nist_open(psf),
+        SF_MAJOR_FORMAT::IRCAM => ircam_open(psf),
+        SF_MAJOR_FORMAT::VOC => voc_open(psf),
+        SF_MAJOR_FORMAT::SDS => sds_open(psf),
+        SF_MAJOR_FORMAT::OGG => ogg_open(psf),
+        SF_MAJOR_FORMAT::TXW => txw_open(psf),
+        SF_MAJOR_FORMAT::WVE => wve_open(psf),
+        SF_MAJOR_FORMAT::DWD => dwd_open(psf),
+        SF_MAJOR_FORMAT::MAT4 => mat4_open(psf),
+        SF_MAJOR_FORMAT::MAT5 => mat5_open(psf),
+        SF_MAJOR_FORMAT::PVF => pvf_open(psf),
+        SF_MAJOR_FORMAT::XI => xi_open(psf),
+        SF_MAJOR_FORMAT::HTK => htk_open(psf),
+        SF_MAJOR_FORMAT::SD2 => sd2_open(psf),
+        SF_MAJOR_FORMAT::REX2 => rx2_open(psf),
+        SF_MAJOR_FORMAT::AVR => avr_open(psf),
+        SF_MAJOR_FORMAT::FLAC => flac_open(psf),
+        SF_MAJOR_FORMAT::CAF => caf_open(psf),
+        SF_MAJOR_FORMAT::MPC2K => mpc2k_open(psf),
+        _ => SFE::BAD_OPEN_FORMAT,
+    };
+
+    if error != SFE::NO_ERROR {
+        psf_open_file_error_exit(psf, error);
+        return ptr::null_mut();
+    }
+
+    // For now, check whether embedding is supported.
+    let format = SF_CONTAINER(psf.sf.format);
+    if psf.fileoffset > 0 {
+        match format {
+            // Actual embedded files.
+            SF_MAJOR_FORMAT::WAV
+            | SF_MAJOR_FORMAT::WAVEX
+            | SF_MAJOR_FORMAT::AIFF
+            | SF_MAJOR_FORMAT::AU => {}
+            // Flac with an ID3v2 header?
+            SF_MAJOR_FORMAT::FLAC => {}
+            _ => {
+                error = SFE::NO_EMBED_SUPPORT;
+                psf_open_file_error_exit(psf, error);
+                return ptr::null_mut();
+            }
+        }
+    }
+
+    if psf.fileoffset > 0 {
+        psf_log_printf(
+            psf,
+            c_str!("Embedded file length : %D\n").as_ptr(),
+            psf.filelength,
+        );
+    }
+
+    if psf.file.mode == SFM_OPEN_MODE::RDWR && sf_format_check(&psf.sf) == 0 {
+        error = SFE::BAD_MODE_RW;
+        psf_open_file_error_exit(psf, error);
+    }
+
+    if validate_sfinfo(&mut psf.sf) == 0 {
+        psf_log_SF_INFO(psf);
+        save_header_info(psf);
+        error = SFE::BAD_SF_INFO;
+        psf_open_file_error_exit(psf, error);
+        return ptr::null_mut();
+    }
+
+    if validate_psf(psf) == 0 {
+        save_header_info(psf);
+        error = SFE::INTERNAL;
+        psf_open_file_error_exit(psf, error);
+        return ptr::null_mut();
+    }
+
+    psf.read_current = 0;
+    psf.write_current = 0;
+    if psf.file.mode == SFM_OPEN_MODE::RDWR {
+        psf.write_current = psf.sf.frames;
+        psf.have_written = if psf.sf.frames > 0 { SF_TRUE } else { SF_FALSE };
+    }
+
+    *sfinfo = psf.sf;
+
+    if psf.file.mode == SFM_OPEN_MODE::WRITE {
+        // Zero out these fields.
+        sfinfo.frames = 0;
+        sfinfo.sections = 0;
+        sfinfo.seekable = 0;
+    }
+
+    return psf;
 }
 
 const SNDFILE_MAGICK: c_int = 0x1234C0DE;
@@ -1979,7 +2297,7 @@ pub unsafe fn sf_read_raw(
         return 0;
     }
 
-    if psf.last_op != SFM_READ {
+    if psf.last_op != SFM_OPEN_MODE::READ {
         if let Some(_psf_seek) = psf.seek {
             if _psf_seek(psf, SFM_READ, psf.read_current) < 0 {
                 return 0;
@@ -2000,7 +2318,7 @@ pub unsafe fn sf_read_raw(
         psf.read_current = psf.sf.frames;
     }
 
-    psf.last_op = SFM_READ;
+    psf.last_op = SFM_OPEN_MODE::READ;
 
     count
 }
@@ -2169,12 +2487,52 @@ pub unsafe fn sf_get_chunk_data(
 extern "C" {
     fn psf_get_sf_errno() -> SFE;
     fn psf_set_sf_errno(errnum: SFE);
-    fn psf_get_sf_syserr() -> *const c_char;
+    fn psf_get_sf_parselog() -> *mut c_char;
+    fn psf_get_sf_syserr() -> *mut c_char;
     fn psf_binheader_readf(psf: *mut SF_PRIVATE, format: *const c_char, ...) -> c_int;
     fn psf_binheader_writef(psf: *mut SF_PRIVATE, format: *const c_char, ...) -> c_int;
+    fn psf_default_seek(
+        psf: *mut SF_PRIVATE,
+        mode: c_int,
+        samples_from_start: sf_count_t,
+    ) -> sf_count_t;
+    fn psf_rand_int32() -> i32;
     fn copy_filename(psf: *mut SF_PRIVATE, path: *const c_char) -> c_int;
-    fn psf_open_file(psf: *mut SF_PRIVATE, sfinfo: *mut SF_INFO) -> *mut SNDFILE;
+    fn guess_file_type(psf: *mut SF_PRIVATE) -> c_int;
     fn pcm_init(psf: *mut SF_PRIVATE) -> SFE;
+
+    fn wav_open(psf: *mut SF_PRIVATE) -> SFE;
+    fn aiff_open(psf: *mut SF_PRIVATE) -> SFE;
+    fn au_open(psf: *mut SF_PRIVATE) -> SFE;
+    fn raw_open(psf: *mut SF_PRIVATE) -> SFE;
+    fn w64_open(psf: *mut SF_PRIVATE) -> SFE;
+    fn rf64_open(psf: *mut SF_PRIVATE) -> SFE;
+    fn paf_open(psf: *mut SF_PRIVATE) -> SFE;
+    fn svx_open(psf: *mut SF_PRIVATE) -> SFE;
+    fn nist_open(psf: *mut SF_PRIVATE) -> SFE;
+    fn ircam_open(psf: *mut SF_PRIVATE) -> SFE;
+    fn voc_open(psf: *mut SF_PRIVATE) -> SFE;
+    fn sds_open(psf: *mut SF_PRIVATE) -> SFE;
+    fn ogg_open(psf: *mut SF_PRIVATE) -> SFE;
+    fn txw_open(psf: *mut SF_PRIVATE) -> SFE;
+    fn wve_open(psf: *mut SF_PRIVATE) -> SFE;
+    fn dwd_open(psf: *mut SF_PRIVATE) -> SFE;
+    fn mat4_open(psf: *mut SF_PRIVATE) -> SFE;
+    fn mat5_open(psf: *mut SF_PRIVATE) -> SFE;
+    fn pvf_open(psf: *mut SF_PRIVATE) -> SFE;
+    fn xi_open(psf: *mut SF_PRIVATE) -> SFE;
+    // fn htk_open (psf: *mut SF_PRIVATE) -> SFE;
+    fn sd2_open(psf: *mut SF_PRIVATE) -> SFE;
+    fn rx2_open(psf: *mut SF_PRIVATE) -> SFE;
+    fn avr_open(psf: *mut SF_PRIVATE) -> SFE;
+    fn flac_open(psf: *mut SF_PRIVATE) -> SFE;
+    fn caf_open(psf: *mut SF_PRIVATE) -> SFE;
+    fn mpc2k_open(psf: *mut SF_PRIVATE) -> SFE;
+
+    fn validate_sfinfo(sfinfo: *mut SF_INFO) -> c_int;
+    fn validate_psf(psf: *mut SF_PRIVATE) -> c_int;
+    fn psf_log_SF_INFO(psf: *mut SF_PRIVATE);
+    fn save_header_info(psf: *mut SF_PRIVATE);
 
     #[cfg(windows)]
     fn fprintf(stream: *mut FILE, format: *const c_char, ...) -> c_int;

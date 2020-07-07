@@ -7,7 +7,7 @@ const SFE_HTK_BAD_FILE_LEN: c_int = 1666;
 const SFE_HTK_NOT_WAVEFORM: c_int = 1667;
 
 #[no_mangle]
-unsafe fn htk_open(psf: *mut SF_PRIVATE) -> SFE {
+pub(crate) unsafe fn htk_open(psf: *mut SF_PRIVATE) -> SFE {
     debug_assert!(!psf.is_null());
 
     let psf = &mut *psf;
