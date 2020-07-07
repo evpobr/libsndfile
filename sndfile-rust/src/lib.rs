@@ -2071,131 +2071,74 @@ fn ansi_to_string(ansi_str: &CStr) -> Option<String> {
 unsafe fn format_from_extension(psf: *mut SF_PRIVATE) -> c_int {
     assert!(!psf.is_null());
     let psf = &mut *psf;
+    let mut s: String;
 
-    if cfg!(windows) & (psf.file.use_wchar == SF_FALSE) {
-        let ansi_ptr = psf.file.name.c.as_ptr();
-        let ansi_str = CStr::from_ptr(ansi_ptr);
-        let a = ansi_to_string(ansi_str).unwrap();
-        let wide_len = MultiByteToWideChar(
-            CP_ACP,
-            MB_PRECOMPOSED,
-            ansi_str.as_ptr(),
-            -1,
-            ptr::null_mut(),
-            0,
-        );
-        if wide_len <= 0 {
-            return 0;
-        }
-        let mut wide_chars: Vec<u16> = vec![0; wide_len as usize];
-        let wide_len = MultiByteToWideChar(
-            CP_ACP,
-            MB_PRECOMPOSED,
-            ansi_str.as_ptr(),
-            -1,
-            wide_chars.as_mut_ptr(),
-            wide_len,
-        );
-        if wide_len <= 0 {
-            return 0;
-        }
-
-        if let Ok(wide_str) = WideCStr::from_slice_with_nul(&wide_chars) {
-            let os_str = wide_str.to_os_string();
-            let path = Path::new(&os_str);
-            if let Some(extension) = path.extension() {
-                let s = extension.to_string_lossy();
-                let mut format = 0;
-                if s == "au" {
-                    psf.sf.channels = 1;
-                    psf.sf.samplerate = 8000;
-                    format = SF_FORMAT_RAW | SF_FORMAT_ULAW;
-                } else if s == "snd" {
-                    psf.sf.channels = 1;
-                    psf.sf.samplerate = 8000;
-                    format = SF_FORMAT_RAW | SF_FORMAT_ULAW;
-                } else if s == "vox" || s == "vox8" {
-                    psf.sf.channels = 1;
-                    psf.sf.samplerate = 8000;
-                    format = SF_FORMAT_RAW | SF_FORMAT_VOX_ADPCM;
-                } else if s == "vox6" {
-                    psf.sf.channels = 1;
-                    psf.sf.samplerate = 6000;
-                    format = SF_FORMAT_RAW | SF_FORMAT_VOX_ADPCM;
-                } else if s == "gsm" {
-                    psf.sf.channels = 1;
-                    psf.sf.samplerate = 8000;
-                    format = SF_FORMAT_RAW | SF_FORMAT_GSM610;
-                }
-
-                // For RAW files, make sure the dataoffset if set correctly.
-                if (SF_CONTAINER(format)) == SF_MAJOR_FORMAT::RAW {
-                    psf.dataoffset = 0;
-                }
-
-                return format;
-            } else {
-                return 0;
+    #[cfg(windows)]
+    {
+        s = if psf.file.use_wchar == SF_FALSE {
+            match ansi_to_string(CStr::from_ptr(psf.file.name.c.as_ptr())) {
+                Some(x) => x,
+                None => return 0,
             }
         } else {
-            return 0;
-        }
-    }
+            match WideCStr::from_slice_with_nul(&psf.file.name.wc) {
+                Ok(ws) => {
+                    if let Ok(x) = ws.to_string() {
+                        x
+                    } else {
+                        return 0;
+                    }
+                }
+                Err(_) => return 0,
+            }
+        };
+    };
 
-    let mut cptr = strrchr(psf.file.name.c.as_ptr(), b'.' as c_int);
-    if cptr.is_null() {
-        return 0;
-    }
-
-    cptr = cptr.add(1);
-    let mut buffer: [c_char; 16] = [0; 16];
-    if strlen(cptr) > buffer.len() - 1 {
-        return 0;
-    }
-
-    psf_strlcpy(buffer.as_mut_ptr(), buffer.len(), cptr);
-    buffer[buffer.len() - 1] = 0;
-
-    // Convert everything in the buffer to lower case.
-    cptr = buffer.as_mut_ptr();
-    while *cptr != 0 {
-        *cptr = tolower(*cptr as c_int) as c_char;
-        cptr = cptr.add(1);
-    }
-
-    cptr = buffer.as_mut_ptr();
-
-    let mut format = 0;
-    if strcmp(cptr, c_str!("au").as_ptr()) == 0 {
-        psf.sf.channels = 1;
-        psf.sf.samplerate = 8000;
-        format = SF_FORMAT_RAW | SF_FORMAT_ULAW;
-    } else if strcmp(cptr, c_str!("snd").as_ptr()) == 0 {
-        psf.sf.channels = 1;
-        psf.sf.samplerate = 8000;
-        format = SF_FORMAT_RAW | SF_FORMAT_ULAW;
-    } else if strcmp(cptr, c_str!("vox").as_ptr()) == 0
-        || strcmp(cptr, c_str!("vox8").as_ptr()) == 0
+    #[cfg(not(windows))]
     {
-        psf.sf.channels = 1;
-        psf.sf.samplerate = 8000;
-        format = SF_FORMAT_RAW | SF_FORMAT_VOX_ADPCM;
-    } else if strcmp(cptr, c_str!("vox6").as_ptr()) == 0 {
-        psf.sf.channels = 1;
-        psf.sf.samplerate = 6000;
-        format = SF_FORMAT_RAW | SF_FORMAT_VOX_ADPCM;
-    } else if strcmp(cptr, c_str!("gsm").as_ptr()) == 0 {
-        psf.sf.channels = 1;
-        psf.sf.samplerate = 8000;
-        format = SF_FORMAT_RAW | SF_FORMAT_GSM610;
-    }
+        let c_str = CStr::from_ptr(psf.file.name.c.as_ptr());
+        s = match c_str.to_str() {
+            Ok(s) => s.to_string(),
+            Err(_) => return 0,
+        };
+    };
 
-    // For RAW files, make sure the dataoffset if set correctly.
-    if (SF_CONTAINER(format)) == SF_MAJOR_FORMAT::RAW {
-        psf.dataoffset = 0;
-    }
+    s = s.to_lowercase();
+    let path = Path::new(&s);
+    if let Some(extension) = path.extension() {
+        let s = extension.to_string_lossy();
+        let mut format = 0;
+        if s == "au" {
+            psf.sf.channels = 1;
+            psf.sf.samplerate = 8000;
+            format = SF_FORMAT_RAW | SF_FORMAT_ULAW;
+        } else if s == "snd" {
+            psf.sf.channels = 1;
+            psf.sf.samplerate = 8000;
+            format = SF_FORMAT_RAW | SF_FORMAT_ULAW;
+        } else if s == "vox" || s == "vox8" {
+            psf.sf.channels = 1;
+            psf.sf.samplerate = 8000;
+            format = SF_FORMAT_RAW | SF_FORMAT_VOX_ADPCM;
+        } else if s == "vox6" {
+            psf.sf.channels = 1;
+            psf.sf.samplerate = 6000;
+            format = SF_FORMAT_RAW | SF_FORMAT_VOX_ADPCM;
+        } else if s == "gsm" {
+            psf.sf.channels = 1;
+            psf.sf.samplerate = 8000;
+            format = SF_FORMAT_RAW | SF_FORMAT_GSM610;
+        }
 
-    return format;
+        // For RAW files, make sure the dataoffset if set correctly.
+        if (SF_CONTAINER(format)) == SF_MAJOR_FORMAT::RAW {
+            psf.dataoffset = 0;
+        }
+
+        return format;
+    } else {
+        return 0;
+    }
 }
 
 #[no_mangle]
