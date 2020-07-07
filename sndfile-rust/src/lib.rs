@@ -1281,7 +1281,7 @@ unsafe fn psf_open_file(psf: *mut SF_PRIVATE, sfinfo: *mut SF_INFO) -> *mut SNDF
         psf_open_file_error_exit(psf, error);
     }
 
-    if validate_sfinfo(&mut psf.sf) == 0 {
+    if !validate_sfinfo(&mut psf.sf) {
         psf_log_SF_INFO(psf);
         save_header_info(psf);
         error = SFE::BAD_SF_INFO;
@@ -1289,7 +1289,7 @@ unsafe fn psf_open_file(psf: *mut SF_PRIVATE, sfinfo: *mut SF_INFO) -> *mut SNDF
         return ptr::null_mut();
     }
 
-    if validate_psf(psf) == 0 {
+    if !validate_psf(psf) {
         save_header_info(psf);
         error = SFE::INTERNAL;
         psf_open_file_error_exit(psf, error);
@@ -2484,6 +2484,62 @@ pub unsafe fn sf_get_chunk_data(
     return SFE::BAD_CHUNK_FORMAT;
 }
 
+fn validate_sfinfo(sfinfo: &SF_INFO) -> bool {
+    if sfinfo.samplerate < 1 {
+        return false;
+    }
+    if sfinfo.frames < 0 {
+        return false;
+    }
+    if sfinfo.channels < 1 {
+        return false;
+    }
+    if SF_CONTAINER(sfinfo.format) == SF_MAJOR_FORMAT::UNKNOWN {
+        return false;
+    }
+    if SF_CODEC(sfinfo.format) == SF_MINOR_FORMAT::UNKNOWN {
+        return false;
+    }
+    if sfinfo.sections < 1 {
+        return false;
+    }
+    return true;
+}
+
+fn validate_psf(psf: &mut SF_PRIVATE) -> bool {
+    if psf.datalength < 0 {
+        unsafe {
+            psf_log_printf(
+                psf,
+                c_str!("Invalid SF_PRIVATE field : datalength == %D.\n").as_ptr(),
+                psf.datalength,
+            )
+        };
+        return false;
+    }
+    if psf.dataoffset < 0 {
+        unsafe {
+            psf_log_printf(
+                psf,
+                c_str!("Invalid SF_PRIVATE field : dataoffset == %D.\n").as_ptr(),
+                psf.dataoffset,
+            )
+        };
+        return false;
+    }
+    if psf.blockwidth != 0 && psf.blockwidth != psf.sf.channels * psf.bytewidth {
+        unsafe {
+            psf_log_printf(
+                psf,
+                c_str!("Invalid SF_PRIVATE field : channels * bytewidth == %d.\n").as_ptr(),
+                psf.sf.channels * psf.bytewidth,
+            )
+        };
+        return false;
+    }
+    return true;
+}
+
 extern "C" {
     fn psf_get_sf_errno() -> SFE;
     fn psf_set_sf_errno(errnum: SFE);
@@ -2529,8 +2585,6 @@ extern "C" {
     fn caf_open(psf: *mut SF_PRIVATE) -> SFE;
     fn mpc2k_open(psf: *mut SF_PRIVATE) -> SFE;
 
-    fn validate_sfinfo(sfinfo: *mut SF_INFO) -> c_int;
-    fn validate_psf(psf: *mut SF_PRIVATE) -> c_int;
     fn psf_log_SF_INFO(psf: *mut SF_PRIVATE);
     fn save_header_info(psf: *mut SF_PRIVATE);
 
