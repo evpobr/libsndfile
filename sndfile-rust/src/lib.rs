@@ -901,19 +901,16 @@ const INITIAL_HEADER_SIZE: sf_count_t = 256;
 /* Allocate and initialize the SF_PRIVATE struct. */
 #[no_mangle]
 unsafe fn psf_allocate() -> *mut SF_PRIVATE {
-    let psf = calloc(1, mem::size_of::<SF_PRIVATE>()) as *mut SF_PRIVATE;
-    if psf.is_null() {
+    let mut psf = Box::new(SF_PRIVATE::default());
+
+    psf.header.ptr = calloc(1, INITIAL_HEADER_SIZE as size_t) as *mut u8;
+    if psf.header.ptr.is_null() {
+        drop(psf);
         return ptr::null_mut();
     }
+    psf.header.len = INITIAL_HEADER_SIZE;
 
-    (*psf).header.ptr = calloc(1, INITIAL_HEADER_SIZE as size_t) as *mut u8;
-    if (*psf).header.ptr.is_null() {
-        free(psf as *mut c_void);
-        return ptr::null_mut();
-    }
-    (*psf).header.len = INITIAL_HEADER_SIZE;
-
-    return psf;
+    Box::into_raw(psf)
 }
 
 #[no_mangle]
@@ -972,50 +969,9 @@ unsafe fn psf_close(psf: *mut SF_PRIVATE) -> c_int {
     assert!(!psf.is_null());
     let psf = &mut *psf;
 
-    let mut error: c_int;
+    Box::from_raw(psf);
 
-    if let Some(codec_close) = psf.codec_close {
-        error = codec_close(psf);
-        /* To prevent it being called in psf->container_close(). */
-        psf.codec_close = None;
-    }
-
-    if let Some(container_close) = psf.container_close {
-        error = container_close(psf);
-    }
-
-    error = psf_fclose(psf);
-    psf_close_rsrc(psf);
-
-    /* For an ISO C compliant implementation it is ok to free a NULL pointer. */
-    free(psf.header.ptr as *mut c_void);
-    free(psf.container_data as *mut c_void);
-    free(psf.codec_data as *mut c_void);
-    free(psf.interleave as *mut c_void);
-    free(psf.dither as *mut c_void);
-    free(psf.peak_info as *mut c_void);
-    free(psf.broadcast_16k as *mut c_void);
-    free(psf.loop_info as *mut c_void);
-    free(psf.instrument as *mut c_void);
-    free(psf.cues as *mut c_void);
-    free(psf.channel_map as *mut c_void);
-    free(psf.format_desc as *mut c_void);
-    free(psf.strings.storage as *mut c_void);
-
-    if !psf.wchunks.chunks.is_null() {
-        for k in 0..psf.wchunks.used as isize {
-            free((*psf.wchunks.chunks.offset(k)).data);
-        }
-    }
-
-    free(psf.rchunks.chunks as *mut c_void);
-    free(psf.wchunks.chunks as *mut c_void);
-    free(psf.iterator as *mut c_void);
-    free(psf.cart_16k as *mut c_void);
-
-    free(psf as *mut SF_PRIVATE as *mut c_void);
-
-    error
+    SFE_NO_ERROR
 }
 
 unsafe fn psf_open_file_error_exit(psf: &mut SF_PRIVATE, error: SFE) {

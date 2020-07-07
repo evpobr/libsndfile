@@ -343,12 +343,20 @@ pub struct SF_PRIVATE_HEADER {
 impl Default for SF_PRIVATE_HEADER {
     fn default() -> Self {
         SF_PRIVATE_HEADER {
-            ptr: ptr::null_mut(),
+            ptr: unsafe { calloc(1, INITIAL_HEADER_SIZE as size_t) as *mut u8 },
             indx: 0,
             end: 0,
-            len: 0,
+            len: INITIAL_HEADER_SIZE,
         }
     }
+}
+
+impl Drop for SF_PRIVATE_HEADER {
+    fn drop(&mut self) {
+        unsafe { free(self.ptr as _) };
+        self.ptr = ptr::null_mut(); 
+    }
+    
 }
 
 #[repr(C)]
@@ -625,7 +633,7 @@ impl Drop for SF_PRIVATE {
             psf_fclose(self);
             psf_close_rsrc(self);
             /* For an ISO C compliant implementation it is ok to free a NULL pointer. */
-            free(self.header.ptr as *mut c_void);
+            // free(self.header.ptr as *mut c_void);
             free(self.container_data as *mut c_void);
             free(self.codec_data as *mut c_void);
             free(self.interleave as *mut c_void);
