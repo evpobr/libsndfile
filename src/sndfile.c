@@ -285,7 +285,7 @@ static int	guess_file_type (SF_PRIVATE *psf) ;
 static int	validate_sfinfo (SF_INFO *sfinfo) ;
 static int	validate_psf (SF_PRIVATE *psf) ;
 static void	save_header_info (SF_PRIVATE *psf) ;
-static int	copy_filename (SF_PRIVATE *psf, const char *path) ;
+int	copy_filename (SF_PRIVATE *psf, const char *path) ;
 static int	psf_close (SF_PRIVATE *psf) ;
 
 int	try_resource_fork (SF_PRIVATE * psf) ;
@@ -323,6 +323,7 @@ char	sf_syserr [SF_SYSERR_LEN] = { 0 } ;
 **	Public functions.
 */
 
+#if 0
 SNDFILE*
 sf_open	(const char *path, int mode, SF_INFO *sfinfo)
 {	SF_PRIVATE 	*psf ;
@@ -352,6 +353,7 @@ sf_open	(const char *path, int mode, SF_INFO *sfinfo)
 
 	return psf_open_file (psf, sfinfo) ;
 } /* sf_open */
+#endif
 
 SNDFILE*
 sf_open_fd	(int fd, int mode, SF_INFO *sfinfo, int close_desc)
@@ -2853,7 +2855,7 @@ save_header_info (SF_PRIVATE *psf)
 {	snprintf (sf_parselog, sizeof (sf_parselog), "%s", psf->parselog.buf) ;
 } /* save_header_info */
 
-static int
+int
 copy_filename (SF_PRIVATE *psf, const char *path)
 {	const char *ccptr ;
 	char *cptr ;

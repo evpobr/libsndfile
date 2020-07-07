@@ -110,15 +110,15 @@ pub mod windows {
     }
 
     #[no_mangle]
-    pub(crate) unsafe fn psf_set_stdio(psf: *mut SF_PRIVATE) -> c_int {
+    pub(crate) unsafe fn psf_set_stdio(psf: *mut SF_PRIVATE) -> SFE {
         assert!(!psf.is_null());
         let psf = &mut *psf;
 
         let mut handle: HANDLE = ptr::null_mut();
-        let mut error = SFE_NO_ERROR;
+        let mut error = SFE::NO_ERROR;
 
         match psf.file.mode {
-            SFM_OPEN_MODE::RDWR => error = SFE_OPEN_PIPE_RDWR,
+            SFM_OPEN_MODE::RDWR => error = SFE::OPEN_PIPE_RDWR,
 
             SFM_OPEN_MODE::READ => {
                 handle = GetStdHandle(STD_INPUT_HANDLE);

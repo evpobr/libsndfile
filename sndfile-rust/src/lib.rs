@@ -23,6 +23,15 @@ use command::psf_strlcpy;
 use convert::TryFrom;
 use strings::*;
 
+use std::path::Path;
+#[cfg(windows)]
+use widestring::WideCStr;
+#[cfg(windows)]
+use winapi::um::{
+    stringapiset::MultiByteToWideChar,
+    winnls::{CP_ACP, MB_PRECOMPOSED},
+};
+
 #[derive(Debug)]
 pub enum SndFileError {
     BadOpenFormat,
@@ -1242,6 +1251,42 @@ macro_rules! VALIDATE_SNDFILE_AND_ASSIGN_PSF {
 }
 
 #[no_mangle]
+pub unsafe fn sf_open(path: *const c_char, mode: c_int, sfinfo: *mut SF_INFO) -> *mut SNDFILE {
+    let mut psf = psf_allocate();
+    if psf.is_null() {
+        psf_set_sf_errno(SFE::MALLOC_FAILED);
+        return ptr::null_mut();
+    }
+
+    psf_init_files(psf);
+
+    psf_log_printf(psf, c_str!("File : %s\n").as_ptr(), path);
+
+    if copy_filename(psf, path) != 0 {
+        psf_set_sf_errno((*psf).error);
+        return ptr::null_mut();
+    }
+
+    (*psf).file.mode = match mode {
+        SFM_RDWR => SFM_OPEN_MODE::RDWR,
+        SFM_WRITE => SFM_OPEN_MODE::WRITE,
+        SFM_READ => SFM_OPEN_MODE::READ,
+        _ => {
+            psf_close(psf);
+            psf_set_sf_errno(SFE::BAD_OPEN_MODE);
+            return ptr::null_mut();
+        }
+    };
+    if strcmp(path, c_str!("-").as_ptr()) == 0 {
+        (*psf).error = psf_set_stdio(psf);
+    } else {
+        (*psf).error = psf_fopen(psf);
+    }
+
+    return psf_open_file(psf, sfinfo);
+}
+
+#[no_mangle]
 pub unsafe fn sf_error_number(errnum: SFE) -> *const c_char {
     let bad_errnum = c_str!("No error defined for this error number. This is a bug in libsndfile.");
 
@@ -1984,10 +2029,118 @@ unsafe fn try_resource_fork(psf: *mut SF_PRIVATE) -> SF_MAJOR_FORMAT {
     return SF_MAJOR_FORMAT::SD2;
 }
 
+#[cfg(windows)]
+fn ansi_to_string(ansi_str: &CStr) -> Option<String> {
+    // Get required size for wide string
+    let len = unsafe {
+        MultiByteToWideChar(
+            CP_ACP,
+            MB_PRECOMPOSED,
+            ansi_str.as_ptr(),
+            -1,
+            ptr::null_mut(),
+            0,
+        )
+    };
+    if len <= 0 {
+        return None;
+    }
+
+    // Get wide string
+    let mut wide_chars: Vec<u16> = vec![0; len as usize];
+    unsafe {
+        MultiByteToWideChar(
+            CP_ACP,
+            MB_PRECOMPOSED,
+            ansi_str.as_ptr(),
+            -1,
+            wide_chars.as_mut_ptr(),
+            len,
+        )
+    };
+    match { WideCStr::from_slice_with_nul(&wide_chars) } {
+        Ok(wide_str) => match wide_str.to_string() {
+            Ok(ws) => Some(ws),
+            _ => None,
+        },
+        _ => None,
+    }
+}
+
 #[no_mangle]
 unsafe fn format_from_extension(psf: *mut SF_PRIVATE) -> c_int {
     assert!(!psf.is_null());
     let psf = &mut *psf;
+
+    if cfg!(windows) & (psf.file.use_wchar == SF_FALSE) {
+        let ansi_ptr = psf.file.name.c.as_ptr();
+        let ansi_str = CStr::from_ptr(ansi_ptr);
+        let a = ansi_to_string(ansi_str).unwrap();
+        let wide_len = MultiByteToWideChar(
+            CP_ACP,
+            MB_PRECOMPOSED,
+            ansi_str.as_ptr(),
+            -1,
+            ptr::null_mut(),
+            0,
+        );
+        if wide_len <= 0 {
+            return 0;
+        }
+        let mut wide_chars: Vec<u16> = vec![0; wide_len as usize];
+        let wide_len = MultiByteToWideChar(
+            CP_ACP,
+            MB_PRECOMPOSED,
+            ansi_str.as_ptr(),
+            -1,
+            wide_chars.as_mut_ptr(),
+            wide_len,
+        );
+        if wide_len <= 0 {
+            return 0;
+        }
+
+        if let Ok(wide_str) = WideCStr::from_slice_with_nul(&wide_chars) {
+            let os_str = wide_str.to_os_string();
+            let path = Path::new(&os_str);
+            if let Some(extension) = path.extension() {
+                let s = extension.to_string_lossy();
+                let mut format = 0;
+                if s == "au" {
+                    psf.sf.channels = 1;
+                    psf.sf.samplerate = 8000;
+                    format = SF_FORMAT_RAW | SF_FORMAT_ULAW;
+                } else if s == "snd" {
+                    psf.sf.channels = 1;
+                    psf.sf.samplerate = 8000;
+                    format = SF_FORMAT_RAW | SF_FORMAT_ULAW;
+                } else if s == "vox" || s == "vox8" {
+                    psf.sf.channels = 1;
+                    psf.sf.samplerate = 8000;
+                    format = SF_FORMAT_RAW | SF_FORMAT_VOX_ADPCM;
+                } else if s == "vox6" {
+                    psf.sf.channels = 1;
+                    psf.sf.samplerate = 6000;
+                    format = SF_FORMAT_RAW | SF_FORMAT_VOX_ADPCM;
+                } else if s == "gsm" {
+                    psf.sf.channels = 1;
+                    psf.sf.samplerate = 8000;
+                    format = SF_FORMAT_RAW | SF_FORMAT_GSM610;
+                }
+
+                // For RAW files, make sure the dataoffset if set correctly.
+                if (SF_CONTAINER(format)) == SF_MAJOR_FORMAT::RAW {
+                    psf.dataoffset = 0;
+                }
+
+                return format;
+            } else {
+                return 0;
+            }
+        } else {
+            return 0;
+        }
+    }
 
     let mut cptr = strrchr(psf.file.name.c.as_ptr(), b'.' as c_int);
     if cptr.is_null() {
@@ -2076,7 +2229,8 @@ extern "C" {
     fn psf_get_sf_syserr() -> *const c_char;
     fn psf_binheader_readf(psf: *mut SF_PRIVATE, format: *const c_char, ...) -> c_int;
     fn psf_binheader_writef(psf: *mut SF_PRIVATE, format: *const c_char, ...) -> c_int;
-
+    fn copy_filename(psf: *mut SF_PRIVATE, path: *const c_char) -> c_int;
+    fn psf_open_file(psf: *mut SF_PRIVATE, sfinfo: *mut SF_INFO) -> *mut SNDFILE;
     fn pcm_init(psf: *mut SF_PRIVATE) -> SFE;
 
     #[cfg(windows)]
