@@ -19,7 +19,6 @@ mod htk;
 mod id3;
 mod strings;
 
-use command::psf_strlcpy;
 use convert::TryFrom;
 use strings::*;
 
