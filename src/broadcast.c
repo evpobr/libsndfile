@@ -43,8 +43,7 @@ broadcast_var_alloc (void)
 
 int
 broadcast_var_set (SF_PRIVATE *psf, const SF_BROADCAST_INFO * info, size_t datasize)
-{	size_t len ;
-
+{
 	if (info == NULL)
 		return SF_FALSE ;
 
@@ -69,7 +68,7 @@ broadcast_var_set (SF_PRIVATE *psf, const SF_BROADCAST_INFO * info, size_t datas
 	memcpy (psf->broadcast_16k, info, offsetof (SF_BROADCAST_INFO, coding_history)) ;
 
 	psf_strlcpy_crlf (psf->broadcast_16k->coding_history, info->coding_history, sizeof (psf->broadcast_16k->coding_history), datasize - offsetof (SF_BROADCAST_INFO, coding_history)) ;
-	len = strlen (psf->broadcast_16k->coding_history) ;
+	size_t len = strlen (psf->broadcast_16k->coding_history) ;
 
 	if (len > 0 && psf->broadcast_16k->coding_history [len - 1] != '\n')
 		psf_strlcat (psf->broadcast_16k->coding_history, sizeof (psf->broadcast_16k->coding_history), "\r\n") ;
@@ -95,12 +94,11 @@ broadcast_var_set (SF_PRIVATE *psf, const SF_BROADCAST_INFO * info, size_t datas
 
 int
 broadcast_var_get (SF_PRIVATE *psf, SF_BROADCAST_INFO * data, size_t datasize)
-{	size_t size ;
-
+{
 	if (psf->broadcast_16k == NULL)
 		return SF_FALSE ;
 
-	size = SF_MIN (datasize, bc_min_size ((const SF_BROADCAST_INFO *) psf->broadcast_16k)) ;
+	size_t size = SF_MIN (datasize, bc_min_size ((const SF_BROADCAST_INFO *) psf->broadcast_16k)) ;
 
 	memcpy (data, psf->broadcast_16k, size) ;
 

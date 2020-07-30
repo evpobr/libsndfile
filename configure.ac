@@ -65,7 +65,6 @@ AC_PROG_LN_S
 
 AM_PATH_PYTHON
 
-AC_CHECK_PROG([HAVE_AUTOGEN], [autogen], [yes], [no])
 AC_CHECK_PROG([HAVE_WINE], [wine], [yes], [no])
 AC_CHECK_PROG([HAVE_XCODE_SELECT], [xcode-select], [yes], [no])
 
@@ -521,11 +520,6 @@ AS_IF([test "x$ac_cv_sizeof_double" != "x8"], [
 		AC_MSG_WARN([[******************************************************************]])
 		AC_MSG_WARN([[*** sizeof (double) != 8.                                         ]])
 		AC_MSG_WARN([[******************************************************************]])
-	])
-
-AS_IF([test "x$ac_cv_prog_HAVE_AUTOGEN" = "xno"], [
-		AC_MSG_WARN([[Touching files in directory tests/.]])
-		touch tests/*.c tests/*.h
 	])
 
 dnl ====================================================================================
