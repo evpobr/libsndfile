@@ -41,7 +41,7 @@ BUILT_SOURCES = src/test_endswap.c
 SYMBOL_FILES = src/Symbols.gnu-binutils src/Symbols.darwin src/libsndfile-1.def src/Symbols.os2 src/Symbols.static
 
 EXTRA_DIST += src/sndfile.h.in src/config.h.in \
-	$(SYMBOL_FILES) src/create_symbols_file.py src/binheader_writef_check.py \
+	$(SYMBOL_FILES) src/binheader_writef_check.py \
 	src/GSM610/README src/GSM610/COPYRIGHT src/GSM610/ChangeLog \
 	src/G72x/README src/G72x/README.original src/G72x/ChangeLog \
 	src/make-static-lib-hidden-privates.sh \
@@ -120,30 +120,6 @@ src_ALAC_libalac_la_SOURCES = src/ALAC/ALACAudioTypes.h src/ALAC/ALACBitUtilitie
 	src/ALAC/ALACBitUtilities.c src/ALAC/ag_dec.c \
 	src/ALAC/ag_enc.c src/ALAC/dp_dec.c src/ALAC/dp_enc.c src/ALAC/matrix_dec.c \
 	src/ALAC/matrix_enc.c src/ALAC/alac_decoder.c src/ALAC/alac_encoder.c
-
-#===============================================================================
-# Generate an OS specific Symbols files. This is done when the author
-# builds the distribution tarball. There should be not need for the
-# end user to create these files.
-
-# "$<" cannot portably be used in the recipe across Make implementations
-# https://www.gnu.org/software/autoconf/manual/autoconf.html#g_t_0024_003c-in-Ordinary-Make-Rules
-SYMBOL_SCRIPT = $(top_srcdir)/src/create_symbols_file.py
-
-src/Symbols.gnu-binutils: $(SYMBOL_SCRIPT)
-	$(PYTHON) $(SYMBOL_SCRIPT) linux $(VERSION) > $(top_srcdir)/$@
-
-src/Symbols.darwin: $(SYMBOL_SCRIPT)
-	$(PYTHON) $(SYMBOL_SCRIPT) darwin $(VERSION) > $(top_srcdir)/$@
-
-src/libsndfile-1.def: $(SYMBOL_SCRIPT)
-	$(PYTHON) $(SYMBOL_SCRIPT) win32 $(VERSION) > $(top_srcdir)/$@
-
-src/Symbols.os2: $(SYMBOL_SCRIPT)
-	$(PYTHON) $(SYMBOL_SCRIPT) os2 $(VERSION) > $(top_srcdir)/$@
-
-src/Symbols.static: $(SYMBOL_SCRIPT)
-	$(PYTHON) $(SYMBOL_SCRIPT) static $(VERSION) > $(top_srcdir)/$@
 
 #===============================================================================
 # Building windows resource files (if needed).

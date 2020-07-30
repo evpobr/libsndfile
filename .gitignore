@@ -83,15 +83,10 @@ regtest/sndfile-regtest
 sndfile.pc
 src/Ext
 src/G72x/g72x_test
-Symbols.darwin
-Symbols.gnu-binutils
-Symbols.os2
-Symbols.static
 src/config.h
 src/config.h.in
 src/config.h.in~
 src/libsndfile.so*
-libsndfile*.def
 src/sndfile.h
 src/stamp-h1
 src/test_main

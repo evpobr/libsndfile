@@ -129,14 +129,6 @@ set_package_properties (SQLite3 PROPERTIES
 	DESCRIPTION "light weight SQL database engine."
 	PURPOSE "Enables regtest"
 	)
-if (BUILD_SHARED_LIBS)
-	set_package_properties (PythonInterp PROPERTIES
-		TYPE REQUIRED
-		URL "www.python.org/"
-		DESCRIPTION "Python is a widely used high-level programming language."
-		PURPOSE "Required to build shared libraries"
-		)
-endif()
 
 feature_summary (WHAT ALL)
 
@@ -339,7 +331,7 @@ if (BUILD_SHARED_LIBS)
 	# Symbol files generation
 
 	if (WIN32)
-		set (SYMBOL_FILENAME "sndfile.def")
+		set (SYMBOL_FILENAME "libsndfile-1.def")
 		set (SYMBOL_OS "win32")
 	elseif ((CMAKE_SYSTEM_NAME MATCHES "Darwin") OR (CMAKE_SYSTEM_NAME MATCHES "Rhapsody"))
 		set (SYMBOL_FILENAME "Symbols.darwin")
@@ -353,32 +345,22 @@ if (BUILD_SHARED_LIBS)
 	endif ()
 
 	if (DEFINED SYMBOL_OS)
-		add_custom_command (
-			OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/src/${SYMBOL_FILENAME}
-			COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/src/create_symbols_file.py ${SYMBOL_OS} ${PROJECT_VERSION_MAJOR} > ${CMAKE_CURRENT_BINARY_DIR}/src/${SYMBOL_FILENAME}
-			COMMENT "Generating ${SYMBOL_FILENAME}..."
-			)
-
-		add_custom_target (GENFILES DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/src/${SYMBOL_FILENAME})
 		if (SYMBOL_OS MATCHES "win32")
 			target_sources (sndfile
 				PRIVATE
-					${CMAKE_CURRENT_BINARY_DIR}/src/${SYMBOL_FILENAME}
+					${CMAKE_CURRENT_SOURCE_DIR}/src/${SYMBOL_FILENAME}
 				)
 		elseif (SYMBOL_OS MATCHES "darwin")
-			add_dependencies (sndfile GENFILES)
 			set_property (TARGET sndfile APPEND_STRING PROPERTY
-				LINK_FLAGS " -Wl,-exported_symbols_list -Wl,${CMAKE_CURRENT_BINARY_DIR}/src/${SYMBOL_FILENAME}"
+				LINK_FLAGS " -Wl,-exported_symbols_list -Wl,${CMAKE_CURRENT_SOURCE_DIR}/src/${SYMBOL_FILENAME}"
 				)
 		elseif (SYMBOL_OS MATCHES "os")
-			add_dependencies (sndfile GENFILES)
 			set_property (TARGET sndfile APPEND_STRING PROPERTY
-				LINK_FLAGS " -Wl,-export-symbols ${CMAKE_CURRENT_BINARY_DIR}/src/${SYMBOL_FILENAME}"
+				LINK_FLAGS " -Wl,-export-symbols ${CMAKE_CURRENT_SOURCE_DIR}/src/${SYMBOL_FILENAME}"
 				)
 		elseif (UNIX)
-			add_dependencies (sndfile GENFILES)
 			set_property (TARGET sndfile APPEND_STRING PROPERTY
-				LINK_FLAGS " -Wl,--version-script,${CMAKE_CURRENT_BINARY_DIR}/src/${SYMBOL_FILENAME}"
+				LINK_FLAGS " -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/src/${SYMBOL_FILENAME}"
 				)
 		endif()
 	endif()

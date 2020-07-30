@@ -247,7 +247,3 @@ elseif (NOT ENABLE_STATIC_RUNTIME)
 		endforeach (flag_var)
 	endif ()
 endif ( )
-
-if (BUILD_SHARED_LIBS)
-	find_package (PythonInterp REQUIRED)
-endif()
