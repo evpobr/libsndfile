@@ -571,7 +571,7 @@ ogg_stream_seek_page_search (SF_PRIVATE *psf, OGG_PRIVATE *odata, uint64_t targe
 			next_boundary = SF_MIN (page_offset, next_boundary) ;
 
 			/* If not from our stream, continue. */
-			if (odata->ostream.serialno != (uint32_t) ogg_page_serialno (&page))
+			if (odata->ostream.serialno != ogg_page_serialno (&page))
 				continue ;
 
 			/*
