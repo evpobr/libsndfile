@@ -168,7 +168,8 @@ ogg_read_first_page (SF_PRIVATE *psf, OGG_PRIVATE *odata)
 	memcpy (buffer, psf->header.ptr, psf->header.indx) ;
 	ogg_sync_wrote (&odata->osync, psf->header.indx) ;
 
-	ret = ogg_sync_next_page (psf, &odata->opage, SF_MAX (0l, 4096 - psf->header.indx), NULL) ;
+	ret = ogg_sync_next_page (psf, &odata->opage, SF_MAX ((sf_count_t) 0,
+		4096 - psf->header.indx), NULL) ;
 
 	/* Have we simply run out of data?  If so, we're done. */
 	if (ret == 0)
