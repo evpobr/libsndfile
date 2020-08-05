@@ -26,7 +26,7 @@
 extern "C" {
 #endif	/* __cplusplus */
 
-#include "sfconfig.h"
+#include "config.h"
 
 #include <stdint.h>
 #include <stdarg.h>

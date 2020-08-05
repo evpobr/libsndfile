@@ -17,7 +17,7 @@
 */
 
 
-#include "sfconfig.h"
+#include "config.h"
 
 #include <stdio.h>
 #include <fcntl.h>
@@ -26,7 +26,7 @@
 #include <time.h>
 #include <math.h>
 
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #else
 #include "sf_unistd.h"

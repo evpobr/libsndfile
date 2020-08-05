@@ -19,12 +19,12 @@
 #ifndef SNDFILE_COMMON_H
 #define SNDFILE_COMMON_H
 
-#include "sfconfig.h"
+#include "config.h"
 
 #include <stdlib.h>
 #include <string.h>
 
-#if HAVE_STDINT_H
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
 #elif HAVE_INTTYPES_H
 #include <inttypes.h>

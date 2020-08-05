@@ -23,7 +23,7 @@
 ** and trial and error experimentation. The code here however is all original.
 */
 
-#include	"sfconfig.h"
+#include	"config.h"
 
 #include	<stdio.h>
 #include	<fcntl.h>

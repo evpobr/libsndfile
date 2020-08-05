@@ -168,7 +168,6 @@ set (sndfile_HDRS
 #
 
 add_library (sndfile
-	src/sfconfig.h
 	src/sfendian.h
 	src/sf_unistd.h
 	src/common.h
