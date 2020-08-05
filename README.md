@@ -16,13 +16,9 @@ You can grab the source code using:
 
 For building for Android see [BuildingForAndroid][BuildingForAndroid].
 
-There are currently two build systems; the official GNU autotool based one and
-a more limited and experimental CMake based build system. Use of the CMake build
-system is documented below.
-
 Setting up a build environment for libsndfile on Debian or Ubuntu is as simple as:
 
-    sudo apt install autoconf automake build-essential libasound2-dev \
+    sudo apt install cmake build-essential libasound2-dev \
       libflac-dev libogg-dev libtool libvorbis-dev libopus-dev pkg-config python
 
 For other Linux distributions or any of the *BSDs, the setup should be similar
@@ -30,24 +26,15 @@ although the package install tools and package names may be slightly different.
 
 Similarly on Mac OS X, assuming [brew] is already installed:
 
-    brew install autoconf automake flac libogg libtool libvorbis opus pkg-config
-
-Once the build environment has been set up, building and testing libsndfile is
-as simple as:
-
-    ./autogen.sh
-    ./configure --enable-werror
-    make
-    make check
+    brew install cmake flac libogg libtool libvorbis opus pkg-config
 
 ## The CMake build system
 
-Although Autotools is the primary and recommended build toolchain, experimental
-CMake meta build generator is also available. The build process with CMake takes
-place in two stages. First, standard build files are created from configuration
-scripts. Then the platform's native build tools are used for the actual
-building. CMake can produce Microsoft Visual Studio project and solution files,
-Unix Makefiles, Xcode projects and [many more](https://cmake.org/cmake/help/latest/manual/cmake-generators.7.html).
+The build process with CMake takes place in two stages. First, standard build
+files are created from configuration scripts. Then the platform's native build
+tools are used for the actual building. CMake can produce Microsoft Visual
+Studio project and solution files, Unix Makefiles, Xcode projects and
+[many more](https://cmake.org/cmake/help/latest/manual/cmake-generators.7.html).
 
 Some IDE support CMake natively or with plugins, check you IDE documentation
  for details.
@@ -56,7 +43,7 @@ Some IDE support CMake natively or with plugins, check you IDE documentation
 
 1. C99-compliant compiler toolchain (tested with GCC, Clang and Visual
    Studio 2015)
-2. CMake 3.1.3 or newer
+2. CMake 3.1 or newer
 
 There are some recommended packages to enable all features of libsndfile:
 
