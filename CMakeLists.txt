@@ -138,7 +138,7 @@ feature_summary (WHAT ALL)
 
 configure_file (src/config.h.cmake src/config.h)
 
-configure_file (src/sndfile.h.in src/sndfile.h)
+configure_file (include/sndfile.h.in include/sndfile.h)
 
 set (prefix ${CMAKE_INSTALL_PREFIX})
 set (exec_prefix "\$\{prefix\}")
@@ -159,8 +159,8 @@ configure_file (sndfile.pc.in sndfile.pc @ONLY)
 
 # Public libsndfile headers
 set (sndfile_HDRS
-	src/sndfile.hh
-	${CMAKE_CURRENT_BINARY_DIR}/src/sndfile.h
+	include/sndfile.hh
+	${CMAKE_CURRENT_BINARY_DIR}/include/sndfile.h
 	)
 
 #
@@ -287,9 +287,12 @@ add_library (SndFile::sndfile ALIAS sndfile)
 
 target_include_directories(sndfile
 	PUBLIC
-		$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src>
+		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+		$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
 		$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+	PRIVATE
+		src
+		${CMAKE_CURRENT_BINARY_DIR}/src
 	)
 target_link_libraries (sndfile
 	PRIVATE
@@ -393,6 +396,11 @@ if (BUILD_PROGRAMS)
 		$<$<NOT:$<BOOL:${BEOS}>>:programs/sndfile-play.c>
 		$<$<BOOL:${BEOS}>:programs/sndfile-play-beos.cpp>
 		)
+	target_include_directories (sndfile-play
+		PRIVATE
+			src
+			${CMAKE_CURRENT_BINARY_DIR}/src
+		)
 	target_link_libraries (sndfile-play PRIVATE $<$<BOOL:${LIBM_REQUIRED}>:m>)
 	target_link_libraries (sndfile-play PRIVATE sndfile)
 	if (WIN32)
@@ -422,6 +430,7 @@ if (BUILD_PROGRAMS)
 		programs/common.c
 		programs/common.h
 		)
+	target_include_directories (sndfile-cmp PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/src)
 	target_link_libraries (sndfile-cmp PRIVATE sndfile $<$<BOOL:${LIBM_REQUIRED}>:m>)
 
 # sndfile-metadata-set
@@ -431,6 +440,7 @@ if (BUILD_PROGRAMS)
 		programs/common.c
 		programs/common.h
 		)
+	target_include_directories (sndfile-metadata-set PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/src)
 	target_link_libraries (sndfile-metadata-set PRIVATE sndfile $<$<BOOL:${LIBM_REQUIRED}>:m>)
 
 # sndfile-metadata-get
@@ -440,6 +450,7 @@ if (BUILD_PROGRAMS)
 		programs/common.c
 		programs/common.h
 		)
+	target_include_directories (sndfile-metadata-get PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/src)
 	target_link_libraries (sndfile-metadata-get PRIVATE sndfile $<$<BOOL:${LIBM_REQUIRED}>:m>)
 
 # sndfile-interleave
@@ -475,6 +486,11 @@ if (BUILD_PROGRAMS)
 		programs/sndfile-salvage.c
 		programs/common.c
 		programs/common.h
+		)
+	target_include_directories (sndfile-salvage
+		PRIVATE
+			src
+			${CMAKE_CURRENT_BINARY_DIR}/src
 		)
 	target_link_libraries (sndfile-salvage PRIVATE sndfile $<$<BOOL:${LIBM_REQUIRED}>:m>)
 
@@ -541,6 +557,7 @@ if (BUILD_EXAMPLES)
 # sndfilehandle
 
 	add_executable (sndfilehandle examples/sndfilehandle.cc)
+	target_include_directories (sndfilehandle PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/src)
 	target_link_libraries (sndfilehandle PUBLIC sndfile)
 
 	set (SNDFILE_EXAMPLE_TARGETS
@@ -568,6 +585,7 @@ if (BUILD_REGTEST)
 		regtest/database.c
 		regtest/checksum.c
 		)
+	target_include_directories (sndfile-regtest PRIVATE src ${CMAKE_CURRENT_BINARY_DIR}/src)
 	target_link_libraries(sndfile-regtest
 		PRIVATE
 			sndfile
@@ -693,7 +711,12 @@ if (BUILD_TESTING)
 	# utils static library
 	add_library(test_utils STATIC tests/utils.c)
 	target_link_libraries(test_utils PRIVATE sndfile)
-	target_include_directories(test_utils PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/tests")
+	target_include_directories(test_utils
+		PUBLIC
+			"${CMAKE_CURRENT_BINARY_DIR}/tests"
+			src
+			${CMAKE_CURRENT_BINARY_DIR}/src
+		)
 
 	### test_main
 
@@ -713,6 +736,7 @@ if (BUILD_TESTING)
 		src/test_binheader_writef.c
 		src/test_nms_adpcm.c
 		)
+	target_include_directories (test_main PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/src)
 	target_link_libraries (test_main PRIVATE sndfile)
 	if (MSVC)
 		target_compile_definitions (test_main PRIVATE _USE_MATH_DEFINES)
@@ -722,6 +746,7 @@ if (BUILD_TESTING)
 	### sfversion_test
 
 	add_executable (sfversion tests/sfversion.c)
+	target_include_directories (sfversion PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/src)
 	target_link_libraries (sfversion sndfile)
 	add_test (sfversion sfversion)
 	set_tests_properties (sfversion PROPERTIES
@@ -1078,6 +1103,11 @@ if (BUILD_TESTING)
 	### g72x_test
 
 	add_executable (g72x_test src/G72x/g72x_test.c)
+	target_include_directories (g72x_test
+		PRIVATE
+			src
+			${CMAKE_CURRENT_BINARY_DIR}/src
+		)
 	target_link_libraries (g72x_test
 		PRIVATE
 			sndfile
