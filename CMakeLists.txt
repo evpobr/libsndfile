@@ -616,6 +616,10 @@ if (BUILD_REGTEST)
 
 endif ()
 
+add_executable (benchmark tests/benchmark.c)
+target_include_directories (benchmark PRIVATE src ${CMAKE_CURRENT_BINARY_DIR}/src)
+target_link_libraries(benchmark PRIVATE sndfile)
+
 #
 # Installation
 #
