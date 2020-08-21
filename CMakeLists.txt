@@ -343,6 +343,21 @@ if (BUILD_SHARED_LIBS)
 		VERSION ${PROJECT_VERSION}
 		)
 
+	# Linker flags
+	if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+		if (CMAKE_VERSION VERSION_LESS 3.13)
+			target_link_directories(sndfile
+				PRIVATE
+					"-Wl,-O1 -Wl,--as-needed -Wl,--no-undefined -Wl,--gc-sections"
+			)
+		else ()
+			target_link_options(sndfile
+				PRIVATE
+					"LINKER:-O1,--as-needed,--no-undefined,--gc-sections"
+			)
+		endif ()
+	endif ()
+
 	# Symbol files generation
 
 	if (WIN32)
