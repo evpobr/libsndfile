@@ -325,6 +325,21 @@ if (ENABLE_COMPATIBLE_LIBSNDFILE_NAME)
 		)
 endif ()
 
+# Linker flags
+if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+	if (CMAKE_VERSION VERSION_LESS 3.13)
+		target_link_directories(sndfile
+			PRIVATE
+				"-Wl,-O1 -Wl,--as-needed -Wl,--no-undefined -Wl,--gc-sections"
+		)
+	else ()
+		target_link_options(sndfile
+			PRIVATE
+				"LINKER:-O1,--as-needed,--no-undefined,--gc-sections"
+		)
+	endif ()
+endif ()
+
 if (BUILD_SHARED_LIBS)
 
 	if (WIN32)
@@ -342,21 +357,6 @@ if (BUILD_SHARED_LIBS)
 		SOVERSION ${PROJECT_VERSION_MAJOR}
 		VERSION ${PROJECT_VERSION}
 		)
-
-	# Linker flags
-	if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
-		if (CMAKE_VERSION VERSION_LESS 3.13)
-			target_link_directories(sndfile
-				PRIVATE
-					"-Wl,-O1 -Wl,--as-needed -Wl,--no-undefined -Wl,--gc-sections"
-			)
-		else ()
-			target_link_options(sndfile
-				PRIVATE
-					"LINKER:-O1,--as-needed,--no-undefined,--gc-sections"
-			)
-		endif ()
-	endif ()
 
 	# Symbol files generation
 
