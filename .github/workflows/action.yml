@@ -178,4 +178,4 @@ jobs:
         if: endsWith(matrix.name,'shared')
         run: |
           cd build
-          cmake --build . --target package
+          cmake --build . --config Release --target package
