@@ -15,7 +15,9 @@ jobs:
           ubuntu-latest-clang-cmake,
           macos-latest-cmake,
           windows-latest-vs2019-x64,
-          windows-latest-vs2019-Win32
+          windows-latest-vs2019-win32,
+          windows-latest-vs2019-x64-shared,
+          windows-latest-vs2019-win32-shared
         ]
         include:
           - name: ubuntu-latest-gcc-autotools
@@ -42,7 +44,10 @@ jobs:
             cxx: g++
             build-system: cmake
             cmake-generator: 'Ninja'
-            cmake-options: '-DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall -Wextra" -DCMAKE_VERBOSE_MAKEFILE=ON'
+            cmake-options: >-
+              -DCMAKE_BUILD_TYPE=Release
+              -DCMAKE_C_FLAGS="-Wall -Wextra"
+              -DCMAKE_VERBOSE_MAKEFILE=ON'
 
           - name: ubuntu-latest-clang-cmake
             os: ubuntu-latest
@@ -50,7 +55,10 @@ jobs:
             cxx: clang++
             build-system: cmake
             cmake-generator: 'Ninja'
-            cmake-options: '-DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall -Wextra" -DCMAKE_VERBOSE_MAKEFILE=ON'
+            cmake-options: >-
+              -DCMAKE_BUILD_TYPE=Release
+              -DCMAKE_C_FLAGS="-Wall -Wextra"
+              -DCMAKE_VERBOSE_MAKEFILE=ON'
 
           - name: macos-latest-cmake
             os: macos-latest
@@ -58,21 +66,60 @@ jobs:
             cxx: clang++
             build-system: cmake
             cmake-generator: 'Unix Makefiles'
-            cmake-options: '-DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall -Wextra" -DCMAKE_VERBOSE_MAKEFILE=ON'
+            cmake-options: >-
+              -DCMAKE_BUILD_TYPE=Release
+              -DCMAKE_C_FLAGS="-Wall -Wextra"
+              -DCMAKE_VERBOSE_MAKEFILE=ON'
 
           - name: windows-latest-vs2019-x64
             os: windows-latest
             triplet: 'x64-windows-static'
             build-system: cmake
             cmake-generator: 'Visual Studio 16 2019'
-            cmake-options: '-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded$<$<CONFIG:Debug>:Debug> -DCMAKE_BUILD_TYPE=Release -DVCPKG_TARGET_TRIPLET=x64-windows-static -DCMAKE_TOOLCHAIN_FILE=c:/vcpkg/scripts/buildsystems/vcpkg.cmake'
+            cmake-options: >-
+              -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded$<$<CONFIG:Debug>:Debug>
+              -DCMAKE_BUILD_TYPE=Release
+              -DVCPKG_TARGET_TRIPLET=x64-windows-static
+              -DCMAKE_TOOLCHAIN_FILE=c:/vcpkg/scripts/buildsystems/vcpkg.cmake
 
-          - name: windows-latest-vs2019-Win32
+          - name: windows-latest-vs2019-win32
             os: windows-latest
             triplet: 'x86-windows-static'
             build-system: cmake
             cmake-generator: 'Visual Studio 16 2019'
-            cmake-options: '-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded$<$<CONFIG:Debug>:Debug> -DCMAKE_GENERATOR_PLATFORM=Win32 -DCMAKE_BUILD_TYPE=Release -DVCPKG_TARGET_TRIPLET=x86-windows-static -DCMAKE_TOOLCHAIN_FILE=c:/vcpkg/scripts/buildsystems/vcpkg.cmake'
+            cmake-options: >-
+              -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded$<$<CONFIG:Debug>:Debug>
+              -DCMAKE_GENERATOR_PLATFORM=Win32
+              -DCMAKE_BUILD_TYPE=Release
+              -DVCPKG_TARGET_TRIPLET=x86-windows-static
+              -DCMAKE_TOOLCHAIN_FILE=c:/vcpkg/scripts/buildsystems/vcpkg.cmake
+
+          - name: windows-latest-vs2019-x64-shared
+            os: windows-latest
+            triplet: 'x64-windows-static'
+            build-system: cmake
+            cmake-generator: 'Visual Studio 16 2019'
+            cmake-options: >-
+              -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded$<$<CONFIG:Debug>:Debug>
+              -DCMAKE_BUILD_TYPE=Release
+              -DBUILD_SHARED_LIBS=ON
+              -DBUILD_EXAMPLES=OFF
+              -DVCPKG_TARGET_TRIPLET=x64-windows-static
+              -DCMAKE_TOOLCHAIN_FILE=c:/vcpkg/scripts/buildsystems/vcpkg.cmake
+
+          - name: windows-latest-vs2019-win32-shared
+            os: windows-latest
+            triplet: 'x86-windows-static'
+            build-system: cmake
+            cmake-generator: 'Visual Studio 16 2019'
+            cmake-options: >-
+              -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded$<$<CONFIG:Debug>:Debug>
+              -DCMAKE_GENERATOR_PLATFORM=Win32
+              -DCMAKE_BUILD_TYPE=Release
+              -DBUILD_SHARED_LIBS=ON
+              -DVCPKG_TARGET_TRIPLET=x86-windows-static
+              -DCMAKE_TOOLCHAIN_FILE=c:/vcpkg/scripts/buildsystems/vcpkg.cmake
+
 
     runs-on: ${{ matrix.os }}    
     steps:
@@ -86,7 +133,8 @@ jobs:
 
       - name: Install Lunux dependencies
         if: startsWith(matrix.os,'ubuntu')
-        run: sudo apt-get install -y autogen ninja-build libogg-dev libvorbis-dev libflac-dev libopus-dev libasound2-dev libsqlite3-dev libspeex-dev
+        run: sudo apt-get install -y autogen ninja-build libogg-dev libvorbis-dev libflac-dev
+          libopus-dev libasound2-dev libsqlite3-dev libspeex-dev
 
       - name: Install Windows dependencies
         if: startsWith(matrix.os,'windows')
