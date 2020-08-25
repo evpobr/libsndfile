@@ -173,7 +173,7 @@ jobs:
           ctest
 
       - name: Package Windows artifacts
-        if: endsWith(matrix.build-system,'shared')
+        if: endsWith(matrix.job,'shared')
         run: |
           cd build
           cmake --build . --target package
