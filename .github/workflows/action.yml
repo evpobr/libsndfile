@@ -174,11 +174,11 @@ jobs:
           cmake --build . --config Release
           ctest
 
-      - name: Package Windows artifacts
-        if: endsWith(matrix.name,'shared')
       - uses: actions/upload-artifact@v2
         with:
             path: build/libsndfile-*.zip
+      - name: Package Windows artifacts
+        if: endsWith(matrix.name,'shared')
         run: |
           cd build
           cmake --build . --config Release --target package
