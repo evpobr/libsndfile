@@ -176,6 +176,9 @@ jobs:
 
       - name: Package Windows artifacts
         if: endsWith(matrix.name,'shared')
+      - uses: actions/upload-artifact@v2
+        with:
+            path: build/libsndfile-*.zip
         run: |
           cd build
           cmake --build . --config Release --target package
