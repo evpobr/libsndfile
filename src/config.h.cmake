@@ -16,11 +16,11 @@
 /* Set to 1 to enable experimental code. */
 #cmakedefine01 ENABLE_EXPERIMENTAL_CODE
 
-/* Define to 1 if you have the <alsa/asoundlib.h> header file. */
-#cmakedefine01 HAVE_ALSA_ASOUNDLIB_H
+/* Define if you have the <alsa/asoundlib.h> header file. */
+#cmakedefine HAVE_ALSA_ASOUNDLIB_H
 
-/* Define to 1 if you have the <byteswap.h> header file. */
-#cmakedefine01 HAVE_BYTESWAP_H
+/* Define if you have the <byteswap.h> header file. */
+#cmakedefine HAVE_BYTESWAP_H
 
 /* Define to 1 if you have the `calloc' function. */
 #cmakedefine01 HAVE_CALLOC
@@ -28,8 +28,8 @@
 /* Define to 1 if you have the `ceil' function. */
 #cmakedefine01 HAVE_CEIL
 
-/* Set to 1 if S_IRGRP is defined. */
-#cmakedefine01 HAVE_DECL_S_IRGRP
+/* Set if S_IRGRP is defined. */
+#cmakedefine HAVE_DECL_S_IRGRP
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #cmakedefine01 HAVE_DLFCN_H
@@ -37,8 +37,8 @@
 /* Define to 1 if you have the <direct.h> header file. */
 #cmakedefine HAVE_DIRECT_H
 
-/* Define to 1 if you have the <endian.h> header file. */
-#cmakedefine01 HAVE_ENDIAN_H
+/* Define if you have the <endian.h> header file. */
+#cmakedefine HAVE_ENDIAN_H
 
 /* Will be set to 1 if flac, ogg and vorbis are available. */
 #cmakedefine01 HAVE_EXTERNAL_XIPH_LIBS
@@ -55,11 +55,11 @@
 /* Define to 1 if you have the `fstat' function. */
 #cmakedefine01 HAVE_FSTAT
 
-/* Define to 1 if you have the `fstat64' function. */
-#cmakedefine01 HAVE_FSTAT64
+/* Define if you have the `fstat64' function. */
+#cmakedefine HAVE_FSTAT64
 
-/* Define to 1 if you have the `fsync' function. */
-#cmakedefine01 HAVE_FSYNC
+/* Define if you have the `fsync' function. */
+#cmakedefine HAVE_FSYNC
 
 /* Define to 1 if you have the `ftruncate' function. */
 #cmakedefine01 HAVE_FTRUNCATE
@@ -85,8 +85,8 @@
 /* Define to 1 if you have the `m' library (-lm). */
 #cmakedefine01 HAVE_LIBM
 
-/* Define to 1 if you have the <locale.h> header file. */
-#cmakedefine01 HAVE_LOCALE_H
+/* Define if you have the <locale.h> header file. */
+#cmakedefine HAVE_LOCALE_H
 
 /* Define if you have the `localtime' function. */
 #cmakedefine HAVE_LOCALTIME
@@ -95,10 +95,10 @@
 #cmakedefine HAVE_LOCALTIME_R
 
 /* Define if you have C99's lrint function. */
-#cmakedefine01 HAVE_LRINT
+#cmakedefine HAVE_LRINT
 
 /* Define if you have C99's lrintf function. */
-#cmakedefine01 HAVE_LRINTF
+#cmakedefine HAVE_LRINTF
 
 /* Define to 1 if you have the `lround' function. */
 #cmakedefine01 HAVE_LROUND
@@ -115,14 +115,14 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #cmakedefine01 HAVE_MEMORY_H
 
-/* Define to 1 if you have the `mmap' function. */
-#cmakedefine01 HAVE_MMAP
+/* Define if you have the `mmap' function. */
+#cmakedefine HAVE_MMAP
 
 /* Define to 1 if you have the `open' function. */
 #cmakedefine01 HAVE_OPEN
 
-/* Define to 1 if you have the `pipe' function. */
-#cmakedefine01 HAVE_PIPE
+/* Define if you have the `pipe' function. */
+#cmakedefine HAVE_PIPE
 
 /* Define to 1 if you have the `read' function. */
 #cmakedefine01 HAVE_READ
@@ -130,8 +130,8 @@
 /* Define to 1 if you have the `realloc' function. */
 #cmakedefine01 HAVE_REALLOC
 
-/* Define to 1 if you have the `setlocale' function. */
-#cmakedefine01 HAVE_SETLOCALE
+/* Define if you have the `setlocale' function. */
+#cmakedefine HAVE_SETLOCALE
 
 /* Set to 1 if <sndio.h> is available. */
 #cmakedefine01 HAVE_SNDIO_H
@@ -139,14 +139,14 @@
 /* Define to 1 if you have the `snprintf' function. */
 #cmakedefine01 HAVE_SNPRINTF
 
-/* Set to 1 if you have libsqlite3. */
-#cmakedefine01 HAVE_SQLITE3
+/* Set if you have libsqlite3. */
+#cmakedefine HAVE_SQLITE3
 
-/* Define to 1 if the system has the type `ssize_t'. */
-#cmakedefine01 HAVE_SSIZE_T
+/* Define if the system has the type `ssize_t'. */
+#cmakedefine HAVE_SSIZE_T
 
-/* Define to 1 if you have the <stdint.h> header file. */
-#cmakedefine01 HAVE_STDINT_H
+/* Define if you have the <stdint.h> header file. */
+#cmakedefine HAVE_STDINT_H
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #cmakedefine01 HAVE_STDLIB_H
@@ -160,23 +160,23 @@
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #cmakedefine01 HAVE_SYS_STAT_H
 
-/* Define to 1 if you have the <sys/time.h> header file. */
-#cmakedefine01 HAVE_SYS_TIME_H
+/* Define if you have the <sys/time.h> header file. */
+#cmakedefine HAVE_SYS_TIME_H
 
 /* Define to 1 if you have the <sys/types.h> header file. */
 #cmakedefine01 HAVE_SYS_TYPES_H
 
-/* Define to 1 if you have <sys/wait.h> that is POSIX.1 compatible. */
-#cmakedefine01 HAVE_SYS_WAIT_H
+/* Define if you have <sys/wait.h> that is POSIX.1 compatible. */
+#cmakedefine HAVE_SYS_WAIT_H
 
-/* Define to 1 if you have the <unistd.h> header file. */
-#cmakedefine01 HAVE_UNISTD_H
+/* Define if you have the <unistd.h> header file. */
+#cmakedefine HAVE_UNISTD_H
 
 /* Define to 1 if you have the `vsnprintf' function. */
 #cmakedefine01 HAVE_VSNPRINTF
 
-/* Define to 1 if you have the `waitpid' function. */
-#cmakedefine01 HAVE_WAITPID
+/* Define if you have the `waitpid' function. */
+#cmakedefine HAVE_WAITPID
 
 /* Define to 1 if you have the `write' function. */
 #cmakedefine01 HAVE_WRITE
@@ -258,9 +258,6 @@
 
 /* The size of `wchar_t', as computed by sizeof. */
 @SIZEOF_WCHAR_T_CODE@
-
-/* Define to 1 if you have the ANSI C header files. */
-#cmakedefine01 STDC_HEADERS
 
 /* Set to long if unknown. */
 #define TYPEOF_SF_COUNT_T @TYPEOF_SF_COUNT_T@

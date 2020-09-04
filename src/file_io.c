@@ -28,20 +28,26 @@
 */
 
 /*
-**	The header file sfconfig.h MUST be included before the others to ensure
+**	The header file config.h MUST be included before the others to ensure
 **	that large file support is enabled correctly on Unix systems.
 */
 
-#include "sfconfig.h"
+#include "config.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 
-#if HAVE_UNISTD_H
+#ifdef HAVE_INTTYPES_H
+#include <inttypes.h>
+#else
+#include <stdint.h>
+#endif
+
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
-#if (HAVE_DECL_S_IRGRP == 0)
+#ifndef HAVE_DECL_S_IRGRP
 #include <sf_unistd.h>
 #endif
 
@@ -305,7 +311,7 @@ psf_fseek (SF_PRIVATE *psf, sf_count_t offset, int whence)
 sf_count_t
 psf_fread (void *ptr, sf_count_t bytes, sf_count_t items, SF_PRIVATE *psf)
 {	sf_count_t total = 0 ;
-	ssize_t	count ;
+	intptr_t count ;
 
 	if (psf->virtual_io)
 		return psf->vio.read (ptr, bytes*items, psf->vio_user_data) / bytes ;
@@ -318,7 +324,7 @@ psf_fread (void *ptr, sf_count_t bytes, sf_count_t items, SF_PRIVATE *psf)
 
 	while (items > 0)
 	{	/* Break the read down to a sensible size. */
-		count = (items > SENSIBLE_SIZE) ? SENSIBLE_SIZE : (ssize_t) items ;
+		count = (items > SENSIBLE_SIZE) ? SENSIBLE_SIZE : (intptr_t) items ;
 
 		count = read (psf->file.filedes, ((char*) ptr) + total, (size_t) count) ;
 
@@ -346,7 +352,7 @@ psf_fread (void *ptr, sf_count_t bytes, sf_count_t items, SF_PRIVATE *psf)
 sf_count_t
 psf_fwrite (const void *ptr, sf_count_t bytes, sf_count_t items, SF_PRIVATE *psf)
 {	sf_count_t total = 0 ;
-	ssize_t	count ;
+	intptr_t	count ;
 
 	if (bytes == 0 || items == 0)
 		return 0 ;
@@ -467,7 +473,7 @@ psf_is_pipe (SF_PRIVATE *psf)
 static sf_count_t
 psf_get_filelen_fd (int fd)
 {
-#if (SIZEOF_OFF_T == 4 && SIZEOF_SF_COUNT_T == 8 && HAVE_FSTAT64)
+#if (SIZEOF_OFF_T == 4 && SIZEOF_SF_COUNT_T == 8 && defined HAVE_FSTAT64)
 	struct stat64 statbuf ;
 
 	if (fstat64 (fd, &statbuf) == -1)
@@ -532,7 +538,7 @@ psf_open_fd (PSF_FILE * pfile)
 	/*
 	** Sanity check. If everything is OK, this test and the printfs will
 	** be optimised out. This is meant to catch the problems caused by
-	** "sfconfig.h" being included after <stdio.h>.
+	** "config.h" being included after <stdio.h>.
 	*/
 	if (sizeof (sf_count_t) != 8)
 	{	puts ("\n\n*** Fatal error : sizeof (sf_count_t) != 8") ;
@@ -584,7 +590,7 @@ psf_log_syserr (SF_PRIVATE *psf, int error)
 void
 psf_fsync (SF_PRIVATE *psf)
 {
-#if HAVE_FSYNC
+#ifdef HAVE_FSYNC
 	if (psf->file.mode == SFM_WRITE || psf->file.mode == SFM_RDWR)
 		fsync (psf->file.filedes) ;
 #else
@@ -957,7 +963,7 @@ psf_fseek (SF_PRIVATE *psf, sf_count_t offset, int whence)
 /* USE_WINDOWS_API */ sf_count_t
 psf_fread (void *ptr, sf_count_t bytes, sf_count_t items, SF_PRIVATE *psf)
 {	sf_count_t total = 0 ;
-	ssize_t count ;
+	intptr_t count ;
 	DWORD dwNumberOfBytesRead ;
 
 	if (psf->virtual_io)
@@ -971,7 +977,7 @@ psf_fread (void *ptr, sf_count_t bytes, sf_count_t items, SF_PRIVATE *psf)
 
 	while (items > 0)
 	{	/* Break the writes down to a sensible size. */
-		count = (items > SENSIBLE_SIZE) ? SENSIBLE_SIZE : (ssize_t) items ;
+		count = (items > SENSIBLE_SIZE) ? SENSIBLE_SIZE : (intptr_t) items ;
 
 		if (ReadFile (psf->file.handle, ((char*) ptr) + total, count, &dwNumberOfBytesRead, 0) == 0)
 		{	psf_log_syserr (psf, GetLastError ()) ;
@@ -996,7 +1002,7 @@ psf_fread (void *ptr, sf_count_t bytes, sf_count_t items, SF_PRIVATE *psf)
 /* USE_WINDOWS_API */ sf_count_t
 psf_fwrite (const void *ptr, sf_count_t bytes, sf_count_t items, SF_PRIVATE *psf)
 {	sf_count_t total = 0 ;
-	ssize_t	count ;
+	intptr_t	count ;
 	DWORD dwNumberOfBytesWritten ;
 
 	if (psf->virtual_io)
@@ -1010,7 +1016,7 @@ psf_fwrite (const void *ptr, sf_count_t bytes, sf_count_t items, SF_PRIVATE *psf
 
 	while (items > 0)
 	{	/* Break the writes down to a sensible size. */
-		count = (items > SENSIBLE_SIZE) ? SENSIBLE_SIZE : (ssize_t) items ;
+		count = (items > SENSIBLE_SIZE) ? SENSIBLE_SIZE : (intptr_t) items ;
 
 		if (WriteFile (psf->file.handle, ((const char*) ptr) + total, count, &dwNumberOfBytesWritten, 0) == 0)
 		{	psf_log_syserr (psf, GetLastError ()) ;
@@ -1294,7 +1300,7 @@ psf_fseek (SF_PRIVATE *psf, sf_count_t offset, int whence)
 /* Win32 */ sf_count_t
 psf_fread (void *ptr, sf_count_t bytes, sf_count_t items, SF_PRIVATE *psf)
 {	sf_count_t total = 0 ;
-	ssize_t	count ;
+	intptr_t	count ;
 
 	if (psf->virtual_io)
 		return psf->vio.read (ptr, bytes*items, psf->vio_user_data) / bytes ;
@@ -1307,7 +1313,7 @@ psf_fread (void *ptr, sf_count_t bytes, sf_count_t items, SF_PRIVATE *psf)
 
 	while (items > 0)
 	{	/* Break the writes down to a sensible size. */
-		count = (items > SENSIBLE_SIZE) ? SENSIBLE_SIZE : (ssize_t) items ;
+		count = (items > SENSIBLE_SIZE) ? SENSIBLE_SIZE : (intptr_t) items ;
 
 		count = read (psf->file.filedes, ((char*) ptr) + total, (size_t) count) ;
 
@@ -1332,7 +1338,7 @@ psf_fread (void *ptr, sf_count_t bytes, sf_count_t items, SF_PRIVATE *psf)
 /* Win32 */ sf_count_t
 psf_fwrite (const void *ptr, sf_count_t bytes, sf_count_t items, SF_PRIVATE *psf)
 {	sf_count_t total = 0 ;
-	ssize_t	count ;
+	intptr_t	count ;
 
 	if (psf->virtual_io)
 		return psf->vio.write (ptr, bytes*items, psf->vio_user_data) / bytes ;

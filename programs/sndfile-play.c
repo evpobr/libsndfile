@@ -30,14 +30,14 @@
 ** ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "sfconfig.h"
+#include "config.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #else
 #include "sf_unistd.h"
@@ -47,7 +47,7 @@
 
 #include "common.h"
 
-#if HAVE_ALSA_ASOUNDLIB_H
+#ifdef HAVE_ALSA_ASOUNDLIB_H
 	#define ALSA_PCM_NEW_HW_PARAMS_API
 	#define ALSA_PCM_NEW_SW_PARAMS_API
 	#include <alsa/asoundlib.h>
@@ -82,7 +82,7 @@
 **	Linux/OSS functions for playing a sound.
 */
 
-#if HAVE_ALSA_ASOUNDLIB_H
+#ifdef HAVE_ALSA_ASOUNDLIB_H
 
 static snd_pcm_t * alsa_open (int channels, unsigned srate, int realtime) ;
 static int alsa_write_float (snd_pcm_t *alsa_dev, float *data, int frames, int channels) ;
@@ -835,7 +835,7 @@ main (int argc, char *argv [])
 	puts ("*** Please feel free to submit a patch.") ;
 	return 1 ;
 #elif defined (__linux__)
-	#if HAVE_ALSA_ASOUNDLIB_H
+	#ifdef HAVE_ALSA_ASOUNDLIB_H
 		if (access ("/proc/asound/cards", R_OK) == 0)
 			alsa_play (argc, argv) ;
 		else

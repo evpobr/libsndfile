@@ -31,7 +31,7 @@
 extern "C" {
 #endif	/* __cplusplus */
 
-#include "sfconfig.h"
+#include "config.h"
 
 #include <stdint.h>
 #include <stdarg.h>
@@ -173,17 +173,17 @@ sf_count_t		file_length_fd (int fd) ;
 
 [+  ==  c  +]
 
-#include "sfconfig.h"
+#include "config.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
 
-#if HAVE_UNISTD_H
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
-#if (HAVE_DECL_S_IRGRP == 0)
+#ifndef HAVE_DECL_S_IRGRP
 #include <sf_unistd.h>
 #endif
 

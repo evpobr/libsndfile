@@ -189,7 +189,6 @@ set (sndfile_HDRS
 #
 
 add_library (sndfile
-	src/sfconfig.h
 	src/sfendian.h
 	src/sf_unistd.h
 	src/common.h
@@ -482,7 +481,6 @@ if (BUILD_PROGRAMS)
 		)
 	target_include_directories (sndfile-cmp
 		PUBLIC
-			src
 			${CMAKE_CURRENT_BINARY_DIR}/src
 			${CMAKE_CURRENT_BINARY_DIR}/tests
 		)
@@ -652,7 +650,6 @@ if (BUILD_REGTEST)
 		)
 	target_include_directories (sndfile-regtest
 		PUBLIC
-			src
 			${CMAKE_CURRENT_BINARY_DIR}/src
 			${CMAKE_CURRENT_BINARY_DIR}/tests
 		)
@@ -839,11 +836,7 @@ if (BUILD_TESTING)
 	### sfversion_test
 
 	add_executable (sfversion tests/sfversion.c)
-	target_include_directories (sfversion
-		PRIVATE
-			src
-			${CMAKE_CURRENT_BINARY_DIR}/src
-		)
+	target_include_directories (sfversion PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/src)
 	target_link_libraries (sfversion sndfile)
 	add_test (sfversion sfversion)
 	set_tests_properties (sfversion PROPERTIES
