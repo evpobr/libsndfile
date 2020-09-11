@@ -57,7 +57,6 @@ sf_wchar_open (LPCWSTR wpath, int mode, SF_INFO *sfinfo)
 
 	copy_filename (psf, utf8name) ;
 	free (utf8name) ;
-	psf->file.use_wchar = SF_TRUE ;
 	psf->file.mode = mode ;
 
 	psf->error = psf_fopen (psf) ;

@@ -352,8 +352,6 @@ typedef struct
 	**	They are basically the same as a windows file HANDLE.
 	*/
 	void 			*handle, *hsaved ;
-
-	int				use_wchar ;
 #else
 	/* These fields can only be used in src/file_io.c. */
 	int 			filedes, savedes ;
