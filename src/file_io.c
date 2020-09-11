@@ -132,9 +132,9 @@ psf_open_rsrc (SF_PRIVATE *psf)
 		return 0 ;
 
 	/* Test for MacOSX style resource fork on HPFS or HPFS+ filesystems. */
-	count = snprintf (psf->rsrc.path.c, sizeof (psf->rsrc.path.c), "%s/..namedfork/rsrc", psf->file.path.c) ;
+	count = snprintf (psf->rsrc.path, sizeof (psf->rsrc.path), "%s/..namedfork/rsrc", psf->file.path) ;
 	psf->error = SFE_NO_ERROR ;
-	if (count < sizeof (psf->rsrc.path.c))
+	if (count < sizeof (psf->rsrc.path))
 	{	if ((psf->rsrc.filedes = psf_open_fd (&psf->rsrc)) >= 0)
 		{	psf->rsrclength = psf_get_filelen_fd (psf->rsrc.filedes) ;
 			if (psf->rsrclength > 0 || (psf->rsrc.mode & SFM_WRITE))
@@ -153,9 +153,9 @@ psf_open_rsrc (SF_PRIVATE *psf)
 	** Now try for a resource fork stored as a separate file in the same
 	** directory, but preceded with a dot underscore.
 	*/
-	count = snprintf (psf->rsrc.path.c, sizeof (psf->rsrc.path.c), "%s._%s", psf->file.dir.c, psf->file.name.c) ;
+	count = snprintf (psf->rsrc.path, sizeof (psf->rsrc.path), "%s._%s", psf->file.dir.c, psf->file.name.c) ;
 	psf->error = SFE_NO_ERROR ;
-	if (count < sizeof (psf->rsrc.path.c) && (psf->rsrc.filedes = psf_open_fd (&psf->rsrc)) >= 0)
+	if (count < sizeof (psf->rsrc.path) && (psf->rsrc.filedes = psf_open_fd (&psf->rsrc)) >= 0)
 	{	psf->rsrclength = psf_get_filelen_fd (psf->rsrc.filedes) ;
 		return SFE_NO_ERROR ;
 		} ;
@@ -164,9 +164,9 @@ psf_open_rsrc (SF_PRIVATE *psf)
 	** Now try for a resource fork stored in a separate file in the
 	** .AppleDouble/ directory.
 	*/
-	count = snprintf (psf->rsrc.path.c, sizeof (psf->rsrc.path.c), "%s.AppleDouble/%s", psf->file.dir.c, psf->file.name.c) ;
+	count = snprintf (psf->rsrc.path, sizeof (psf->rsrc.path), "%s.AppleDouble/%s", psf->file.dir.c, psf->file.name.c) ;
 	psf->error = SFE_NO_ERROR ;
-	if (count < sizeof (psf->rsrc.path.c))
+	if (count < sizeof (psf->rsrc.path))
 	{	if ((psf->rsrc.filedes = psf_open_fd (&psf->rsrc)) >= 0)
 		{	psf->rsrclength = psf_get_filelen_fd (psf->rsrc.filedes) ;
 			return SFE_NO_ERROR ;
@@ -572,9 +572,9 @@ psf_open_fd (PSF_FILE * pfile)
 		} ;
 
 	if (mode == 0)
-		fd = open (pfile->path.c, oflag) ;
+		fd = open (pfile->path, oflag) ;
 	else
-		fd = open (pfile->path.c, oflag, mode) ;
+		fd = open (pfile->path, oflag, mode) ;
 
 	return fd ;
 } /* psf_open_fd */
@@ -653,7 +653,7 @@ psf_open_rsrc (SF_PRIVATE *psf)
 		return 0 ;
 
 	/* Test for MacOSX style resource fork on HPFS or HPFS+ filesystems. */
-	snprintf (psf->rsrc.path.c, sizeof (psf->rsrc.path.c), "%s/rsrc", psf->file.path.c) ;
+	snprintf (psf->rsrc.path, sizeof (psf->rsrc.path), "%s/rsrc", psf->file.path) ;
 	psf->error = SFE_NO_ERROR ;
 	if ((psf->rsrc.handle = psf_open_handle (&psf->rsrc)) != NULL)
 	{	psf->rsrclength = psf_get_filelen_handle (psf->rsrc.handle) ;
@@ -664,7 +664,7 @@ psf_open_rsrc (SF_PRIVATE *psf)
 	** Now try for a resource fork stored as a separate file in the same
 	** directory, but preceded with a dot underscore.
 	*/
-	snprintf (psf->rsrc.path.c, sizeof (psf->rsrc.path.c), "%s._%s", psf->file.dir.c, psf->file.name.c) ;
+	snprintf (psf->rsrc.path, sizeof (psf->rsrc.path), "%s._%s", psf->file.dir, psf->file.name) ;
 	psf->error = SFE_NO_ERROR ;
 	if ((psf->rsrc.handle = psf_open_handle (&psf->rsrc)) != NULL)
 	{	psf->rsrclength = psf_get_filelen_handle (psf->rsrc.handle) ;
@@ -675,7 +675,7 @@ psf_open_rsrc (SF_PRIVATE *psf)
 	** Now try for a resource fork stored in a separate file in the
 	** .AppleDouble/ directory.
 	*/
-	snprintf (psf->rsrc.path.c, sizeof (psf->rsrc.path.c), "%s.AppleDouble/%s", psf->file.dir.c, psf->file.name.c) ;
+	snprintf (psf->rsrc.path, sizeof (psf->rsrc.path), "%s.AppleDouble/%s", psf->file, psf->file.name) ;
 	psf->error = SFE_NO_ERROR ;
 	if ((psf->rsrc.handle = psf_open_handle (&psf->rsrc)) != NULL)
 	{	psf->rsrclength = psf_get_filelen_handle (psf->rsrc.handle) ;
@@ -788,7 +788,7 @@ psf_open_handle (PSF_FILE * pfile)
 				return NULL ;
 		} ;
 
-	LPWSTR lpFileName = utf8str_to_widestr (pfile->path.c) ;
+	LPWSTR lpFileName = utf8str_to_widestr (pfile->path) ;
 	if (!lpFileName)
 		return NULL ;
 

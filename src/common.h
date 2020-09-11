@@ -301,13 +301,6 @@ typedef SF_BROADCAST_INFO_VAR (16 * 1024) SF_BROADCAST_INFO_16K ;
 
 typedef SF_CART_INFO_VAR (16 * 1024) SF_CART_INFO_16K ;
 
-#if SIZEOF_WCHAR_T == 2
-typedef wchar_t	sfwchar_t ;
-#else
-typedef int16_t sfwchar_t ;
-#endif
-
-
 static inline void *
 psf_memdup (const void *src, size_t n)
 {	void * mem = calloc (1, n & 3 ? n + 4 - (n & 3) : n) ;
@@ -331,20 +324,9 @@ psf_isprint (int ch)
 
 typedef struct
 {
-	union
-	{	char		c [SF_FILENAME_LEN] ;
-		sfwchar_t	wc [SF_FILENAME_LEN] ;
-	} path ;
-
-	union
-	{	char		c [SF_FILENAME_LEN] ;
-		sfwchar_t	wc [SF_FILENAME_LEN] ;
-	} dir ;
-
-	union
-	{	char		c [SF_FILENAME_LEN / 4] ;
-		sfwchar_t	wc [SF_FILENAME_LEN / 4] ;
-	} name ;
+	char path [SF_FILENAME_LEN] ;
+	char dir [SF_FILENAME_LEN] ;
+	char name [SF_FILENAME_LEN / 4] ;
 
 #if USE_WINDOWS_API
 	/*

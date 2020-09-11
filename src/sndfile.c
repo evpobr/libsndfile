@@ -2624,7 +2624,7 @@ try_resource_fork (SF_PRIVATE * psf)
 		} ;
 
 	/* More checking here. */
-	psf_log_printf (psf, "Resource fork : %s\n", psf->rsrc.path.c) ;
+	psf_log_printf (psf, "Resource fork : %s\n", psf->rsrc.path) ;
 
 	return SF_FORMAT_SD2 ;
 } /* try_resource_fork */
@@ -2635,7 +2635,7 @@ format_from_extension (SF_PRIVATE *psf)
 	char buffer [16] ;
 	int format = 0 ;
 
-	if ((cptr = strrchr (psf->file.name.c, '.')) == NULL)
+	if ((cptr = strrchr (psf->file.name, '.')) == NULL)
 		return 0 ;
 
 	cptr ++ ;
@@ -2860,25 +2860,25 @@ copy_filename (SF_PRIVATE *psf, const char *path)
 {	const char *ccptr ;
 	char *cptr ;
 
-	if (strlen (path) > 1 && strlen (path) - 1 >= sizeof (psf->file.path.c))
+	if (strlen (path) > 1 && strlen (path) - 1 >= sizeof (psf->file.path))
 	{	psf->error = SFE_FILENAME_TOO_LONG ;
 		return psf->error ;
 		} ;
 
-	snprintf (psf->file.path.c, sizeof (psf->file.path.c), "%s", path) ;
+	snprintf (psf->file.path, sizeof (psf->file.path), "%s", path) ;
 	if ((ccptr = strrchr (path, '/')) || (ccptr = strrchr (path, '\\')))
 		ccptr ++ ;
 	else
 		ccptr = path ;
 
-	snprintf (psf->file.name.c, sizeof (psf->file.name.c), "%s", ccptr) ;
+	snprintf (psf->file.name, sizeof (psf->file.name), "%s", ccptr) ;
 
 	/* Now grab the directory. */
-	snprintf (psf->file.dir.c, sizeof (psf->file.dir.c), "%s", path) ;
-	if ((cptr = strrchr (psf->file.dir.c, '/')) || (cptr = strrchr (psf->file.dir.c, '\\')))
+	snprintf (psf->file.dir, sizeof (psf->file.dir), "%s", path) ;
+	if ((cptr = strrchr (psf->file.dir, '/')) || (cptr = strrchr (psf->file.dir, '\\')))
 		cptr [1] = 0 ;
 	else
-		psf->file.dir.c [0] = 0 ;
+		psf->file.dir [0] = 0 ;
 
 	return 0 ;
 } /* copy_filename */
