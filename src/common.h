@@ -1111,4 +1111,13 @@ arith_shift_right (int32_t x, int shift)
 	return ~ ((~x) >> shift) ;
 } /* arith_shift_right */
 
+int	copy_filename (SF_PRIVATE *psf, const char *path) ;
+
+#ifdef _WIN32
+wchar_t *ansistr_to_widestr(const char *s);
+wchar_t *utf8str_to_widestr(const char *s);
+char *widestr_to_utf8str(const wchar_t *ws);
+char *ansistr_to_utf8str(const char *s);
+#endif
+
 #endif /* SNDFILE_COMMON_H */

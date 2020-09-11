@@ -33,12 +33,9 @@
 
 extern int sf_errno ;
 
-static void copy_filename (SF_PRIVATE * psf, LPCWSTR wpath) ;
-
 SNDFILE*
 sf_wchar_open (LPCWSTR wpath, int mode, SF_INFO *sfinfo)
 {	SF_PRIVATE 	*psf ;
-	char utf8name [512] ;
 
 	if ((psf = psf_allocate ()) == NULL)
 	{	sf_errno = SFE_MALLOC_FAILED ;
@@ -47,12 +44,19 @@ sf_wchar_open (LPCWSTR wpath, int mode, SF_INFO *sfinfo)
 
 	psf_init_files (psf) ;
 
-	if (WideCharToMultiByte (CP_UTF8, 0, wpath, -1, utf8name, sizeof (utf8name), NULL, NULL) == 0)
-		psf->file.path.wc [0] = 0 ;
+
+	char *utf8name = widestr_to_utf8str (wpath) ;
+	if (!utf8name)
+	{	sf_errno = SFE_MALLOC_FAILED ;
+		free (psf->header.ptr) ;
+		free (psf) ;
+		return	NULL ;
+		} ;
 
 	psf_log_printf (psf, "File : '%s' (utf-8 converted from ucs-2)\n", utf8name) ;
 
-	copy_filename (psf, wpath) ;
+	copy_filename (psf, utf8name) ;
+	free (utf8name) ;
 	psf->file.use_wchar = SF_TRUE ;
 	psf->file.mode = mode ;
 
@@ -62,31 +66,82 @@ sf_wchar_open (LPCWSTR wpath, int mode, SF_INFO *sfinfo)
 } /* sf_wchar_open */
 
 
-static void
-copy_filename (SF_PRIVATE *psf, LPCWSTR wpath)
-{	const wchar_t *cwcptr ;
-	wchar_t *wcptr ;
+wchar_t *ansistr_to_widestr (const char *s)
+{
+	wchar_t *widestr = NULL ;
 
-	wcsncpy (psf->file.path.wc, wpath, ARRAY_LEN (psf->file.path.wc)) ;
-	psf->file.path.wc [ARRAY_LEN (psf->file.path.wc) - 1] = 0 ;
-	if ((cwcptr = wcsrchr (wpath, '/')) || (cwcptr = wcsrchr (wpath, '\\')))
-		cwcptr ++ ;
-	else
-		cwcptr = wpath ;
+    int nRet = MultiByteToWideChar (CP_ACP, MB_PRECOMPOSED, s, -1, NULL, 0) ;
+	if (nRet != 0)
+	{	int cchWideChar = nRet ;
+		widestr = calloc (cchWideChar, sizeof (wchar_t)) ;
+		if (widestr)
+		{	nRet = MultiByteToWideChar (CP_ACP, MB_PRECOMPOSED, s, -1, widestr, cchWideChar) ;
+			if (nRet != cchWideChar)
+            {	free(widestr) ;
+                widestr = NULL ;
+				}
+			}
+		}
 
-	wcsncpy (psf->file.name.wc, cwcptr, ARRAY_LEN (psf->file.name.wc)) ;
-	psf->file.name.wc [ARRAY_LEN (psf->file.name.wc) - 1] = 0 ;
+    return widestr ;
+}
 
-	/* Now grab the directory. */
-	wcsncpy (psf->file.dir.wc, wpath, ARRAY_LEN (psf->file.dir.wc)) ;
-	psf->file.dir.wc [ARRAY_LEN (psf->file.dir.wc) - 1] = 0 ;
+wchar_t *utf8str_to_widestr(const char *s)
+{
+    wchar_t *widestr = NULL;
 
-	if ((wcptr = wcsrchr (psf->file.dir.wc, '/')) || (wcptr = wcsrchr (psf->file.dir.wc, '\\')))
-		wcptr [1] = 0 ;
-	else
-		psf->file.dir.wc [0] = 0 ;
+    int nRet = MultiByteToWideChar(CP_UTF8, 0, s, -1, NULL, 0);
+    if (nRet != 0)
+    {
+        int cchWideChar = nRet;
+        widestr = calloc(cchWideChar, sizeof(wchar_t));
+        if (widestr)
+        {
+            nRet = MultiByteToWideChar(CP_UTF8, 0, s, -1, widestr, cchWideChar);
+            if (nRet != cchWideChar)
+            {
+                free(widestr);
+                widestr = NULL;
+            }
+        }
+    }
 
-	return ;
-} /* copy_filename */
+    return widestr;
+}
+
+char *widestr_to_utf8str(const wchar_t *ws)
+{
+    char *utf8str = NULL;
+    int nRet = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, ws, - 1, NULL, 0, NULL, NULL);
+    if (nRet != 0)
+    {
+        int cbMultiByte = nRet;
+        utf8str = calloc(cbMultiByte, sizeof(char));
+        if (utf8str)
+        {
+            nRet = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, ws, - 1, utf8str, cbMultiByte, NULL, NULL);
+            if (nRet != cbMultiByte)
+            {
+                free(utf8str);
+                utf8str = NULL;
+            }
+        }
+    }
+    return utf8str;
+}
+
+char *ansistr_to_utf8str(const char *s)
+{
+	char *utf8str = NULL ;
+
+    wchar_t *widestr = ansistr_to_widestr (s) ;
+    if (widestr)
+    {	utf8str = widestr_to_utf8str (widestr) ;
+		free (widestr) ;
+		widestr = NULL ;
+    }
+
+	return utf8str;
+}
 
 #endif

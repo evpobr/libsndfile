@@ -291,7 +291,6 @@ static int	guess_file_type (SF_PRIVATE *psf) ;
 static int	validate_sfinfo (SF_INFO *sfinfo) ;
 static int	validate_psf (SF_PRIVATE *psf) ;
 static void	save_header_info (SF_PRIVATE *psf) ;
-static int	copy_filename (SF_PRIVATE *psf, const char *path) ;
 static int	psf_close (SF_PRIVATE *psf) ;
 
 static int	try_resource_fork (SF_PRIVATE * psf) ;
@@ -345,13 +344,26 @@ sf_open	(const char *path, int mode, SF_INFO *sfinfo)
 
 	psf_log_printf (psf, "File : %s\n", path) ;
 
+	#ifdef _WIN32
+		char *_path = ansistr_to_utf8str (path) ;
+		if (!_path)
+		{	sf_errno = SFE_UNSUPPORTED_ENCODING ;
+			psf_close (psf) ;
+			return NULL ;
+			} ;
+	#else
+		const char *_path = path ;
+	#endif
 	if (copy_filename (psf, path) != 0)
 	{	sf_errno = psf->error ;
 		return	NULL ;
 		} ;
+#ifdef _WIN32
+	free (_path) ;
+#endif
 
 	psf->file.mode = mode ;
-	if (strcmp (path, "-") == 0)
+	if (strcmp (_path, "-") == 0)
 		psf->error = psf_set_stdio (psf) ;
 	else
 		psf->error = psf_fopen (psf) ;
@@ -2843,7 +2855,7 @@ save_header_info (SF_PRIVATE *psf)
 {	snprintf (sf_parselog, sizeof (sf_parselog), "%s", psf->parselog.buf) ;
 } /* save_header_info */
 
-static int
+int
 copy_filename (SF_PRIVATE *psf, const char *path)
 {	const char *ccptr ;
 	char *cptr ;

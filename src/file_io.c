@@ -788,41 +788,36 @@ psf_open_handle (PSF_FILE * pfile)
 				return NULL ;
 		} ;
 
-#if defined (WINAPI_FAMILY_PARTITION) && !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP | WINAPI_PARTITION_SYSTEM)
-	if (!pfile->use_wchar)
+	LPWSTR lpFileName = utf8str_to_widestr (pfile->path.c) ;
+	if (!lpFileName)
 		return NULL ;
+
+#if defined (WINAPI_FAMILY_PARTITION) && !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP | WINAPI_PARTITION_SYSTEM)
+
 
 	CREATEFILE2_EXTENDED_PARAMETERS cfParams = { 0 } ;
 	cfParams.dwSize = sizeof (CREATEFILE2_EXTENDED_PARAMETERS) ;
 	cfParams.dwFileAttributes = FILE_ATTRIBUTE_NORMAL ;
 
 	handle = CreateFile2 (pfile->path.wc, dwDesiredAccess, dwShareMode, dwCreationDistribution, &cfParams) ;
+	free (lpFileName) ;
 
 	if (handle == INVALID_HANDLE_VALUE)
 		return NULL ;
 
 	return handle ;
 #else
-	if (pfile->use_wchar)
-		handle = CreateFileW (
-					pfile->path.wc,				/* pointer to name of the file */
-					dwDesiredAccess,			/* access (read-write) mode */
-					dwShareMode,				/* share mode */
-					0,							/* pointer to security attributes */
-					dwCreationDistribution,		/* how to create */
-					FILE_ATTRIBUTE_NORMAL,		/* file attributes (could use FILE_FLAG_SEQUENTIAL_SCAN) */
-					NULL						/* handle to file with attributes to copy */
-					) ;
-	else
-		handle = CreateFileA (
-					pfile->path.c,				/* pointer to name of the file */
-					dwDesiredAccess,			/* access (read-write) mode */
-					dwShareMode,				/* share mode */
-					0,							/* pointer to security attributes */
-					dwCreationDistribution,		/* how to create */
-					FILE_ATTRIBUTE_NORMAL,		/* file attributes (could use FILE_FLAG_SEQUENTIAL_SCAN) */
-					NULL						/* handle to file with attributes to copy */
-					) ;
+
+	handle = CreateFileW (
+				lpFileName,					/* pointer to name of the file */
+				dwDesiredAccess,			/* access (read-write) mode */
+				dwShareMode,				/* share mode */
+				0,							/* pointer to security attributes */
+				dwCreationDistribution,		/* how to create */
+				FILE_ATTRIBUTE_NORMAL,		/* file attributes (could use FILE_FLAG_SEQUENTIAL_SCAN) */
+				NULL						/* handle to file with attributes to copy */
+				) ;
+	free (lpFileName) ;
 
 	if (handle == INVALID_HANDLE_VALUE)
 		return NULL ;
