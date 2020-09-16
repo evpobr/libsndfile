@@ -54,6 +54,7 @@ if (MSVC AND (CMAKE_VERSION VERSION_LESS 3.15))
 endif ()
 option (ENABLE_PACKAGE_CONFIG "Generate and install package config file" ON)
 option (INSTALL_PKGCONFIG_MODULE "Generate and install pkg-config module" ON)
+option (ENABLE_RUST "Enable Rust code" OFF)
 
 list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -101,6 +102,7 @@ endif ()
 if (MSVC AND (CMAKE_VERSION VERSION_LESS 3.15))
 	add_feature_info (ENABLE_STATIC_RUNTIME ENABLE_STATIC_RUNTIME "Enable static runtime")
 endif ()
+add_feature_info (ENABLE_RUST ENABLE_RUST "enable Rust code")
 
 set_package_properties (Ogg PROPERTIES
 	TYPE RECOMMENDED
@@ -177,6 +179,12 @@ endif ()
 #
 # libsndfile
 #
+
+if (ENABLE_RUST)
+	enable_language (Rust)
+	include (CMakeCargo)
+	add_subdirectory(sndfile-rust)
+endif ()
 
 # Public libsndfile headers
 set (sndfile_HDRS
@@ -323,6 +331,13 @@ target_link_libraries (sndfile
 		$<$<BOOL:${HAVE_EXTERNAL_XIPH_LIBS}>:FLAC::FLAC>
 		$<$<AND:$<BOOL:${ENABLE_EXPERIMENTAL}>,$<BOOL:${HAVE_EXTERNAL_XIPH_LIBS}>,$<BOOL:${HAVE_SPEEX}>>:Speex::Speex>
 		$<$<BOOL:${HAVE_EXTERNAL_XIPH_LIBS}>:Opus::opus>
+		$<$<BOOL:${ENABLE_RUST}>:sndfile-rust>
+		$<$<AND:$<BOOL:${ENABLE_RUST}>,$<BOOL:${WIN32}>>:ws2_32>
+		$<$<AND:$<BOOL:${ENABLE_RUST}>,$<BOOL:${WIN32}>>:userenv>
+	)
+target_compile_definitions (sndfile
+	PRIVATE
+		$<$<BOOL:${ENABLE_RUST}>:ENABLE_RUST>
 	)
 set_target_properties (sndfile PROPERTIES
 	PUBLIC_HEADER "${sndfile_HDRS}"
