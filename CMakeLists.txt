@@ -44,10 +44,6 @@ include (CTest)
 #
 
 option (BUILD_SHARED_LIBS "Build shared libraries" OFF)
-if (BUILD_SHARED_LIBS AND BUILD_TESTING)
-	set (BUILD_TESTING OFF)
-	message ("Build testing required static libraries. To prevent build errors BUILD_TESTING disabled.")
-endif ()
 option (BUILD_PROGRAMS "Build programs" ON)
 option (BUILD_EXAMPLES "Build examples" ON)
 option (ENABLE_CPACK "Enable CPack support" ON)
@@ -787,14 +783,34 @@ if (BUILD_TESTING)
 	enable_testing ()
 
 	# utils static library
-	add_library(test_utils STATIC tests/utils.c)
+	add_library (test_utils STATIC
+		tests/utils.c
+		tests/utils.h
+		)
+	if (BUILD_SHARED_LIBS)
+		target_sources (test_utils
+			PRIVATE
+				src/audio_detect.c
+				src/broadcast.c
+				src/cart.c
+				src/common.h
+				src/common.c
+				src/double64.c
+				src/float32.c
+				src/file_io.c
+			)
+	endif ()
 	target_include_directories (test_utils
 		PUBLIC
 			src
 			tests
 			${CMAKE_CURRENT_BINARY_DIR}/src
 		)
-	target_link_libraries(test_utils PRIVATE sndfile)
+	target_link_libraries (test_utils
+		PRIVATE
+			sndfile
+			$<$<AND:$<BOOL:${BUILD_SHARED_LIBS}>,$<BOOL:${LIBM_REQUIRED}>>:m>
+		)
 
 	### test_main
 
@@ -820,7 +836,11 @@ if (BUILD_TESTING)
 			${CMAKE_CURRENT_BINARY_DIR}/src
 			${CMAKE_CURRENT_BINARY_DIR}/tests
 		)
-	target_link_libraries (test_main PRIVATE sndfile)
+	target_link_libraries (test_main
+		PRIVATE
+			sndfile
+			$<$<BOOL:${BUILD_SHARED_LIBS}>:test_utils>
+		)
 	if (MSVC)
 		target_compile_definitions (test_main PRIVATE _USE_MATH_DEFINES)
 	endif ()
@@ -1190,6 +1210,18 @@ if (BUILD_TESTING)
 	### g72x_test
 
 	add_executable (g72x_test src/G72x/g72x_test.c)
+	if (BUILD_SHARED_LIBS)
+		target_sources (g72x_test
+			PRIVATE
+				src/G72x/g72x.h
+				src/G72x/g72x_priv.h
+				src/G72x/g721.c
+				src/G72x/g723_16.c
+				src/G72x/g723_24.c
+				src/G72x/g723_40.c
+				src/G72x/g72x.c
+			)
+	endif ()
 	target_include_directories (g72x_test
 		PRIVATE
 			src
